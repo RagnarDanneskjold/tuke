@@ -1,3 +1,4 @@
+# vim: tabstop=4 expandtab shiftwidth=4 fileencoding=utf8
 # ### BOILERPLATE ###
 # Tuke - Electrical Design Automation toolset
 # Copyright (C) 2008 Peter Todd <pete@petertodd.org>
