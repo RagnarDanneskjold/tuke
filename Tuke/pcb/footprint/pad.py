@@ -55,8 +55,8 @@ class Pad:
         """Generate geometry"""
 
         g = {}
-        g['top.pad'] = (self.from_ab(self.thickness))
-        g['top.clearance'] = (self.from_ab(self.clearance))
-        g['top.mask'] = (self.from_ab(self.mask))
+        g['top.pad'] = (self.from_ab(self.thickness),)
+        g['top.clearance'] = (self.from_ab(self.thickness + (self.clearance * 2)),)
+        g['top.mask'] = (self.from_ab(self.mask),)
 
         return g
