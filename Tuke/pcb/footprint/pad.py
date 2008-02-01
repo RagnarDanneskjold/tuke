@@ -16,3 +16,47 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
+
+from shapely.geometry import Polygon
+
+class Pad:
+    """Defines a pad"""
+
+    def __init__(self,a,b,thickness,clearance,mask):
+        """Create a pad.
+
+        a - First point of line segment
+        b - Second point
+        thickness - Width of metal surrounding line segment
+        clearance - Separation of pad from other conductors
+        mask - Width of solder mask relief
+        """
+
+        self.a = a
+        self.b = b
+        self.thickness = thickness
+        self.clearance = clearance
+        self.mask = mask
+
+        pass
+
+    def from_ab(self,thickness):
+        """Returns a box generated from a,b with a given thickness.
+
+        For makng pads, clearances etc.
+        """
+
+        return Polygon(((self.a[0] - thickness,self.a[1] - thickness),
+            (self.b[0] + thickness,self.b[1] - thickness),
+            (self.b[0] + thickness,self.b[1] + thickness),
+            (self.a[0] - thickness,self.a[1] + thickness)))
+
+    def geo(self):
+        """Generate geometry"""
+
+        g = {}
+        g['top.pad'] = (self.from_ab(self.thickness))
+        g['top.clearance'] = (self.from_ab(self.clearance))
+        g['top.mask'] = (self.from_ab(self.mask))
+
+        return g
