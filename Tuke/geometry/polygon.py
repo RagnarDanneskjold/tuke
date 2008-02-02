@@ -17,7 +17,22 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-class BaseGeo:
-    """Base geometry class."""
-    def __init__(self,id=''):
-        self.id = id
+from Tuke import SingleElement,Id
+import shapely.geometry
+
+class Polygon(SingleElement,shapely.geometry.Polygon):
+    def __init__(*args,**kwargs):
+        self = args[0]
+
+        if not kwargs.has_key('id'):
+            kwargs['id'] = Id()
+
+        SingleElement.__init__(self,id=kwargs['id'])
+
+        shapely.geometry.Polygon.__init__(*args)
+
+
+        if not kwargs.has_key('layer'):
+            raise None
+
+        self.layer = kwargs['layer']

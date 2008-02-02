@@ -23,7 +23,6 @@ class Element(object):
     """Base element class."""
     def __init__(self,id=Id()):
         self.id = id
-        print 'new element: ' + str(id)
 
         self.subs = []
 
@@ -36,3 +35,11 @@ class Element(object):
 
     def render():
         pass
+
+
+class SingleElement(Element):
+    """Base class for elements without subelements."""
+    __iter__ = None
+    add = None
+    def __init__(self,id=Id()):
+        self.id = id

@@ -17,19 +17,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from Tuke.geo import BaseGeo
+from Tuke import Element,Id
 
-class Geo(BaseGeo):
-    """Geometry container."""
+class Translate(Element):
+    def __init__(self,g,v):
+        """Translate geometry."""
+        Element.__init__(self,id=Id())
 
-    def __init__(self,id = ''):
-        BaseGeo.__init__(self,id=id)
+        assert(isinstance(g,Element))
+        self.__g = g
+        self.v = v
 
-        self.g = []
-
-
-    def add(self,b):
-        if isinstance(b,BaseGeo):
-            self.g += [b]
-        else:
-            raise None 
+    def __getattr__(self,name):
+        return getattr(self.__g,name)

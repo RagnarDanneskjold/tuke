@@ -17,8 +17,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from basegeo import BaseGeo
-from geo import Geo
-from hole import Hole
-from polygon import Polygon
-from translate import Translate
+from Tuke import SingleElement,Id
+
+class Hole(SingleElement):
+    def __init__(self,dia,id=Id()):
+        SingleElement.__init__(self,id=id)
+
+        self.dia = dia

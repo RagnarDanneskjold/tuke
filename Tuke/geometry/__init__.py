@@ -17,10 +17,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from geo import BaseGeo
-
-class Hole(BaseGeo):
-    def __init__(self,dia,id=''):
-        BaseGeo.__init__(self,id=id)
-
-        self.dia = dia
+from hole import Hole
+from polygon import Polygon
+from translate import Translate

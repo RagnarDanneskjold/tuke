@@ -18,4 +18,4 @@
 # ### BOILERPLATE ###
 
 from id import Id
-from element import Element
+from element import Element,SingleElement
