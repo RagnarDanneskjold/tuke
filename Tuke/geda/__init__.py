@@ -17,12 +17,4 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from Tuke.geo import BaseGeo
-
-class Translate(BaseGeo):
-    def __init__(self,g,v):
-        """Translate geometry."""
-        BaseGeo.__init__(self,id='')
-
-        self.g = g
-        self.v = v
+from Tuke.geda.footprint import Footprint
