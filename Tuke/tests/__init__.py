@@ -17,6 +17,7 @@ import common
 
 DEBUG = False
 
+from id import *
 from main import *
 from meta import *
 
