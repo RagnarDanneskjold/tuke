@@ -24,5 +24,8 @@ class Translate(BaseGeo):
         """Translate geometry."""
         BaseGeo.__init__(self,id='')
 
-        self.g = g
+        self.__g = g
         self.v = v
+
+    def __getattr__(self,name):
+        return getattr(self.__g,name)
