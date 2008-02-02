@@ -58,3 +58,15 @@ class IdTest(TestCase):
         self.assert_(str(Id('foo') + Id('bar')) == 'foo/bar')
         self.assert_(str(Id('foo') + Id('..')) == '.')
         self.assert_(str(Id('..') + Id('bar')) == '../bar')
+
+    def testIdAddSide_effects(self):
+        """Id() + Id() has no side effects"""
+
+        a = Id('foo')
+        b = Id('bar')
+
+        c = a + b
+
+        self.assert_(str(a) == 'foo')
+        self.assert_(str(b) == 'bar')
+        self.assert_(str(c) == 'foo/bar')

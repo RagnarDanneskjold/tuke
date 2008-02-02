@@ -46,11 +46,13 @@ class Id(object):
 
 
     def __add__(self,b):
-        self.id += b.id
+        n = Id()
 
-        self.normalize()
+        n.id = self.id + b.id
 
-        return self
+        n.normalize()
+
+        return n 
 
     def __str__(self):
         if self.id:
