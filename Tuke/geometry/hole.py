@@ -24,3 +24,6 @@ class Hole(SingleElement):
         SingleElement.__init__(self,id=id)
 
         self.dia = dia
+
+    def render(self):
+        return [(self.id,'*.drill',self)]

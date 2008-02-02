@@ -33,9 +33,15 @@ class Element(object):
     def add(self,b):
         self.subs.append(b)
 
-    def render():
-        pass
+    def render(self):
+        print "render called from %s" % self.id
+        geo = []
 
+        for s in self.subs:
+            for i,l,s in s.render():
+                geo += [(self.id + i,l,s)]
+
+        return geo
 
 class SingleElement(Element):
     """Base class for elements without subelements."""

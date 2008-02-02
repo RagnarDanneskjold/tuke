@@ -73,7 +73,7 @@ class Footprint(Element):
                     mask = int(mask) * mul
                     dia = int(dia) * mul
 
-                    pin_number = pin_number[1:-1] # remove quotes
+                    pin_number = Id(pin_number[1:-1]) # remove quotes
 
                     p = Pin(dia,thickness,clearance,mask,id=pin_number)
                     p = Translate(p,(x,y))
@@ -91,7 +91,7 @@ class Footprint(Element):
                     clearance = int(clearance) * mul
                     mask = int(mask)
 
-                    pad_number = pad_number[1:-1] # remove quotes
+                    pad_number = Id(pad_number[1:-1]) # remove quotes
 
                     p = Pad((x1,y1),(x2,y2),thickness,clearance,mask,id=pad_number)
 

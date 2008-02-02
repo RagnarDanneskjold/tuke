@@ -36,3 +36,6 @@ class Polygon(SingleElement,shapely.geometry.Polygon):
             raise None
 
         self.layer = kwargs['layer']
+
+    def render(self):
+        return [(self.id,self.layer,self)]

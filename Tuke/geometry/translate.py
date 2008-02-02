@@ -19,6 +19,8 @@
 
 from Tuke import Element,Id
 
+import shapely.geometry
+
 class Translate(Element):
     def __init__(self,g,v):
         """Translate geometry."""
@@ -27,6 +29,24 @@ class Translate(Element):
         assert(isinstance(g,Element))
         self.__g = g
         self.v = v
+
+    def render(self):
+        geo = self.__g.render()
+
+        gnew = []
+        for i,l,s in geo:
+            # some shape-specific knowledge
+            coords = []
+            if isinstance(s,shapely.geometry.Polygon):
+                for x,y in s.exterior.coords:
+                    coords += [(x + self.v[0],y + self.v[1])]
+
+                # make a new polygon
+                s = shapely.geometry.Polygon(coords)
+
+            gnew += [(i,l,s)]
+
+        return gnew
 
     def __getattr__(self,name):
         return getattr(self.__g,name)
