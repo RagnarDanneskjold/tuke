@@ -22,6 +22,30 @@ class IdTest(TestCase):
     def testId(self):
         """Id class"""
 
-        self._assert(Id('') == '')
+        # normalization rules
+        self.assert_(str(Id('')) == '.')
+        self.assert_(str(Id('./')) == '.')
+        self.assert_(str(Id('././')) == '.')
 
-        self._assert(Id('/') == '/')
+        self.assert_(str(Id('foo')) == 'foo')
+        self.assert_(str(Id('foo/')) == 'foo')
+        self.assert_(str(Id('foo/.')) == 'foo')
+        self.assert_(str(Id('foo/./')) == 'foo')
+        self.assert_(str(Id('foo/././')) == 'foo')
+
+        self.assert_(str(Id('./foo')) == 'foo')
+        self.assert_(str(Id('././foo')) == 'foo')
+        self.assert_(str(Id('./././foo')) == 'foo')
+
+        self.assert_(str(Id('../foo')) == '../foo')
+        self.assert_(str(Id('../../foo')) == '../../foo')
+        self.assert_(str(Id('../../../foo')) == '../../../foo')
+
+
+        self.assert_(str(Id('./../foo')) == '../foo')
+        self.assert_(str(Id('./../foo/..')) == '..')
+        self.assert_(str(Id('./../foo/../.')) == '..')
+
+        self.assert_(str(Id('/////')) == '.')
+        self.assert_(str(Id('//..///')) == '..')
+        self.assert_(str(Id('//..//../')) == '../..')

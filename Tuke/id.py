@@ -20,12 +20,34 @@
 class Id(object):
     """Element Ids."""
 
-    def __init__(self,s = ''):
+    def __init__(self,s = '.'):
         self.id = s.split('/')
+
+        self.normalize()
+
+    def normalize(self):
+        id = []
+
+        prev = None
+        for i in self.id:
+            if i == '..' and prev not in ('..',None):
+                id.pop()
+            elif i in ('.',''):
+                continue # to avoid setting prev
+            else:
+                id.append(i)
+
+            prev = i
+
+        if not id:
+            id = ['.']
+
+        self.id = id
+
 
     def __add__(self,b):
          self.id += b.id
-    
+
     def __str__(self):
         if self.id:
             return reduce(lambda a,b: a + '/' + b,self.id)

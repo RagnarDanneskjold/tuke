@@ -45,7 +45,7 @@ Examples:
 
     def __init__(self,args):
         # Create a temp directory to play in
-        TestProgram.__init__(self, module='Example.tests', argv=args)
+        TestProgram.__init__(self, module='Tuke.tests', argv=args)
 
     def parseArgs(self, argv):
         import getopt
