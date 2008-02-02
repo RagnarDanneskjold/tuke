@@ -17,8 +17,19 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from basegeo import BaseGeo
-from geo import Geo
-from hole import Hole
-from polygon import Polygon
-from translate import Translate
+from Tuke.geo import BaseGeo
+
+class Geo(BaseGeo):
+    """Geometry container."""
+
+    def __init__(self,id = ''):
+        BaseGeo.__init__(self,id=id)
+
+        self.g = []
+
+
+    def add(self,b):
+        if isinstance(b,BaseGeo):
+            self.g += [b]
+        else:
+            raise None 

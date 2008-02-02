@@ -17,14 +17,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from shapely.geometry import Polygon
+from Tuke.geo import Geo,Polygon
 
 class Pad:
     """Defines a pad"""
 
-    def __init__(self,a,b,thickness,clearance,mask):
+    def __init__(self,id,a,b,thickness,clearance,mask):
         """Create a pad.
 
+        id - Id name
         a - First point of line segment
         b - Second point
         thickness - Width of metal surrounding line segment
@@ -32,6 +33,7 @@ class Pad:
         mask - Width of solder mask relief
         """
 
+        self.id = id
         self.a = a
         self.b = b
         self.thickness = thickness
@@ -40,7 +42,7 @@ class Pad:
 
         pass
 
-    def from_ab(self,thickness):
+    def from_ab(self,thickness,id='../',layer=None):
         """Returns a box generated from a,b with a given thickness.
 
         For makng pads, clearances etc.
@@ -49,14 +51,15 @@ class Pad:
         return Polygon(((self.a[0] - thickness,self.a[1] - thickness),
             (self.b[0] + thickness,self.b[1] - thickness),
             (self.b[0] + thickness,self.b[1] + thickness),
-            (self.a[0] - thickness,self.a[1] + thickness)))
+            (self.a[0] - thickness,self.a[1] + thickness)),id=id,layer=layer)
 
     def geo(self):
         """Generate geometry"""
 
-        g = {}
-        g['top.pad'] = (self.from_ab(self.thickness),)
-        g['top.clearance'] = (self.from_ab(self.thickness + (self.clearance * 2)),)
-        g['top.mask'] = (self.from_ab(self.mask),)
+        g = Geo()
+
+        g.add(self.from_ab(self.thickness,id=self.id,layer='top.pad'))
+        g.add(self.from_ab(self.thickness + (self.clearance * 2),layer='top.clearance'))
+        g.add(self.from_ab(self.mask,layer='top.mask'))
 
         return g

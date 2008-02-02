@@ -17,8 +17,26 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from basegeo import BaseGeo
-from geo import Geo
-from hole import Hole
-from polygon import Polygon
-from translate import Translate
+from geo import BaseGeo
+import shapely.geometry
+
+class Polygon(BaseGeo,shapely.geometry.Polygon):
+    def __init__(*args,**kwargs):
+        self = args[0]
+        BaseGeo.__init__(self,id=kwargs['id'])
+
+        shapely.geometry.Polygon.__init__(*args)
+
+
+        if not kwargs.has_key('id'):
+            kwargs['id'] = ''
+        if not kwargs.has_key('layer'):
+            raise None
+
+        self.id = kwargs['id']
+        self.layer = kwargs['layer']
+
+
+    def add(self,b):
+        """Polygon's can't include sub-geometry"""
+        raise None

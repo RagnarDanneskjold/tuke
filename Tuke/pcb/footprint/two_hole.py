@@ -17,43 +17,45 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from Tuke.geo import Geo,Hole,Polygon
+from Tuke.geo import Geo,Translate,Polygon
+from Tuke.pcb.footprint import Pin
 
-class Pin:
-    """Defines a pin"""
+class TwoHole:
+    """Defines a basic two hole footprint"""
 
-    def __init__(self,id,dia,thickness,clearance,mask,square=False):
-        """Create a pin.
+    def __init__(self,id,dist,dia,thickness,clearance,mask):
+        """Create a basic two hole part. 
 
+        id 
+        dist = distance between the two holes
         
+        dia
+        thickness
+        clearance
+        mask
         """
 
         self.id = id
+
+        self.dist = dist
         self.dia = dia
         self.thickness = thickness
         self.clearance = clearance
         self.mask = mask
-        self.square = square
 
         pass
-
-    def gen_pad_shape(self,thick,square,id='../',layer=None):
-        """Returns a pad shape, circle or square, with a given thickness.
-
-        For makng pads or masks.
-        """
-
-        return Polygon(((-thick,-thick),(thick,-thick),(thick,thick),(-thick,thick)),id=id,layer=layer)
 
     def geo(self):
         """Generate geometry"""
 
-        g = Geo() 
+        g = Geo(id=self.id) 
 
-        g.add(Hole(self.dia,id=self.id))
+        a = Pin('1',self.dia,self.thickness,self.clearance,self.mask,square = True)
+        b = Pin('2',self.dia,self.thickness,self.clearance,self.mask,square = False)
 
-        g.add(self.gen_pad_shape(self.thickness,self.square,id=self.id,layer='top.pad'))
-        g.add(self.gen_pad_shape(self.mask,self.square,layer='top.mask'))
-        g.add(self.gen_pad_shape(self.mask + (self.clearance * 2),self.square,layer='top.clearance'))
+        b = Translate(b,(0,self.dist))
+
+        g.add(a.geo())
+        g.add(b.geo())
 
         return g
