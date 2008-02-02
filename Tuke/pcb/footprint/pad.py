@@ -17,30 +17,35 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from Tuke.geo import Geo,Polygon
+from Tuke import Element,Id
+from Tuke.geometry import Polygon
 
-class Pad:
+class Pad(Element):
     """Defines a pad"""
 
-    def __init__(self,id,a,b,thickness,clearance,mask):
+    def __init__(self,a,b,thickness,clearance,mask,id=Id()):
         """Create a pad.
 
-        id - Id name
         a - First point of line segment
         b - Second point
         thickness - Width of metal surrounding line segment
         clearance - Separation of pad from other conductors
         mask - Width of solder mask relief
+
+        id - Id name
         """
 
-        self.id = id
+        Element.__init__(self,id=id)
+
         self.a = a
         self.b = b
         self.thickness = thickness
         self.clearance = clearance
         self.mask = mask
 
-        pass
+        self.add(self.from_ab(self.thickness,id=self.id,layer='top.pad'))
+        self.add(self.from_ab(self.thickness + (self.clearance * 2),layer='top.clearance'))
+        self.add(self.from_ab(self.mask,layer='top.mask'))
 
     def from_ab(self,thickness,id='../',layer=None):
         """Returns a box generated from a,b with a given thickness.
@@ -52,14 +57,3 @@ class Pad:
             (self.b[0] + thickness,self.b[1] - thickness),
             (self.b[0] + thickness,self.b[1] + thickness),
             (self.a[0] - thickness,self.a[1] + thickness)),id=id,layer=layer)
-
-    def geo(self):
-        """Generate geometry"""
-
-        g = Geo()
-
-        g.add(self.from_ab(self.thickness,id=self.id,layer='top.pad'))
-        g.add(self.from_ab(self.thickness + (self.clearance * 2),layer='top.clearance'))
-        g.add(self.from_ab(self.mask,layer='top.mask'))
-
-        return g

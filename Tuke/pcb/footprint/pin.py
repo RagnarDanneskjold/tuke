@@ -17,13 +17,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from Tuke import Element
-from Tuke.geo import Geo,Hole,Polygon
+from Tuke import Element,Id
+from Tuke.geometry import Hole,Polygon
 
 class Pin(Element):
     """Defines a pin"""
 
-    def __init__(self,id,dia,thickness,clearance,mask,square=False):
+    def __init__(self,dia,thickness,clearance,mask,square=False,id=Id()):
         """Create a pin
 
         
@@ -36,23 +36,16 @@ class Pin(Element):
         self.mask = mask
         self.square = square
 
-    def gen_pad_shape(self,thick,square,id='../',layer=None):
+        self.add(Hole(self.dia,id=self.id))
+
+        self.add(self.gen_pad_shape(self.thickness,self.square,id=self.id,layer='top.pad'))
+        self.add(self.gen_pad_shape(self.mask,self.square,layer='top.mask'))
+        self.add(self.gen_pad_shape(self.mask + (self.clearance * 2),self.square,layer='top.clearance'))
+
+    def gen_pad_shape(self,thick,square,id='..',layer=None):
         """Returns a pad shape, circle or square, with a given thickness.
 
-        For makng pads or masks.
+        For making pads or masks.
         """
 
         return Polygon(((-thick,-thick),(thick,-thick),(thick,thick),(-thick,thick)),id=id,layer=layer)
-
-    def geo(self):
-        """Generate geometry"""
-
-        g = Geo() 
-
-        g.add(Hole(self.dia,id=self.id))
-
-        g.add(self.gen_pad_shape(self.thickness,self.square,id=self.id,layer='top.pad'))
-        g.add(self.gen_pad_shape(self.mask,self.square,layer='top.mask'))
-        g.add(self.gen_pad_shape(self.mask + (self.clearance * 2),self.square,layer='top.clearance'))
-
-        return g
