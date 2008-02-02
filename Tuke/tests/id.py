@@ -49,3 +49,12 @@ class IdTest(TestCase):
         self.assert_(str(Id('/////')) == '.')
         self.assert_(str(Id('//..///')) == '..')
         self.assert_(str(Id('//..//../')) == '../..')
+
+
+        # adding paths together
+        self.assert_(str(Id('') + Id('')) == '.')
+        self.assert_(str(Id('foo') + Id('')) == 'foo')
+        self.assert_(str(Id('') + Id('foo')) == 'foo')
+        self.assert_(str(Id('foo') + Id('bar')) == 'foo/bar')
+        self.assert_(str(Id('foo') + Id('..')) == '.')
+        self.assert_(str(Id('..') + Id('bar')) == '../bar')

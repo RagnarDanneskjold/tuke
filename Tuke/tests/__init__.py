@@ -1,5 +1,5 @@
 # vim: tabstop=4 expandtab shiftwidth=4 fileencoding=utf8
-# (c) 2007,2008 Peter Todd <pete@petertodd.org>
+# (c) 2007 Peter Todd <pete@petertodd.org>
 # (c) 2004 Lele Gaifax <lele@nautilus.homeip.net>
 # From tailor test suite.
 #
@@ -21,7 +21,7 @@ from id import *
 from main import *
 from meta import *
 
-class TukeTest(TestProgram):
+class exampleTest(TestProgram):
     """A command-line program that runs a set of tests; this is primarily
        for making test modules conveniently executable.
     """
@@ -107,4 +107,4 @@ Examples:
         except getopt.error, msg:
             self.usageExit(msg)
 
-main = TukeTest 
+main = exampleTest 

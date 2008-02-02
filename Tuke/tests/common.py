@@ -1,5 +1,5 @@
 # vim: tabstop=4 expandtab shiftwidth=4 fileencoding=utf8
-# (c) 2007,2008 Peter Todd <pete@petertodd.org>
+# (c) 2007 Peter Todd <pete@petertodd.org>
 #
 # This program is made available under the GNU GPL version 3.0 or
 # greater. See the accompanying file COPYING for details.
@@ -29,7 +29,7 @@ def clean_tmpd():
     """Sets tmpd to a unique name guaranteed to have nothing at it."""
     global tmpd
     if not tmpd or not os.path.exists(tmpd):
-        tmpd = tempfile.mkdtemp(prefix="tuke_tests_")
+        tmpd = tempfile.mkdtemp(prefix="example_tests_")
     shutil.rmtree(tmpd)
 
 def load_dataset(name):

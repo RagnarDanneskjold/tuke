@@ -42,11 +42,15 @@ class Id(object):
         if not id:
             id = ['.']
 
-        self.id = id
+        self.id = tuple(id)
 
 
     def __add__(self,b):
-         self.id += b.id
+        self.id += b.id
+
+        self.normalize()
+
+        return self
 
     def __str__(self):
         if self.id:
