@@ -36,13 +36,13 @@ class Pin(Element):
         self.mask = mask
         self.square = square
 
-        self.add(Hole(self.dia,id=self.id))
+        self.add(Hole(self.dia,id=Id()))
 
-        self.add(self.gen_pad_shape(self.thickness,self.square,id=self.id,layer='top.pad'))
+        self.add(self.gen_pad_shape(self.thickness,self.square,layer='top.pad'))
         self.add(self.gen_pad_shape(self.mask,self.square,layer='top.mask'))
         self.add(self.gen_pad_shape(self.mask + (self.clearance * 2),self.square,layer='top.clearance'))
 
-    def gen_pad_shape(self,thick,square,id='..',layer=None):
+    def gen_pad_shape(self,thick,square,id=Id(),layer=None):
         """Returns a pad shape, circle or square, with a given thickness.
 
         For making pads or masks.
