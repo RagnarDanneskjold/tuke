@@ -17,10 +17,12 @@ import common
 
 DEBUG = False
 
-from element import *
-from id import *
-from main import *
-from meta import *
+from Tuke.tests.element import *
+from Tuke.tests.id import *
+from Tuke.tests.main import *
+from Tuke.tests.meta import *
+
+from Tuke.tests.pcb.footprint.pin import *
 
 class exampleTest(TestProgram):
     """A command-line program that runs a set of tests; this is primarily

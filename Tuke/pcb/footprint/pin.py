@@ -17,25 +17,24 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
+from Tuke import Element
 from Tuke.geo import Geo,Hole,Polygon
 
-class Pin:
+class Pin(Element):
     """Defines a pin"""
 
     def __init__(self,id,dia,thickness,clearance,mask,square=False):
-        """Create a pin.
+        """Create a pin
 
         
         """
+        Element.__init__(self,id = id)
 
-        self.id = id
         self.dia = dia
         self.thickness = thickness
         self.clearance = clearance
         self.mask = mask
         self.square = square
-
-        pass
 
     def gen_pad_shape(self,thick,square,id='../',layer=None):
         """Returns a pad shape, circle or square, with a given thickness.

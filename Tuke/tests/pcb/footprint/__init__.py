@@ -16,23 +16,3 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
-
-from Tuke import Id
-
-class Element(object):
-    """Base element class."""
-    def __init__(self,id=Id()):
-        self.id = id
-        print 'new element: ' + str(id)
-
-        self.subs = []
-
-    def __iter__(self):
-        for i in self.subs:
-            yield i
-
-    def add(self,b):
-        self.subs.append(b)
-
-    def render():
-        pass
