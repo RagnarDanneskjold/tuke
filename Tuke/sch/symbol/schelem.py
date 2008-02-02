@@ -17,7 +17,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from netline import NetLine
-from pin import Pin
-from schelem import SchElem
-from sheet import Sheet
+class SchElem:
+    """Base class for all schematic elements"""
+    pass

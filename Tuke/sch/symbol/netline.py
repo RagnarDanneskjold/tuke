@@ -17,7 +17,25 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from netline import NetLine
-from pin import Pin
-from schelem import SchElem
-from sheet import Sheet
+from Tuke.sch import SchElem
+from Tuke.geo import Geo
+
+class NetLine(SchElem):
+    """Defines a net line"""
+
+    def __init__(self,a,b):
+        """Create a net line.
+
+        a - first vertex
+        b - second vertex
+        """
+
+        self.a = a
+        self.b = b
+
+    def geo(self):
+        """Generate geometry"""
+
+        g = Geo() 
+
+        return g

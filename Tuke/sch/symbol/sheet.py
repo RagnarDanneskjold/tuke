@@ -17,7 +17,31 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from netline import NetLine
-from pin import Pin
-from schelem import SchElem
-from sheet import Sheet
+from Tuke.sch import SchElem
+from Tuke.geo import Geo
+
+class Sheet(SchElem):
+    """Defines a sheet"""
+
+    def __init__(self,id):
+        """Create a sheet
+
+        id - id
+        """
+
+        self.id = id
+
+        self.e = []
+
+    def add(self,b):
+        """Add a new schematic element to the sheet"""
+        assert(isinstance(b,SchElem))
+
+        self.e.append(b)
+
+    def geo(self):
+        """Generate geometry"""
+
+        g = Geo(id=self.id) 
+
+        return g
