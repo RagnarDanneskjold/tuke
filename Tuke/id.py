@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # vim: tabstop=4 expandtab shiftwidth=4 fileencoding=utf8
 # ### BOILERPLATE ###
 # Tuke - Electrical Design Automation toolset
@@ -18,22 +17,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
+class Id(object):
+    """Element Ids."""
 
-"""
-Tuke software project in Python.
-"""
+    def __init__(self,s = ''):
+        self.id = s.split('/')
 
-if __name__ == "__main__":
-    import locale
-    locale.setlocale(locale.LC_ALL, '')
-
-    import sys
-
-    if (len(sys.argv) > 1) and sys.argv[1] == 'test':
-        from Tuke.tests import main
-        sys.argv[0] += " test"
-        del sys.argv[1]
-        main(sys.argv)
-    else:
-        from Tuke.main import main
-        main(sys.argv)
+    def __add__(self,b):
+         self.id += b.id
+    
+    def __str__(self):
+        if self.id:
+            return reduce(lambda a,b: a + '/' + b,self.id)
+        else:
+            return ''
