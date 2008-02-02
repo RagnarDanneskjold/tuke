@@ -53,9 +53,10 @@ class TwoHole:
         a = Pin('1',self.dia,self.thickness,self.clearance,self.mask,square = True)
         b = Pin('2',self.dia,self.thickness,self.clearance,self.mask,square = False)
 
-        b = Translate(b,(0,self.dist))
+        a = a.geo()
+        b = Translate(b.geo(),(0,self.dist))
 
-        g.add(a.geo())
-        g.add(b.geo())
+        g.add(a)
+        g.add(b)
 
         return g

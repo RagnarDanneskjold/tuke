@@ -26,6 +26,3 @@ class Translate(BaseGeo):
 
         self.g = g
         self.v = v
-
-    def geo(self):
-        return self.g.geo()
