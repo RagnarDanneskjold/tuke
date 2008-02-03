@@ -17,8 +17,34 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from circle import Circle
-from hole import Hole
-from line import Line,ThinLine
-from polygon import Polygon
-from translate import Translate
+from Tuke import SingleElement,Id
+import shapely.geometry
+
+class Line(SingleElement):
+    """A line with a specified thickness."""
+
+    def __init__(self,a,b,thickness,layer=None,id=Id()):
+        SingleElement.__init__(self,id=id)
+
+        assert(layer)
+
+        self.a = a
+        self.b = b
+        self.thickness = thickness
+        self.layer = layer
+
+    def render(self):
+        # 
+
+        # create a very thin polygon first
+        p = shapely.geometry.Polygon(( \
+            (self.a[0],self.a[1]),
+            (self.b[0],self.b[1])))
+
+        # and expand it with buffer
+        p = p.buffer(self.thickness)
+
+        return [(self.id,self.layer,p)]
+
+class ThinLine(Line):
+    """A line who's thickness is a multiple of the minimum resolution on the output device.""" 

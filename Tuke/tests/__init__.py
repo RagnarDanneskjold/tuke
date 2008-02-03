@@ -25,7 +25,9 @@ from Tuke.tests.meta import *
 
 from Tuke.tests.geda.footprint import *
 
+from Tuke.tests.geometry.circle import *
 from Tuke.tests.geometry.hole import *
+from Tuke.tests.geometry.line import *
 from Tuke.tests.geometry.polygon import *
 from Tuke.tests.geometry.translate import *
 

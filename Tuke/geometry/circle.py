@@ -17,8 +17,40 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from circle import Circle
-from hole import Hole
-from line import Line,ThinLine
-from polygon import Polygon
-from translate import Translate
+from Tuke import SingleElement,Id
+import shapely.geometry
+
+from math import sin,cos
+
+def arc_points(a,b,r,segments):
+    """Approximates an arc from a to b with a given radius and a specified number of segments. Returns a tuple of vertexes."""
+    assert(segments > 0)
+    assert(a != b)
+    assert(r)
+
+    t = []
+
+    i = a
+    for j in range(segments + 1):
+        t += [(cos(i) * r,sin(i) * r)]
+
+        i += abs(b - a) / segments
+
+    return t
+
+class Circle(SingleElement):
+    """A circle with a specified diameter."""
+
+    def __init__(self,dia,layer=None,id=Id()):
+        SingleElement.__init__(self,id=id)
+
+        assert(layer)
+
+        self.dia = dia
+
+        self.layer = layer
+        
+    def render(self):
+        v = []
+
+        return [(self.id,self.layer,p)]
