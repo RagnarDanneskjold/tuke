@@ -10,6 +10,7 @@
 
 import common
 import os
+import math
 
 from unittest import TestCase
 
@@ -54,3 +55,47 @@ class MetaTest(TestCase):
         os.symlink(common.tmpd + "/foo",common.tmpd + "/bar")
 
         self.assert_(not common.check_dataset('check_dataset_not_empty_symlink.check'))
+
+
+    def testFcmp(self):
+        """fcmp() floating point comparison function"""
+
+        def T(obs,exp,eps=None):
+            if eps:
+                self.assert_(common.fcmp(obs,exp,eps))
+            else:
+                self.assert_(common.fcmp(obs,exp))
+
+        def F(obs,exp,eps=None):
+            if eps:
+                self.assert_(not common.fcmp(obs,exp,eps))
+            else:
+                self.assert_(not common.fcmp(obs,exp))
+
+        # really basic stuff
+        T(0.0,0.0)
+        T(1,1)
+        T(0.1,0.1)
+        T(math.pi,math.pi)
+
+        F(0,1)
+        F(1,1.1)
+
+        # relative comparisons
+        T(math.pi,math.pi - 1e-6,1e-6) # note scaling, this isn't a close non-match
+        F(math.pi,math.pi - (1e-6 * math.pi * 2),1e-6) # scaling applied
+
+        # trigger absolute comparisons of very small numbers
+        T(0.01,0,0.1)
+        F(0.1,0,0.1)
+
+        # some funny cases
+        T(0,1,1)
+        T(0,100000000,1) # yup, correct too, scaling is as a percentage, so anything will match
+
+        # signed
+        T(-0,0)
+        F(-1,1)
+        F(1.0001,-1.0001)
+        T(-1.0001,-1.0001,0.1)
+        T(-1.0001,-1.0001,-0.1)

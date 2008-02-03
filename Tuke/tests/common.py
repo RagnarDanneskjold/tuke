@@ -84,3 +84,29 @@ def check_dataset(name):
     """
 
     return repr_dirtree(dataset_path(name)) == repr_dirtree(tmpd)
+
+def fcmp(obs,exp,eps=1e-6):
+    """Tests whether two floating point numbers are approximately equal.
+
+    Checks whether the distance is within epsilon relative to the value
+    of the sum of observed and expected."""
+
+    #try the cheap comparison first
+    if obs == exp:
+        return True
+
+    sum = float(obs + exp)
+    diff = float(obs - exp)
+
+    # Very small sums get handled absolutely
+    if abs(sum) < abs(eps):
+        if abs(diff) > abs(eps):
+            return False
+        else:
+            return True
+
+    # Larger ones relatively
+    if abs(diff/sum) > abs(eps):
+        return False
+    else:
+        return True
