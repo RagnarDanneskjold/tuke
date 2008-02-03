@@ -83,5 +83,8 @@ class GeometryCircleTest(TestCase):
                  (-cos(radians(45))/2,-sin(radians(45))/2),
                  (0,-0.5)))
 
-    def testGeometryHole(self):
-        """Basic tests"""
+    def testGeometryCircle(self):
+        """geometry.Circle()"""
+
+        a = Circle(2,layer='foo')
+        a = Circle(1,layer='foo')

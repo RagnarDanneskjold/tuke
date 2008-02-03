@@ -20,7 +20,7 @@
 from Tuke import SingleElement,Id
 import shapely.geometry
 
-from math import sin,cos
+from math import sin,cos,pi
 
 def arc_points(a,b,r,segments):
     """Approximates an arc from a to b with a given radius and a specified number of segments. Returns a tuple of vertexes."""
@@ -52,5 +52,9 @@ class Circle(SingleElement):
         
     def render(self):
         v = []
+
+        v = arc_points(0,2*pi,self.dia / 2,32)
+
+        p = shapely.geometry.Polygon(v)
 
         return [(self.id,self.layer,p)]
