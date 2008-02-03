@@ -27,6 +27,8 @@ class Translate(Element):
         Element.__init__(self,id=Id())
 
         assert(isinstance(g,Element))
+        assert(len(v) == 2)
+
         self.__g = g
         self.v = v
 

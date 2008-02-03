@@ -26,7 +26,10 @@ class Line(SingleElement):
     def __init__(self,a,b,thickness,layer=None,id=Id()):
         SingleElement.__init__(self,id=id)
 
-        assert(layer)
+        if not layer:
+            raise Exception('Missing layer value')
+        if not thickness > 0:
+            raise Exception('Thickness must be greater than zero')
 
         self.a = a
         self.b = b

@@ -33,7 +33,7 @@ class Polygon(SingleElement,shapely.geometry.Polygon):
 
 
         if not kwargs.has_key('layer'):
-            raise None
+            raise Exception('Missing layer value') 
 
         self.layer = kwargs['layer']
 

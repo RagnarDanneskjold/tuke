@@ -44,7 +44,10 @@ class Circle(SingleElement):
     def __init__(self,dia,layer=None,id=Id()):
         SingleElement.__init__(self,id=id)
 
-        assert(layer)
+        if not layer:
+            raise Exception('Missing layer value')
+        if not dia > 0:
+            raise Exception('Diameter must be greater than zero')
 
         self.dia = dia
 

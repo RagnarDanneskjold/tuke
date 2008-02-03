@@ -23,6 +23,9 @@ class Hole(SingleElement):
     def __init__(self,dia,id=Id()):
         SingleElement.__init__(self,id=id)
 
+        if not dia > 0:
+            raise Exception('Hole diameter must be greater than zero')
+
         self.dia = dia
 
     def render(self):
