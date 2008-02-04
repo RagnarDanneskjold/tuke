@@ -21,6 +21,16 @@ from Tuke import SingleElement,Id
 import shapely.geometry
 
 class Polygon(SingleElement,shapely.geometry.Polygon):
+    full_class_name = 'Tuke.geometry.Polygon'
+
+    saved_state = SingleElement.saved_state + ('layer',)
+
+    def extra_saved_state(self):
+        ext = tuple(self.exterior.coords)
+        int = ()
+        return (('exterior-coords',ext),
+                ('interior-coords',int))
+
     def __init__(*args,**kwargs):
         self = args[0]
 

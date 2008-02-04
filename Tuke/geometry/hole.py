@@ -20,6 +20,11 @@
 from Tuke import SingleElement,Id
 
 class Hole(SingleElement):
+
+    full_class_name = 'Tuke.geometry.Hole'
+    saved_state = SingleElement.saved_state + \
+            ('dia',)
+
     def __init__(self,dia,id=Id()):
         SingleElement.__init__(self,id=id)
 

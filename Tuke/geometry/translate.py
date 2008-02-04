@@ -22,6 +22,10 @@ from Tuke import Element,Id
 import shapely.geometry
 
 class Translate(Element):
+    full_class_name = 'Tuke.geometry.Translate'
+
+    saved_state = Element.saved_state + ('v',)
+
     def __init__(self,g,v):
         """Translate geometry."""
         Element.__init__(self,id=Id())
@@ -49,6 +53,12 @@ class Translate(Element):
             gnew += [(i,l,s)]
 
         return gnew
+
+    def save(self,doc):
+        # Special case, we need to save children, but the normal "save-subs"
+        # mechanism won't work because we've hidden stuff via getattr, so call
+        # _save with a generated subs list.
+        return self._save(doc,(self.__g,))
 
     def __getattr__(self,name):
         return getattr(self.__g,name)

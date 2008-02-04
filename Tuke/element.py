@@ -19,8 +19,23 @@
 
 from Tuke import Id
 
+
 class Element(object):
     """Base element class."""
+
+    # Full name of the class for saving state.
+    full_class_name = 'Tuke.Element'
+
+    # XML attributes, and there default values.
+    #
+    # This should include all state that needs to be saved in the long term.
+    # All values in this list should be eval(repr()) safe.
+    saved_state = ('id',)
+
+    def extra_saved_state(self):
+        """For extra saved state that must be auto-generated in some way."""
+        return ()
+
     def __init__(self,id=Id()):
         self.id = id
 
@@ -32,6 +47,26 @@ class Element(object):
 
     def add(self,b):
         self.subs.append(b)
+
+    def _save(self,doc,subs):
+        """Actual save function, seperated out for Translate-type subclassing."""
+
+        r = doc.createElement(self.full_class_name)
+
+        # Save state.
+        state = [(n,getattr(self,n)) for n in self.saved_state]
+        state += self.extra_saved_state()
+        for n,v in state:
+            r.setAttribute(n,repr(v))
+
+        for s in subs:
+            r.appendChild(s.save(doc))
+
+        return r
+
+    def save(self,doc):
+        """Returns an xml minidom object representing the Element"""
+        return self._save(doc,getattr(self,'subs',[]))
 
     def render(self):
         geo = []

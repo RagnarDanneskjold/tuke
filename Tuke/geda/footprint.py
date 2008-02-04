@@ -27,6 +27,7 @@ import re
 class Footprint(Element):
     """Wrapper for gEDA/PCB footprints"""
 
+    full_class_name = 'Tuke.geda.Footprint'
 
     def __init__(self,file,id=Id()):
         Element.__init__(self,id=id)
