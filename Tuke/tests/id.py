@@ -71,6 +71,22 @@ class IdTest(TestCase):
         self.assert_(str(b) == 'bar')
         self.assert_(str(c) == 'foo/bar')
 
+    def testIdEqNeq(self):
+        """Id() ==, != operators"""
+
+        self.assert_(Id() == Id())
+        self.assert_(not Id() != Id())
+
+        self.assert_(Id('asdf') != Id())
+        self.assert_(Id('asdf') == Id() + Id('asdf'))
+
+    def testIdReprEval(self):
+        """eval(repr(Id()))"""
+
+        a = Id('bar')
+
+        self.assert_(a == eval(repr(a)))
+
     def test_rndId(self):
         """rndId()"""
 

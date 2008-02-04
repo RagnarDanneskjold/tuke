@@ -62,6 +62,16 @@ class Id(object):
         else:
             return ''
 
+    def __eq__(self,b):
+        return str(self) == str(b)
+
+    def __ne__(self,b):
+        return not self.__eq__(b)
+
+    def __repr__(self):
+        s = str(self)
+
+        return 'Id(\'%s\')' % s
 
 def rndId():
     """Returns a randomized element Id
