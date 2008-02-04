@@ -28,35 +28,10 @@ class GeometryCircleTest(TestCase):
     def testGeometryCircle_arc_points(self):
         """arc_points() utility function"""
 
-        def vert_equal(a,b):
-            """Utility function to check if two lists of vertexes are approximetely equal."""
-            if len(a) != len(b):
-                return False
-            for v1,v2 in zip(a,b):
-                if len(v1) != len(v2):
-                    return False
-                for x1,x2 in zip(v1,v2):
-                    if not common.fcmp(x1,x2):
-                        return False
-            return True
-
         def T(a,b):
-            self.assert_(vert_equal(a,b))
+            self.assert_(common.vert_equal(a,b))
         def F(a,b):
-            self.assert_(not vert_equal(a,b))
-
-        # Test our new comparison function
-        T(((0,0),(1,1)),((0,0),(1,1)))
-        F(((1,0),(1,1)),((0,0),(1,1)))
-        F(((0,0),(1,0)),((0,0),(1,1)))
-
-        # extra items must fail
-        F(((0,0),(1,0)),((0,0),(1,0),(1,1)))
-
-        # as well as vertexes with odd numbers of elements
-        F(((0,0),(1,0)),((0,0),(1,)))
-        F(((0,0),(1,0)),((0,0),(1,1,1)))
-
+            self.assert_(not common.vert_equal(a,b))
 
         # test arc_points() finally
         T(arc_points(0,pi,1,1),

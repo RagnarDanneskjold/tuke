@@ -8,7 +8,7 @@
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
 # PURPOSE.
 
-import common
+from Tuke.tests import common
 import os
 import math
 
@@ -99,3 +99,23 @@ class MetaTest(TestCase):
         F(1.0001,-1.0001)
         T(-1.0001,-1.0001,0.1)
         T(-1.0001,-1.0001,-0.1)
+
+    def testVert_equal(self):
+        """vert_equal()"""
+
+        def T(a,b):
+            self.assert_(common.vert_equal(a,b))
+        def F(a,b):
+            self.assert_(not common.vert_equal(a,b))
+
+        # Test our new comparison function
+        T(((0,0),(1,1)),((0,0),(1,1)))
+        F(((1,0),(1,1)),((0,0),(1,1)))
+        F(((0,0),(1,0)),((0,0),(1,1)))
+
+        # extra items must fail
+        F(((0,0),(1,0)),((0,0),(1,0),(1,1)))
+
+        # as well as vertexes with odd numbers of elements
+        F(((0,0),(1,0)),((0,0),(1,)))
+        F(((0,0),(1,0)),((0,0),(1,1,1)))

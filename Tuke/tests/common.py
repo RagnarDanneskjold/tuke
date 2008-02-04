@@ -110,3 +110,15 @@ def fcmp(obs,exp,eps=1e-6):
         return False
     else:
         return True
+
+def vert_equal(a,b):
+    """Utility function to check if two lists of vertexes are approximetely equal."""
+    if len(a) != len(b):
+        return False
+    for v1,v2 in zip(a,b):
+        if len(v1) != len(v2):
+            return False
+        for x1,x2 in zip(v1,v2):
+            if not fcmp(x1,x2):
+                return False
+    return True
