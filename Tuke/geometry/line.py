@@ -20,6 +20,29 @@
 from Tuke import SingleElement,Id
 import shapely.geometry
 
+from Tuke.geometry.circle import arc_points 
+from math import atan2,pi,degrees
+
+def make_line_vertexes(a,b,thickness,segments):
+    # first find the angle of the given line
+    dx = b[0] - a[0]
+    dy = b[1] - a[1]
+
+    alpha = atan2(dy,dx)
+
+    # create half-circles for either end
+    arc_a = arc_points(alpha + pi/2,alpha - pi/2,float(thickness)/2,segments)  
+    arc_b = arc_points(alpha - pi/2,alpha + pi/2,float(thickness)/2,segments)  
+
+    # half circles aren't complete yet, need to shift them relative to the end
+    # positions
+    def t(v,a):
+        return [(x + a[0],y + a[1]) for (x,y) in v]
+    arc_a = t(arc_a,a)
+    arc_b = t(arc_b,b)
+
+    return arc_a + arc_b
+
 class Line(SingleElement):
     """A line with a specified thickness."""
 
@@ -37,15 +60,7 @@ class Line(SingleElement):
         self.layer = layer
 
     def render(self):
-        # 
-
-        # create a very thin polygon first
-        p = shapely.geometry.Polygon(( \
-            (self.a[0],self.a[1]),
-            (self.b[0],self.b[1])))
-
-        # and expand it with buffer
-        p = p.buffer(self.thickness)
+        p = make_line_vertexes(self.a,self.b,self.thickness,16)
 
         return [(self.id,self.layer,p)]
 
