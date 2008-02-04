@@ -17,6 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
+from Tuke.units import *
 from Tuke import Element,Id
 from Tuke.geometry import Translate
 from Tuke.pcb.footprint import Pin,Pad
@@ -44,34 +45,44 @@ class Footprint(Element):
                 v = re.findall(r'\[.*\]',l)
 
                 # FIXME: add detection for mil units in () brackets
-                mul = 1
+                source_units = MMIL 
 
                 v = v[0][1:-1].split(' ')
 
                 if tag[0] == 'Element':
                     (element_flags,description,pcb_name,value,mark_x,mark_y,text_x,text_y,text_direction,text_scale,text_flags) = v
 
-                    mark_x = int(mark_x)
-                    mark_y = int(mark_y)
-                    text_x = int(text_x)
-                    text_y = int(text_y)
+                    mark_x = float(mark_x)
+                    mark_y = float(mark_y)
+                    text_x = float(text_x)
+                    text_y = float(text_y)
 
-                    mark_x *= mul
-                    mark_y *= mul
-                    text_x *= mul
-                    text_y *= mul
+                    mark_x *= source_units
+                    mark_y *= source_units
+                    text_x *= source_units
+                    text_y *= source_units
 
                     # Setup translation function
                     translate = lambda x: Translate(x,(mark_x,mark_y))
 
                 elif tag[0] == 'Pin':
                     (x,y,thickness,clearance,mask,dia,name,pin_number,flags) = v
-                    x = int(x) * mul
-                    y = int(y) * mul
-                    thickness = int(thickness) * mul
-                    clearance = int(clearance) * mul
-                    mask = int(mask) * mul
-                    dia = int(dia) * mul
+                    x = float(x) * source_units
+                    y = float(y) * source_units
+                    thickness = float(thickness) * source_units
+                    clearance = float(clearance) * source_units
+                    mask = float(mask) * source_units
+                    dia = float(dia) * source_units
+
+                    # Pin() defines pad thickness as the thickness of the
+                    # metalization surrounding the hole. gEDA simply defines
+                    # thickness as diameter of the metal, convert.
+                    thickness = (thickness - dia) / 2
+
+                    # gEDA defines clearance as the sum of both clearance
+                    # thicknesses, Pin() defines it as a single thickness,
+                    # convert
+                    clearance = clearance / 2
 
                     pin_number = Id(pin_number[1:-1]) # remove quotes
 
@@ -83,13 +94,18 @@ class Footprint(Element):
                 elif tag[0] == 'Pad':
                     (x1,y1,x2,y2,thickness,clearance,mask,name,pad_number,flags) = v
 
-                    x1 = int(x1) * mul
-                    y1 = int(y1) * mul
-                    x2 = int(x2) * mul
-                    y2 = int(y2) * mul
-                    thickness = int(thickness) * mul
-                    clearance = int(clearance) * mul
-                    mask = int(mask)
+                    x1 = float(x1) * source_units
+                    y1 = float(y1) * source_units
+                    x2 = float(x2) * source_units
+                    y2 = float(y2) * source_units
+                    thickness = float(thickness) * source_units
+                    clearance = float(clearance) * source_units
+                    mask = float(mask)
+
+                    # gEDA defines clearance as the sum of both clearance
+                    # thicknesses, Pin() defines it as a single thickness,
+                    # convert
+                    clearance = clearance / 2
 
                     pad_number = Id(pad_number[1:-1]) # remove quotes
 
