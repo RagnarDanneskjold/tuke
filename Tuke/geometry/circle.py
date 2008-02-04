@@ -54,7 +54,7 @@ class Circle(SingleElement):
         if not dia > 0:
             raise Exception('Diameter must be greater than zero')
 
-        self.dia = dia
+        self.dia = float(dia)
 
         self.layer = layer
         
