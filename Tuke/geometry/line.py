@@ -46,6 +46,11 @@ def make_line_vertexes(a,b,thickness,segments):
 class Line(SingleElement):
     """A line with a specified thickness."""
 
+    full_class_name = 'Tuke.geometry.Line'
+
+    saved_state = SingleElement.saved_state + \
+            ('a','b','thickness','layer')
+
     def __init__(self,a,b,thickness,layer=None,id=Id()):
         SingleElement.__init__(self,id=id)
 
@@ -65,4 +70,6 @@ class Line(SingleElement):
         return [(self.id,self.layer,p)]
 
 class ThinLine(Line):
-    """A line who's thickness is a multiple of the minimum resolution on the output device.""" 
+    """A line who's thickness is a multiple of the minimum resolution on the output device."""
+
+    full_class_name = 'Tuke.geometry.ThinLine'
