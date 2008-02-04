@@ -53,7 +53,7 @@ class Pad(Element):
         For makng pads, clearances etc.
         """
 
-        return Polygon(((self.a[0] - thickness,self.a[1] - thickness),
-            (self.b[0] + thickness,self.b[1] - thickness),
-            (self.b[0] + thickness,self.b[1] + thickness),
-            (self.a[0] - thickness,self.a[1] + thickness)),id=id,layer=layer)
+        return Polygon(((self.a[0] - thickness/2,self.a[1] - thickness/2),
+            (self.b[0] + thickness/2,self.b[1] - thickness/2),
+            (self.b[0] + thickness/2,self.b[1] + thickness/2),
+            (self.a[0] - thickness/2,self.a[1] + thickness/2)),id=id,layer=layer)

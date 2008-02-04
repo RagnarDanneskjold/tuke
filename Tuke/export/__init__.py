@@ -17,34 +17,4 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from Tuke import Id
-
-class Element(object):
-    """Base element class."""
-    def __init__(self,id=Id()):
-        self.id = id
-
-        self.subs = []
-
-    def __iter__(self):
-        for i in self.subs:
-            yield i
-
-    def add(self,b):
-        self.subs.append(b)
-
-    def render(self):
-        geo = []
-
-        for s in self.subs:
-            for i,l,s in s.render():
-                geo += [(self.id + i,l,s)]
-
-        return geo
-
-class SingleElement(Element):
-    """Base class for elements without subelements."""
-    __iter__ = None
-    add = None
-    def __init__(self,id=Id()):
-        self.id = id
+from svg import to_svg

@@ -100,7 +100,7 @@ class Footprint(Element):
                     y2 = float(y2) * source_units
                     thickness = float(thickness) * source_units
                     clearance = float(clearance) * source_units
-                    mask = float(mask)
+                    mask = float(mask) * source_units
 
                     # gEDA defines clearance as the sum of both clearance
                     # thicknesses, Pin() defines it as a single thickness,
