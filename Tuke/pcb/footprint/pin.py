@@ -18,7 +18,7 @@
 # ### BOILERPLATE ###
 
 from Tuke import Element,Id
-from Tuke.geometry import Hole,Polygon
+from Tuke.geometry import Circle,Hole,Polygon
 
 class Pin(Element):
     """Defines a pin"""
@@ -26,7 +26,11 @@ class Pin(Element):
     def __init__(self,dia,thickness,clearance,mask,square=False,id=Id()):
         """Create a pin
 
-        
+        dia - diameter of the hole
+        thickness - thickness of the surrounding pad
+        clearance - width of clearance from the pad
+        mask - diameter of the mask, independent of other values
+        square - square flag
         """
         Element.__init__(self,id = id)
 
@@ -36,16 +40,15 @@ class Pin(Element):
         self.mask = mask
         self.square = square
 
-        self.add(Hole(self.dia,id=Id()))
+        def gen_pad_shape(dia,layer=None):
+            if self.square:
+                return Polygon(((-dia,-dia),(dia,-dia),(dia,dia),(-dia,dia)),id=self.id,layer=layer)
+            else:
+                return Circle(dia,id=self.id,layer=layer)
 
-        self.add(self.gen_pad_shape(self.thickness,self.square,layer='top.pad'))
-        self.add(self.gen_pad_shape(self.mask,self.square,layer='top.mask'))
-        self.add(self.gen_pad_shape(self.mask + (self.clearance * 2),self.square,layer='top.clearance'))
+        self.add(Hole(self.dia,id=self.id))
 
-    def gen_pad_shape(self,thick,square,id=Id(),layer=None):
-        """Returns a pad shape, circle or square, with a given thickness.
+        self.add(gen_pad_shape(self.dia + self.thickness,layer='top.pad'))
+        self.add(gen_pad_shape(self.mask,layer='top.mask'))
+        self.add(gen_pad_shape(self.mask + (self.clearance * 2),layer='top.clearance'))
 
-        For making pads or masks.
-        """
-
-        return Polygon(((-thick,-thick),(thick,-thick),(thick,thick),(-thick,thick)),id=id,layer=layer)

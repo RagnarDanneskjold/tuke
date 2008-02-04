@@ -24,4 +24,4 @@ class PcbFootprintPinTest(TestCase):
     def testPcbFootprintPin(self):
         """Basic tests"""
 
-        a = Pin(Id('1'),1,1,1,1)
+        a = Pin(1,1,1,1,id=Id('1'))
