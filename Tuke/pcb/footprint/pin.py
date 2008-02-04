@@ -48,7 +48,7 @@ class Pin(Element):
 
         self.add(Hole(self.dia,id=self.id))
 
-        self.add(gen_pad_shape(self.dia + self.thickness,layer='top.pad'))
+        self.add(gen_pad_shape(self.dia + (self.thickness * 2),layer='top.pad'))
         self.add(gen_pad_shape(self.mask,layer='top.mask'))
         self.add(gen_pad_shape(self.mask + (self.clearance * 2),layer='top.clearance'))
 
