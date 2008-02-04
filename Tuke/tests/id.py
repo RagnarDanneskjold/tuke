@@ -14,7 +14,7 @@ import shutil
 import common
 
 from unittest import TestCase
-from Tuke import Id
+from Tuke import Id,rndId
 
 class IdTest(TestCase):
     """Perform tests of the id module"""
@@ -70,3 +70,9 @@ class IdTest(TestCase):
         self.assert_(str(a) == 'foo')
         self.assert_(str(b) == 'bar')
         self.assert_(str(c) == 'foo/bar')
+
+    def test_rndId(self):
+        """rndId()"""
+
+        self.assert_(isinstance(rndId(),Id))
+        self.assert_(rndId() != rndId())

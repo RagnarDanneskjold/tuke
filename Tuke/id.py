@@ -17,6 +17,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
+from Tuke.uuid import uuid4
+
 class Id(object):
     """Element Ids."""
 
@@ -59,3 +61,11 @@ class Id(object):
             return reduce(lambda a,b: a + '/' + b,self.id)
         else:
             return ''
+
+
+def rndId():
+    """Returns a randomized element Id
+
+    Internally simply generates a UUID to insure uniqueness."""
+
+    return Id(str(uuid4()))

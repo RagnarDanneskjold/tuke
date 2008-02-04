@@ -17,5 +17,5 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from id import Id
+from id import Id,rndId
 from element import Element,SingleElement
