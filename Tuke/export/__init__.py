@@ -18,3 +18,4 @@
 # ### BOILERPLATE ###
 
 from svg import to_svg
+from gerber import to_gerber

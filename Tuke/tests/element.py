@@ -43,14 +43,14 @@ class ElementTest(TestCase):
         from Tuke.geometry import Circle,Hole,Line
         from Tuke.pcb.footprint import Pin,Pad
 
-        a.add(Element(Id('asdf')))
-        a.add(Circle(1,'foo',id=rndId()))
-        a.add(Line((0.1,-0.1),(2,3),0.05,'foo',id=rndId()))
-        a.add(Hole(3,id=rndId()))
-        a.add(Pin(1,0.1,0.1,1,id=rndId()))
-        a.add(Pin(1,0.1,0.1,1,square=True,id=rndId()))
-        a.add(Pad((0,0),(1,1),0.5,0.1,0.6,id=rndId()))
-        a.subs[0].add(Element())
+#        a.add(Element(Id('asdf')))
+#        a.add(Circle(1,'foo',id=rndId()))
+#        a.add(Line((0.1,-0.1),(2,3),0.05,'foo',id=rndId()))
+#        a.add(Hole(3,id=rndId()))
+#        a.add(Pin(1,0.1,0.1,1,id=rndId()))
+#        a.add(Pin(1,0.1,0.1,1,square=True,id=rndId()))
+#        a.add(Pad((0,0),(0,1),0.5,0.1,0.6,id=rndId()))
+#        a.subs[0].add(Element())
 
         from Tuke.geda import Footprint
         common.load_dataset('geda_footprints')
@@ -59,4 +59,8 @@ class ElementTest(TestCase):
         a.add(f1)
         a.add(f2)
 
-        print a.save(doc).toprettyxml(indent="  ")
+#        print a.save(doc).toprettyxml(indent="  ")
+
+        from Tuke.export import to_gerber
+
+        print to_gerber(a)['top.pad']
