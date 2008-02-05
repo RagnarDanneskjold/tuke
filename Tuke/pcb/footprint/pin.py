@@ -49,9 +49,9 @@ class Pin(Element):
             if self.square:
                 return Polygon(((-dia,-dia),(dia,-dia),(dia,dia),(-dia,dia)),id=self.id,layer=layer)
             else:
-                return Circle(dia,id=self.id,layer=layer)
+                return Circle(dia,id=Id(),layer=layer)
 
-        self.add(Hole(self.dia,id=self.id))
+        self.add(Hole(self.dia,id=Id()))
 
         self.add(gen_pad_shape(self.dia + (self.thickness * 2),layer='top.pad'))
         self.add(gen_pad_shape(self.mask,layer='top.mask'))
