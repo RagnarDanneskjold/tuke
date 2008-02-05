@@ -46,7 +46,7 @@ class Footprint(Element):
                 v = re.findall(r'\[.*\]',l)
 
                 # FIXME: add detection for mil units in () brackets
-                source_units = MMIL 
+                source_units = CMIL 
 
                 v = v[0][1:-1].split(' ')
 

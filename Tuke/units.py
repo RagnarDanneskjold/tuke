@@ -40,6 +40,6 @@ MM = CM * 1e-1
 # Imperial
 IN = 25.4 * MM
 
-# These two are used by geda, mils and mili-mils
+# These two are used by geda, mils and centi-mils
 MIL = IN * 1e-3
-MMIL = MIL * 1e-3
+CMIL = MIL * 1e-2
