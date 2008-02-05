@@ -67,6 +67,8 @@ class Line(SingleElement):
     def render(self):
         p = make_line_vertexes(self.a,self.b,self.thickness,16)
 
+        p = shapely.geometry.Polygon(p)
+
         return [(self.id,self.layer,p)]
 
 class ThinLine(Line):
