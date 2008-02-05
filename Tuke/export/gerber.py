@@ -49,6 +49,9 @@ def to_gerber(elem):
         if not layers.has_key(l):
             layers[l] = ''
 
+        # Comment for debugging
+        layers[l] += 'G04 id: %s *\n' % str(i)
+
         # start Polygon Area Fill code
         layers[l] += 'G36*\n'
 
@@ -67,7 +70,8 @@ def to_gerber(elem):
 
     # prepend parameter blocks to all layers
     for l in layers.keys():
-        layers[l] = \
+        comment = 'G04 layer: %s *\n' % l
+        layers[l] = comment + \
 """
 %MOIN*%
 %FSLAX35Y35*%
