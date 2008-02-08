@@ -23,9 +23,6 @@ from Tuke import Id
 class Element(object):
     """Base element class."""
 
-    # Full name of the class for saving state.
-    full_class_name = 'Tuke.Element'
-
     # XML attributes, and there default values.
     #
     # This should include all state that needs to be saved in the long term.
@@ -51,7 +48,7 @@ class Element(object):
     def _save(self,doc,subs):
         """Actual save function, seperated out for Translate-type subclassing."""
 
-        r = doc.createElement(self.full_class_name)
+        r = doc.createElement(self.__module__)
 
         # Save state.
         state = [(n,getattr(self,n)) for n in self.saved_state]

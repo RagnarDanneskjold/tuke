@@ -59,7 +59,7 @@ class ElementTest(TestCase):
         a.add(f1)
         a.add(f2)
 
-#        print a.save(doc).toprettyxml(indent="  ")
+        print a.save(doc).toprettyxml(indent="  ")
 
         from Tuke.export import to_gerber
 

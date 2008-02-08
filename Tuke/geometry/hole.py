@@ -21,7 +21,6 @@ from Tuke import SingleElement,Id
 
 class Hole(SingleElement):
 
-    full_class_name = 'Tuke.geometry.Hole'
     saved_state = SingleElement.saved_state + \
             ('dia',)
 

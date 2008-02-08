@@ -22,7 +22,6 @@ from Tuke import Element,Id
 import shapely.geometry
 
 class Translate(Element):
-    full_class_name = 'Tuke.geometry.Translate'
 
     saved_state = Element.saved_state + ('v',)
 

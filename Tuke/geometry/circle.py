@@ -41,8 +41,6 @@ def arc_points(a,b,r,segments):
 class Circle(SingleElement):
     """A circle with a specified diameter."""
 
-    full_class_name = 'Tuke.geometry.Circle'
-
     saved_state = SingleElement.saved_state + \
         ('dia','layer')
 

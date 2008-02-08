@@ -23,8 +23,6 @@ from Tuke.geometry import Circle,Hole,Polygon
 class Pin(Element):
     """Defines a pin"""
 
-    full_class_name = 'Tuke.pcb.footprint.Pin'
-
     saved_state = Element.saved_state + \
             ('dia','thickness','clearance','mask','square')
 

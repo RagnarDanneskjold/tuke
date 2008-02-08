@@ -21,7 +21,6 @@ from Tuke import SingleElement,Id
 import shapely.geometry
 
 class Polygon(SingleElement,shapely.geometry.Polygon):
-    full_class_name = 'Tuke.geometry.Polygon'
 
     saved_state = SingleElement.saved_state + ('layer',)
 

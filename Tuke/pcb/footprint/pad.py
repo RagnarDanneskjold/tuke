@@ -23,8 +23,6 @@ from Tuke.geometry import Polygon
 class Pad(Element):
     """Defines a pad"""
 
-    full_class_name = 'Tuke.pcb.footprint.Pad'
-
     saved_state = Element.saved_state + \
             ('a','b','thickness','clearance','mask')
 
