@@ -23,9 +23,6 @@ from Tuke.geometry import Circle,Hole,Polygon
 class Pin(Element):
     """Defines a pin"""
 
-    saved_state = Element.saved_state + \
-            ('dia','thickness','clearance','mask','square')
-
     def __init__(self,dia,thickness,clearance,mask,square=False,id=Id()):
         """Create a pin
 

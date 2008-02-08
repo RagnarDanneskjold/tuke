@@ -46,9 +46,6 @@ def make_line_vertexes(a,b,thickness,segments):
 class Line(SingleElement):
     """A line with a specified thickness."""
 
-    saved_state = SingleElement.saved_state + \
-            ('a','b','thickness','layer')
-
     def __init__(self,a,b,thickness,layer=None,id=Id()):
         SingleElement.__init__(self,id=id)
 

@@ -22,13 +22,11 @@ import shapely.geometry
 
 class Polygon(SingleElement,shapely.geometry.Polygon):
 
-    saved_state = SingleElement.saved_state + ('layer',)
-
-    def extra_saved_state(self):
+    def __getstate__(self):
         ext = tuple(self.exterior.coords)
         int = ()
-        return (('exterior-coords',ext),
-                ('interior-coords',int))
+        return {'exterior-coords':ext,
+                'interior-coords':int}
 
     def __init__(*args,**kwargs):
         self = args[0]

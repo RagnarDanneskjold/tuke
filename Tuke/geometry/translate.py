@@ -23,8 +23,6 @@ import shapely.geometry
 
 class Translate(Element):
 
-    saved_state = Element.saved_state + ('v',)
-
     def __init__(self,g,v):
         """Translate geometry."""
         Element.__init__(self,id=Id())
@@ -58,6 +56,11 @@ class Translate(Element):
         # mechanism won't work because we've hidden stuff via getattr, so call
         # _save with a generated subs list.
         return self._save(doc,(self.__g,))
+
+    def __getstate__(self):
+        # More special case, we have a hidden __g attribute that shouldn't be
+        # saved.
+        return {'v':self.v}
 
     def __getattr__(self,name):
         return getattr(self.__g,name)

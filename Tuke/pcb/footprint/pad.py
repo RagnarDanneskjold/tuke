@@ -23,9 +23,6 @@ from Tuke.geometry import Polygon
 class Pad(Element):
     """Defines a pad"""
 
-    saved_state = Element.saved_state + \
-            ('a','b','thickness','clearance','mask')
-
     def __init__(self,a,b,thickness,clearance,mask,id=Id()):
         """Create a pad.
 

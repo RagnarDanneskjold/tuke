@@ -51,9 +51,20 @@ class Element(object):
         r = doc.createElement(self.__module__)
 
         # Save state.
-        state = [(n,getattr(self,n)) for n in self.saved_state]
-        state += self.extra_saved_state()
-        for n,v in state:
+        state = None
+        try:
+            state = self.__getstate__()
+        except AttributeError:
+            state = self.__dict__
+
+        for n,v in state.iteritems():
+            # subs is handled below, so ignore it if appropriate.
+            #
+            # Note that this means that a custom __savestate__ function can't
+            # return a dict with 'subs' in it...
+            if n == 'subs':
+                continue 
+
             r.setAttribute(n,repr(v))
 
         for s in subs:

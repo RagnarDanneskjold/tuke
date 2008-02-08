@@ -21,9 +21,6 @@ from Tuke import SingleElement,Id
 
 class Hole(SingleElement):
 
-    saved_state = SingleElement.saved_state + \
-            ('dia',)
-
     def __init__(self,dia,id=Id()):
         SingleElement.__init__(self,id=id)
 
