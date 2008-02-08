@@ -1,0 +1,26 @@
+some quick ideas:
+
+programmable heavy symbol generator
+
+
+make sure there are nice ways to map symbolic pin names to numerical pin numbers
+
+make embedded symbols/footprints be default, with uuid? sha1?
+
+note licencing of symbols/footprints for above usage
+
+
+think about usage of multi-slot parts, should be easy to assign slots to parent parts, as well as move them around
+
+
+pcb ui should allow parts to be temp placed off board
+
+tooltips
+
+
+remove concept of "Vcc solder" etc. replace with configurable Vcc/GND connected net colors
+
+
+need physical keepouts, electrical keepouts, top.solder.keepout? top.phys.keepout?
+
+IPC-7351 - the big spec for smd stuff
