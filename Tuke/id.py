@@ -73,6 +73,9 @@ class Id(object):
 
         return 'Id(\'%s\')' % s
 
+    def __hash__(self):
+        return hash(self.id)
+
 def rndId():
     """Returns a randomized element Id
 

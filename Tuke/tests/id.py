@@ -87,6 +87,16 @@ class IdTest(TestCase):
 
         self.assert_(a == eval(repr(a)))
 
+    def testIdHashable(self):
+        """hash(Id())"""
+
+        a = Id('foo')
+        b = Id('bar')
+        c = Id('foo')
+
+        self.assert_(hash(a) == hash(c))
+        self.assert_(hash(a) != hash(b))
+
     def test_rndId(self):
         """rndId()"""
 

@@ -23,6 +23,16 @@ from Tuke import Id
 class Element(object):
     """Base element class."""
 
+    # XML attributes, and there default values.
+    #
+    # This should include all state that needs to be saved in the long term.
+    # All values in this list should be eval(repr()) safe.
+    saved_state = ('id',)
+
+    def extra_saved_state(self):
+        """For extra saved state that must be auto-generated in some way."""
+        return ()
+
     def __init__(self,id=Id()):
         self.id = id
 
