@@ -25,8 +25,13 @@ class Polygon(SingleElement,shapely.geometry.Polygon):
     def __getstate__(self):
         ext = tuple(self.exterior.coords)
         int = ()
-        return {'exterior-coords':ext,
+        return {'id':self.id,
+                'layer':self.layer,
+                'exterior-coords':ext,
                 'interior-coords':int}
+
+    def __setstate__(self,attr):
+        self.__init__(attr['exterior-coords'],layer=attr['layer'],id=attr['id'])
 
     def __init__(*args,**kwargs):
         self = args[0]

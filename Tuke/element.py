@@ -48,7 +48,7 @@ class Element(object):
     def _save(self,doc,subs):
         """Actual save function, seperated out for Translate-type subclassing."""
 
-        r = doc.createElement(self.__module__)
+        r = doc.createElement(self.__module__ + '.' + self.__class__.__name__)
 
         # Save state.
         state = None
@@ -73,7 +73,7 @@ class Element(object):
         return r
 
     def save(self,doc):
-        """Returns an xml minidom object representing the Element"""
+        """Returns an XML minidom object representing the Element"""
         return self._save(doc,getattr(self,'subs',[]))
 
     def render(self):
@@ -84,6 +84,64 @@ class Element(object):
                 geo += [(self.id + i,l,s)]
 
         return geo
+
+def load_Element(dom):
+    """Loads elements from a saved minidom"""
+
+    # Since the xml is saved as a tree, and elements depend on their
+    # subelements, the load operation must be done in a depth-first recursive
+    # manner.
+
+    subs = []
+    for sub in dom.childNodes:
+        subs.append(load_Element(sub))
+
+    
+    # De-repr() the element attributes to generate a dict.
+    attr = {}
+    for n,v in dom.attributes.items():
+        v = eval(v)
+        attr[n] = v
+
+
+    # Create an instance of the class referred to by the tagName
+    import sys
+
+    # First split up the module part of tagName from the trailing class part.
+    module = dom.tagName.split('.')
+    name = module[-1]
+    module = reduce(lambda a,b: a + '.' + b,module[0:-1])
+
+    # Load the required module and get the correct class object.
+    __import__(module)
+
+    mod = sys.modules[module]
+    
+    klass = getattr(mod,name)
+   
+    # Create a new object of the correct class.
+    #
+    # Not really sure why obj = object() doesn't work, gives an odd error:
+    # "__class__ assignment: only for heap types"
+    obj = _EmptyClass() 
+    obj.__class__ = klass
+
+    # Populate the subs first, to give any __setstate__ function possibly
+    # needed info.
+    obj.subs = subs
+
+    # If the class defines __setstate__, let it handle the state, otherwise
+    # just populate the object's dict. 
+    if hasattr(obj,'__setstate__'):
+        obj.__setstate__(attr)
+    else:
+        for n,v in attr.iteritems():
+            setattr(obj,n,v)
+
+    return obj
+
+class _EmptyClass(object):
+    pass
 
 class SingleElement(Element):
     """Base class for elements without subelements."""

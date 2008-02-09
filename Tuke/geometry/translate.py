@@ -60,7 +60,16 @@ class Translate(Element):
     def __getstate__(self):
         # More special case, we have a hidden __g attribute that shouldn't be
         # saved.
-        return {'v':self.v}
+        return {'id':self.id,'v':self.v}
+
+    def __setstate__(self,attr):
+        assert(len(self.subs) == 1)
+        self.id = attr['id']
+        self.v = attr['v']
+        self.__g = self.subs[0]
+
+        # __getattr__ is only called if the object doesn't have a given attr
+        del self.subs
 
     def __getattr__(self,name):
         return getattr(self.__g,name)

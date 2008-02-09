@@ -14,7 +14,7 @@ import shutil
 import common
 
 from unittest import TestCase
-from Tuke import Element,Id,rndId
+from Tuke import load_Element,Element,Id,rndId
 
 from xml.dom.minidom import Document
 
@@ -59,8 +59,10 @@ class ElementTest(TestCase):
         a.add(f1)
         a.add(f2)
 
+        dom = a.save(doc)
+
         print a.save(doc).toprettyxml(indent="  ")
 
-        from Tuke.export import to_gerber
-
-        print to_gerber(a)['top.pad']
+        doc = Document()
+        print load_Element(dom).save(doc).toprettyxml(indent="  ")
+        
