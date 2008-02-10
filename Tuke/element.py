@@ -18,7 +18,7 @@
 # ### BOILERPLATE ###
 
 from Tuke import Id
-
+from xml.dom.minidom import Document
 
 class Element(object):
     """Base element class.
@@ -150,3 +150,11 @@ class SingleElement(Element):
     add = None
     def __init__(self,id=Id()):
         self.id = id
+
+
+def save_element_to_file(elem,f):
+    """Save element to file object f"""
+
+    doc = Document()
+
+    f.write(elem.save(doc).toprettyxml(indent="  "))

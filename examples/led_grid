@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # vim: tabstop=4 expandtab shiftwidth=4 fileencoding=utf8
 # ### BOILERPLATE ###
 # Tuke - Electrical Design Automation toolset
@@ -17,26 +18,35 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from Tuke import Id
+
+"""
+Example Tuke-using program to generate an led grid.
+
+Usage:
+
+led_grid rows cols
+
+Generates a series-parallel grid of leds and prints the resulting XML to
+stdout.
+"""
+
+from Tuke import rndId,save_element_to_file
 from Tuke.sch import Component
 
-class Sheet(Component):
-    """Defines a schematic sheet.
-    
-    A sheet is a collection of components representing a schematic meant to be
-    encapsulated into one unit. 
+class LedGrid(Component):
+    def __init__(self,rows,cols,id):
+        Component.__init__(self,id = id)
 
-    A sheet has two renderings, internal and external. The internal rendering
-    shows the components the sheet is made up of. The external rendering
-    presents the sheet as a box with named ports.
+        for x in cols:
+            for y in rows:
+                pass 
 
-    A sheet is a component as well, and therefore may have pins that can be connected.
-    """
+if __name__ == "__main__":
+    import sys
 
-    def __init__(self,id=Id()):
-        """Create a sheet.
+    rows = sys.argv[1]
+    cols = sys.argv[2]
 
-        id - Id name
-        """
+    grid = LedGrid(rows,cols,id=rndId())
 
-        Component.__init__(self,id=id)
+    save_element_to_file(grid,sys.stdout)
