@@ -21,7 +21,18 @@ from Tuke import Id
 
 
 class Element(object):
-    """Base element class."""
+    """Base element class.
+    
+    Everything is an Element, from a single pad on a pcb, to a whole circuit.
+    This applies equally to things in schematic view and layout view. What is
+    common to elements is as follows:
+        
+    They can be "rendered" into a graphical representation.
+
+    They can be loaded and saved to disk.
+
+    They have an immutable Id()
+    """
 
     def __init__(self,id=Id()):
         self.id = id

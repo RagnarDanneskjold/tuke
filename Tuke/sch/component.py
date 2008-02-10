@@ -17,31 +17,30 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from Tuke.sch import SchElem
-from Tuke.geo import Geo
+from Tuke import Netlist,Element,Id
 
-class Sheet(SchElem):
-    """Defines a sheet"""
+class Component(Element):
+    """Defines a Component.
+   
+    Components are representations of electrical components in a schematic.
+    They are meant to be subclassed by the actual schematic symbols who will
+    provide a custom rendering.
 
-    def __init__(self,id):
-        """Create a sheet
+    Components have a Netlist, describing the connectivity of pins within them.
 
-        id - id
+    A component has pins, a dict of names that map to Id's Pins is shortened to
+    p as you'll be doing a whole lot of connecting pins to pins. The Id's in p
+    include the Component's Id in the path.
+    """
+
+    def __init__(self,id=Id()):
+        """Create a component.
+
+        id - Id name
         """
 
-        self.id = id
+        Element.__init__(self,id=id)
 
-        self.e = []
+        self.netlist = Netlist()
 
-    def add(self,b):
-        """Add a new schematic element to the sheet"""
-        assert(isinstance(b,SchElem))
-
-        self.e.append(b)
-
-    def geo(self):
-        """Generate geometry"""
-
-        g = Geo(id=self.id) 
-
-        return g
+        self.p = {}

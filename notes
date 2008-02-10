@@ -24,3 +24,19 @@ remove concept of "Vcc solder" etc. replace with configurable Vcc/GND connected 
 need physical keepouts, electrical keepouts, top.solder.keepout? top.phys.keepout?
 
 IPC-7351 - the big spec for smd stuff
+
+
+
+Layer ideas:
+
+layer.type
+
+layer - Physically/Logically seperate. Differently named layers must not affect
+each other in any way. top is independent of bottom
+
+type - Sub types in the same physical space.
+
+
+*.drill - drill layer, present in all layers at once
+top.drill - drill through top layer only
+(top|middle).drill - drill through top and middle only

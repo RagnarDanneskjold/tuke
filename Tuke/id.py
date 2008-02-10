@@ -20,9 +20,12 @@
 from Tuke.uuid import uuid4
 
 class Id(object):
-    """Element Ids."""
-
-    __slots__ = ('id')
+    """Element identifiers.
+    
+    Id's are identifiers with a path. The path is relative, so for instance
+    ../Vcc means Vcc in our parent's context, similarly foo/Vcc means Vcc in
+    foo, a sub-element.
+    """
 
     def __init__(self,s = '.'):
         self.id = s.split('/')
