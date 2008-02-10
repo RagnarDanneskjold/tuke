@@ -29,8 +29,7 @@ class Component(Element):
     Components have a Netlist, describing the connectivity of pins within them.
 
     A component has pins, a dict of names that map to Id's Pins is shortened to
-    p as you'll be doing a whole lot of connecting pins to pins. The Id's in p
-    include the Component's Id in the path.
+    p as you'll be doing a whole lot of connecting pins to pins.
     """
 
     def __init__(self,id=Id()):
@@ -44,3 +43,9 @@ class Component(Element):
         self.netlist = Netlist(id=id)
 
         self.p = {}
+
+    def define_pins(self,*names):
+        """Define pins by name."""
+
+        for n in names:
+            self.p[n] = Id(n)

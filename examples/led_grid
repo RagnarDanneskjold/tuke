@@ -30,22 +30,51 @@ Generates a series-parallel grid of leds and prints the resulting XML to
 stdout.
 """
 
-from Tuke import rndId,save_element_to_file
+from Tuke import Id,rndId,save_element_to_file
 from Tuke.sch import Component
+
+class Led(Component):
+    def __init__(self,id):
+        Component.__init__(self,id = id)
+
+        self.define_pins('anode','cathode')
 
 class LedGrid(Component):
     def __init__(self,rows,cols,id):
         Component.__init__(self,id = id)
 
-        for x in cols:
-            for y in rows:
-                pass 
+        # Define anode and cathode pins
+        self.define_pins('anode','cathode')
+
+        top_leds = []
+        bottom_leds = []
+
+        for x in range(cols):
+            prev = None
+            for y in range(rows):
+                l = Led(id=Id('LED%s-%s' % (str(x),str(y))))
+                self.add(l)
+
+                if not prev:
+                    top_leds.append(l)
+                else:
+                    self.netlist[prev.id + prev.p['cathode']].add(l.id + l.p['anode']) 
+
+                prev = l
+
+            bottom_leds.append(prev)
+
+        # Link common anodes and cathodes
+        for t in top_leds:
+            self.netlist[self.p['anode']].add(t.id + t.p['anode'])
+        for b in bottom_leds:
+            self.netlist[self.p['cathode']].add(b.id + b.p['cathode'])
 
 if __name__ == "__main__":
     import sys
 
-    rows = sys.argv[1]
-    cols = sys.argv[2]
+    rows = int(sys.argv[1])
+    cols = int(sys.argv[2])
 
     grid = LedGrid(rows,cols,id=rndId())
 
