@@ -41,6 +41,6 @@ class Component(Element):
 
         Element.__init__(self,id=id)
 
-        self.netlist = Netlist()
+        self.netlist = Netlist(id=id)
 
         self.p = {}
