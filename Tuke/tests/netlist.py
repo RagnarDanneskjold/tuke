@@ -63,3 +63,10 @@ class NetlistTest(TestCase):
         T(n[i2] == set((i1,i2,i4)))
         F(i3 in n)
 
+
+        # repr(Netlist)
+        T(repr(eval(repr(n)) == repr(n)))
+        n = Netlist()
+        T(repr(eval(repr(n)) == repr(n)))
+        n = Netlist(id=rndId())
+        T(repr(eval(repr(n)) == repr(n)))
