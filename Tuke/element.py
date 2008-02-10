@@ -17,9 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-import Tuke
-from Tuke import Id,non_evalable_repr_helper
-from Tuke.repr_helper import shortest_class_name
+from Tuke import Id
 
 
 class Element(object):
@@ -50,7 +48,7 @@ class Element(object):
     def _save(self,doc,subs):
         """Actual save function, seperated out for Translate-type subclassing."""
 
-        r = doc.createElement(shortest_class_name(self.__class__))
+        r = doc.createElement(self.__module__ + '.' + self.__class__.__name__)
 
         # Save state.
         state = None
@@ -86,10 +84,6 @@ class Element(object):
                 geo += [(self.id + i,l,s)]
 
         return geo
-
-    @non_evalable_repr_helper
-    def __repr__(self):
-        return {'id':self.id}
 
 def load_Element(dom):
     """Loads elements from a saved minidom"""

@@ -14,7 +14,6 @@ import shutil
 import common
 
 from unittest import TestCase
-import Tuke
 from Tuke import load_Element,Element,Id,rndId
 
 from xml.dom.minidom import Document

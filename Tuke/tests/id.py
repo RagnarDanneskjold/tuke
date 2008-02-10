@@ -14,7 +14,6 @@ import shutil
 import common
 
 from unittest import TestCase
-import Tuke
 from Tuke import Id,rndId
 
 class IdTest(TestCase):

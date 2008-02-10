@@ -18,7 +18,7 @@
 # ### BOILERPLATE ###
 
 from Tuke.id import Id
-from Tuke import repr_helper
+
 
 class Net(set):
     """Helper class for Netlist
@@ -103,18 +103,18 @@ class Netlist(dict):
                 # same net.
                 self[s[0]].add(n)
 
-    @repr_helper
     def __repr__(self):
         # Generate a list of unique Id sets
-        #
-        # FIXME: doesn't prune single-Id sets
-        s = [frozenset(v) for v in self.itervalues()]
-        s = set(s) # removes dups
-    
-        # Turn into tuples for nice printing
-        s = [tuple(v) for v in s]
+        s = [tuple(v) for v in self.itervalues()]
 
-        return (s,{'id':self.id}) 
+        r = 'Netlist('
+
+        for v in s:
+            r += repr(v) + ','
+
+        r += 'id=%s)' % repr(self.id)
+
+        return r
 
     def __getitem__(self,i):
         """Returns the nets i is connected to, including itself."""
@@ -136,3 +136,32 @@ class Netlist(dict):
                 return False
             else:
                 return True
+
+    def values(self):
+        """Returns a list of all Nets"""
+
+        # Generate a list of unique Id sets
+        s = [frozenset(v) for v in dict.itervalues(self)]
+        s = set(s) # removes dups
+
+        # Prune single-id Nets
+        s2 = []
+        for n in s:
+            if len(n) > 1:
+                s2.append(n)
+
+        return tuple(s2)
+
+    def itervalues(self):
+        return iter(self.values())
+
+    def update(self,other):
+        """Update with connectivity information from another Netlist
+
+        Id()'s are processed relatively with respect to other.id
+        """
+
+        for net in other.itervalues():
+            net = tuple(net) 
+            for i in net:
+                self[other.id + net[0]].add(other.id + i)

@@ -14,7 +14,6 @@ import shutil
 import common
 
 from unittest import TestCase
-import Tuke
 from Tuke import Id,rndId,Netlist
 
 class NetlistTest(TestCase):
@@ -64,10 +63,31 @@ class NetlistTest(TestCase):
         T(n[i2] == set((i1,i2,i4)))
         F(i3 in n)
 
-
         # repr(Netlist)
         T(repr(eval(repr(n)) == repr(n)))
         n = Netlist()
         T(repr(eval(repr(n)) == repr(n)))
         n = Netlist(id=rndId())
         T(repr(eval(repr(n)) == repr(n)))
+
+
+        # Netlist.upate()
+
+        # Same Id() level
+        n1 = Netlist((Id('1'),Id('2')),(Id('3'),Id('4')))
+        n2 = Netlist((Id('2'),Id('3')),(Id('1'),Id('4')))
+        n3 = Netlist((Id('1'),Id('2'),Id('3'),Id('4')))
+        n2bak = repr(n2)
+
+        n1.update(n2)
+
+        T(repr(n2) == n2bak)
+        T(repr(n1) == repr(n3))
+
+        # Different Id() level
+        n1 = Netlist()
+        n2 = Netlist((Id('1'),Id('2')),(Id('3'),Id('4')),id=Id('a'))
+        n3 = Netlist((Id('a/1'),Id('a/2')),(Id('a/3'),Id('a/4')))
+   
+        n1.update(n2)
+        T(repr(n1) == repr(n3))
