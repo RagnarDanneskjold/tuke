@@ -22,6 +22,8 @@ from Tuke.uuid import uuid4
 class Id(object):
     """Element Ids."""
 
+    __slots__ = ('id')
+
     def __init__(self,s = '.'):
         self.id = s.split('/')
 
