@@ -27,6 +27,8 @@ class Id(object):
     foo, a sub-element.
     """
 
+    __slots__ = ('id')
+
     def __init__(self,s = '.'):
         self.id = s.split('/')
 
