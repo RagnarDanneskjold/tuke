@@ -40,3 +40,10 @@ type - Sub types in the same physical space.
 *.drill - drill layer, present in all layers at once
 top.drill - drill through top layer only
 (top|middle).drill - drill through top and middle only
+
+
+pin connection syntax:
+
+link(p1,p2)
+
+cut(p1,p2)

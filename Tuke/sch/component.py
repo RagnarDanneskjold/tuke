@@ -28,8 +28,10 @@ class Component(Element):
 
     Components have a Netlist, describing the connectivity of pins within them.
 
-    A component has pins, a dict of names that map to Id's Pins is shortened to
-    p as you'll be doing a whole lot of connecting pins to pins.
+    A component has pins, which are defined by define_pins() A component can
+    link() pins of itself, or sub components, together.
+
+    Pin names must be valid python names, sutable for c.pin_name
     """
 
     def __init__(self,id=Id()):
@@ -42,10 +44,41 @@ class Component(Element):
 
         self.netlist = Netlist(id=id)
 
-        self.p = {}
+        self.pins = ()
 
-    def define_pins(self,*names):
-        """Define pins by name."""
+    def __getattr__(self,name):
+        """Resolve references to pin names"""
+        if name in self.pins:
+            return (self,Id(name)) 
+        else:
+            raise AttributeError, name
 
-        for n in names:
-            self.p[n] = Id(n)
+    def link(self,a,b):
+        """Connect pin a to pin b"""
+
+        # Figure out correct Id paths for a and b
+
+        def deref(i):
+            # First case, already dereferenced Id's get passed on unchanged, so
+            # you can state obj.link(self.Vcc,Id('../Vcc'))
+            if isinstance(i,Id):
+                return i 
+            else:
+                # Must be from a Component pin
+                o,n = i
+
+                # Is the object actually ourselves?
+                if id(o) == id(self):
+                    # Pass unchanged
+                    return n
+                else:
+                    # Check that the object is one of our subclasses
+                    assert(o in self.subs)
+
+                    # Good, return with correct path
+                    return o.id + n
+    
+        a = deref(a)
+        b = deref(b)
+
+        self.netlist[a].add(b)

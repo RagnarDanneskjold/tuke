@@ -37,14 +37,14 @@ class Led(Component):
     def __init__(self,id):
         Component.__init__(self,id = id)
 
-        self.define_pins('anode','cathode')
+        self.pins = ('anode','cathode')
 
 class LedGrid(Component):
     def __init__(self,rows,cols,id):
         Component.__init__(self,id = id)
 
         # Define anode and cathode pins
-        self.define_pins('anode','cathode')
+        self.pins = ('anode','cathode')
 
         top_leds = []
         bottom_leds = []
@@ -58,7 +58,7 @@ class LedGrid(Component):
                 if not prev:
                     top_leds.append(l)
                 else:
-                    self.netlist[prev.id + prev.p['cathode']].add(l.id + l.p['anode']) 
+                    self.link(prev.cathode,l.anode)
 
                 prev = l
 
@@ -66,9 +66,9 @@ class LedGrid(Component):
 
         # Link common anodes and cathodes
         for t in top_leds:
-            self.netlist[self.p['anode']].add(t.id + t.p['anode'])
+            self.link(self.anode,t.anode)
         for b in bottom_leds:
-            self.netlist[self.p['cathode']].add(b.id + b.p['cathode'])
+            self.link(self.cathode,b.cathode)
 
 if __name__ == "__main__":
     import sys
