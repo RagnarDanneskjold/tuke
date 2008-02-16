@@ -48,4 +48,14 @@ class SchComponentTest(TestCase):
             (Id('c'), Id('foo/c'), Id('bar/a')),
             id=Id('.')))
 
+    def testComponentLinksNonePins(self):
+        """obj.link(None,None) fails"""
 
+        root = Component(pins=(Pin('a'),'b','c'))
+        root2 = Component(pins=(Pin('a'),'b','c'))
+
+        self.assertRaises(KeyError,
+                lambda x: x.link(x.a,None),root)
+
+        self.assertRaises(KeyError,
+                lambda x: x.link(x.a,root2),root)

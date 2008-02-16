@@ -82,7 +82,10 @@ class Component(Element):
                             if p == i:
                                 # Found, return with correct path.
                                 return c.id + p.id
-    
+   
+            # Found nothing
+            raise KeyError, i
+
         a = deref(a)
         b = deref(b)
 
