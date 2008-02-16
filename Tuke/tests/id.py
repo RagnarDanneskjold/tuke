@@ -59,6 +59,9 @@ class IdTest(TestCase):
         self.assert_(str(Id('foo') + Id('..')) == '.')
         self.assert_(str(Id('..') + Id('bar')) == '../bar')
 
+        # Adding strings to Id's
+        self.assert_(Id('foo') + 'bar' == Id('foo/bar'))
+
     def testIdAddSide_effects(self):
         """Id() + Id() has no side effects"""
 
@@ -109,6 +112,12 @@ class IdTest(TestCase):
         # Must not implement the simple self.id = other.id, as other.id may
         # change.
         self.assert_(id(a.id) != id(b.id))
+
+    def testIdRaisesTypeErrors(self):
+        """Id(1) raises TypeError"""
+
+        self.assertRaises(TypeError,lambda x: Id(x),1)
+        self.assertRaises(TypeError,lambda x: Id() + x,1)
 
     def test_rndId(self):
         """rndId()"""

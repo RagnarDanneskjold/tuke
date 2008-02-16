@@ -32,6 +32,10 @@ class Id(object):
     def __init__(self,s = '.'):
         if isinstance(s,Id):
             s = str(s)
+
+        if not isinstance(s,str):
+            raise TypeError, s
+
         self.id = s.split('/')
 
         self.normalize()
@@ -59,7 +63,9 @@ class Id(object):
     def __add__(self,b):
         n = Id()
 
-        n.id = self.id + b.id
+        # Why the Id(b)? That's to allow b to be anything that's acceptable by
+        # Id(), yet, if it isn't, to properly raise a TypeError
+        n.id = self.id + Id(b).id
 
         n.normalize()
 
