@@ -42,8 +42,57 @@ top.drill - drill through top layer only
 (top|middle).drill - drill through top and middle only
 
 
+Translate/Rotate/LayerSwap -> Transform
+
 pin connection syntax:
 
 link(p1,p2)
 
 cut(p1,p2)
+
+
+need to have a Bus Component, with named pins for various lines in the bus:
+
+i2c = Bus() # or even, i2c_Bus()
+
+self.link(i2c.scl,obj.scl)
+self.link(i2c.sda,obj.sda)
+
+can we extend link to link busses?
+
+self.link(i2c,obj.i2c)
+self.link(pwr,obj.pwr)
+
+What about having sub objects, in subs, be allowed to be a accessed via .obj
+where obj is the sub-objects Id? Then pin's and busses could be completely
+generalized, with the bus being a collection of pins.
+
+link could be setup so that only like stuff can be linked, with the link
+objects handling the link ability. Of course you can always link up the
+individual pins manually.
+
+To handle net attributes link should have an optional third arg, attrib, which
+normally is simply copied from first to second. (or maybe more restrictive to
+less) Or just error if net types are different. They could simply be
+implemented by sub-classing Pin
+
+
+Multi-part components like op-amps can be treated like busses:
+
+opamp.slota.in
+opamp.slota.out
+opamp.slotb.in
+
+Need to be able to exchange slots as well.
+
+
+Can translate/rotate use decorators? Make Elements all have .v attribute? Don't
+forget rotate, mirror and scale.
+
+
+Decouple wrapper, obj = Decouple(Pic18f252(),Capacitor()) such that obj.rb0 ->
+obj.pic.rb0 but obj.pwr -> cap -> obj.pic.pwr
+
+
+For debugging Elements should include a reference to what source code file
+instanciated them.

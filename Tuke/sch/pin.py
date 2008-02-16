@@ -17,6 +17,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from component import Component
-from sheet import Sheet
-from pin import Pin
+from Tuke import Element,Id
+
+class Pin(Element):
+    """Defines a Pin of a Component"""
+
+    def __init__(self,name):
+        """Create a pin.
+
+        name - Pins name, must also be valid object attribute name.
+        """
+        Element.__init__(self,id=Id(name))

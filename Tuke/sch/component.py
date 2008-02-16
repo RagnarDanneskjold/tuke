@@ -34,9 +34,10 @@ class Component(Element):
     Pin names must be valid python names, sutable for c.pin_name
     """
 
-    def __init__(self,id=Id()):
+    def __init__(self,pins=(),id=Id()):
         """Create a component.
 
+        pins - Pin list
         id - Id name
         """
 
@@ -44,11 +45,11 @@ class Component(Element):
 
         self.netlist = Netlist(id=id)
 
-        self.pins = ()
+        self.pins = pins
 
     def __getattr__(self,name):
         """Resolve references to pin names"""
-        if name in self.pins:
+        if Id(name) in [p.id for p in self.pins]:
             return (self,Id(name)) 
         else:
             raise AttributeError, name
