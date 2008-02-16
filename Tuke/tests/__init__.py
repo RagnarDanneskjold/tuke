@@ -35,6 +35,8 @@ from Tuke.tests.geometry.translate import *
 from Tuke.tests.pcb.footprint.pad import *
 from Tuke.tests.pcb.footprint.pin import *
 
+from Tuke.tests.sch.component import *
+
 class exampleTest(TestProgram):
     """A command-line program that runs a set of tests; this is primarily
        for making test modules conveniently executable.

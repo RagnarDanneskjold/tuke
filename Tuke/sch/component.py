@@ -52,37 +52,36 @@ class Component(Element):
                 p = Pin(p)
             self.add(p)
 
-    def __getattr__(self,name):
-        """Resolve references to pin names"""
-        if Id(name) in [p.id for p in self.subs]:
-            return (self,Id(name)) 
-        else:
-            raise AttributeError, name
-
     def link(self,a,b):
-        """Connect pin a to pin b"""
+        """Connect pin a to pin b
+        
+        Both a and b must either be a pin on self, or a child of self.
+        """
 
-        # Figure out correct Id paths for a and b
+        # Note that a and b are simply Pin objects, we have to figure out where
+        # they are by searching through our sub elements.
 
         def deref(i):
-            # First case, already dereferenced Id's get passed on unchanged, so
-            # you can state obj.link(self.Vcc,Id('../Vcc'))
-            if isinstance(i,Id):
-                return i 
-            else:
-                # Must be from a Component pin
-                o,n = i
+            # First case, valid Id's get passed on unchanged, so you can state
+            # obj.link(self.Vcc,Id('../Vcc'))
+            try:
+                i = Id(i)
+                return i
+            except TypeError:
+                # Must be from a Component pin. Find out which one.
 
-                # Is the object actually ourselves?
-                if id(o) == id(self):
-                    # Pass unchanged
-                    return n
-                else:
-                    # Check that the object is one of our subclasses
-                    assert(o in self.subs)
+                for p in self:
+                    if p == i:
+                        # One of our pins, return id unchanged.
+                        return p.id
 
-                    # Good, return with correct path
-                    return o.id + n
+                # Look in sub-components
+                for c in self:
+                    if isinstance(c,Component):
+                        for p in c:
+                            if p == i:
+                                # Found, return with correct path.
+                                return c.id + p.id
     
         a = deref(a)
         b = deref(b)
