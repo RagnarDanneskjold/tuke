@@ -30,6 +30,8 @@ class Id(object):
     __slots__ = ('id')
 
     def __init__(self,s = '.'):
+        if isinstance(s,Id):
+            s = str(s)
         self.id = s.split('/')
 
         self.normalize()

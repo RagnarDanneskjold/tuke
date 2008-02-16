@@ -97,6 +97,19 @@ class IdTest(TestCase):
         self.assert_(hash(a) == hash(c))
         self.assert_(hash(a) != hash(b))
 
+    def testIdInitWithId(self):
+        """Id(Id('foo'))"""
+
+        a = Id('foo')
+
+        b = Id(a)
+
+        self.assert_(hash(a) == hash(b))
+
+        # Must not implement the simple self.id = other.id, as other.id may
+        # change.
+        self.assert_(id(a.id) != id(b.id))
+
     def test_rndId(self):
         """rndId()"""
 

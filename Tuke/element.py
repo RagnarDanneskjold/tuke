@@ -34,8 +34,8 @@ class Element(object):
     They have an immutable Id()
     """
 
-    def __init__(self,id=Id()):
-        self.id = id
+    def __init__(self,id=''):
+        self.id = Id(id)
 
         self.subs = []
 
