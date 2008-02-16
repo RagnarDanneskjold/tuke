@@ -33,6 +33,21 @@ class ElementTest(TestCase):
 
         self.assert_(set(a.subs) == j)
 
+    def testElementIdAttr(self):
+        """Auto-magical attribute lookup from sub-element Id's"""
+
+        a = Element()
+
+        foo = Element(id='foo')
+        bar = Element(id='bar')
+
+        a.add(foo)
+        a.add(bar)
+
+        self.assert_(a.foo == foo)
+        self.assert_(a.bar == bar)
+        self.assertRaises(AttributeError,a.__getattr__,'foobar')
+
     def testElementSave(self):
         """Element.save()"""
 

@@ -77,38 +77,10 @@ class Id(object):
     def __ne__(self,b):
         return not self.__eq__(b)
 
-    def __len__(self):
-        return len(self.id)
-
-    def __cmp__(self,other):
-        """Compare
-
-        This is done in terms of higher or lower in the hierarchy, with equal
-        hierarchies being compared alphabetically."""
-
-        if len(self) == len(other):
-            return cmp(self.id,other.id)
-        else:
-            if len(self) < len(other):
-                return -1
-            else:
-                return 1
-
     def __repr__(self):
         s = str(self)
 
         return 'Id(\'%s\')' % s
-
-    def __getitem__(self,s):
-        e = self.id.__getitem__(s)
-
-        # In the Id[0] case, e is bare, however the following code is assuming
-        # that e is a tuple. Fix.
-        if not isinstance(e,tuple):
-            e = (e,)
-
-        # Convert to an Id to return
-        return Id('/'.join(e))
 
     def __hash__(self):
         return hash(self.id)

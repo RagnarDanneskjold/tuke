@@ -97,47 +97,6 @@ class IdTest(TestCase):
         self.assert_(hash(a) == hash(c))
         self.assert_(hash(a) != hash(b))
 
-    def testId__getitem__(self):
-        """Id.__getitem__"""
-
-        # Why the aa? At one point a subtle bug was present that wasn't being
-        # caught with single character path elements.
-        a = Id('aa/b/c/d')
-
-        def T(x):
-            self.assert_(x)
-
-        T(isinstance(a[0],Id))
-        T(isinstance(a[0:3],Id))
-
-        T(a[0] == 'aa')
-        T(a[1] == 'b')
-        T(a[2] == 'c')
-        T(a[3] == 'd')
-
-        T(a[-1] == 'd')
-
-        self.assertRaises(IndexError,a.__getitem__,4) 
-
-        T(a[0:2] == 'aa/b')
-        T(a[2:0] == '.')
-        T(a[2:0:-1] == 'c/b') # useless? who knows
-        T(a[-2:] == 'c/d')
-
-    def testId__cmp__(self):
-        """Id comparisons"""
-
-        def T(x):
-            self.assert_(x)
-
-        T(Id('a') < Id('b'))
-        T(not Id('a') > Id('b'))
-
-        T(Id('a/b') > Id('b'))
-        T(not Id('a/b') < Id('b'))
-
-        T(Id() < Id('a'))
-
     def testIdInitWithId(self):
         """Id(Id('foo'))"""
 

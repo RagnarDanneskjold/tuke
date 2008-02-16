@@ -43,6 +43,24 @@ class Element(object):
         for i in self.subs:
             yield i
 
+    def __getattr__(self,name):
+        """Resolve named references to sub elements.
+
+        Allows obj.foo where foo is an Id() of a sub element.
+        """
+
+        # Um... why is this needed? Without, you get recursion problems, with,
+        # there are no errors... Probably has something to do with the
+        # SingleElement class, which doesn't have subs.
+        if not hasattr(self,'subs'):
+            raise AttributeError, name
+
+        for s in self.subs:
+            if Id(name) == s.id:
+                return s
+
+        raise AttributeError, name
+
     def add(self,b):
         self.subs.append(b)
 
