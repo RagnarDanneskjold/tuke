@@ -19,6 +19,8 @@
 
 from Tuke import Netlist,Element,Id
 
+from Tuke.sch.pin import Pin
+
 class Component(Element):
     """Defines a Component.
    
@@ -45,11 +47,14 @@ class Component(Element):
 
         self.netlist = Netlist(id=id)
 
-        self.pins = pins
+        for p in pins:
+            if not isinstance(p,Pin):
+                p = Pin(p)
+            self.add(p)
 
     def __getattr__(self,name):
         """Resolve references to pin names"""
-        if Id(name) in [p.id for p in self.pins]:
+        if Id(name) in [p.id for p in self.subs]:
             return (self,Id(name)) 
         else:
             raise AttributeError, name
