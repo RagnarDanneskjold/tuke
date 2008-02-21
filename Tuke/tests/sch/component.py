@@ -28,9 +28,12 @@ class SchComponentTest(TestCase):
         
         foo = Component(pins=('a','b','c'),id='foo')
         bar = Component(pins=('a','b','c'),id='bar')
+        moo = Component(pins=('a','b','c'),id='moo')
 
         root.add(foo)
         root.add(bar)
+
+        bar.add(moo)
 
         root.link(root.a,foo.a)
         root.link(root.b,foo.b)
@@ -40,10 +43,11 @@ class SchComponentTest(TestCase):
         root.link(root.b,root.bar.b)
         root.link(root.c,root.bar.a)
 
+        root.link(root.a,root.bar.moo.a)
 
         self.assert_(root.netlist ==
         Netlist(
-            (Id('a'),Id('foo/a'), Id('bar/c')),
+            (Id('a'),Id('foo/a'), Id('bar/c'), Id('bar/moo/a')),
             (Id('b'), Id('foo/b'), Id('bar/b')),
             (Id('c'), Id('foo/c'), Id('bar/a')),
             id=Id('.')))

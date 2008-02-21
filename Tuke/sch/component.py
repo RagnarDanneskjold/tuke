@@ -76,15 +76,31 @@ class Component(Element):
                         return p.id
 
                 # Look in sub-components
-                for c in self:
+
+                # Need to keep track of what Id() level the search is at, hence
+                # base.
+                def add_subs_to_check(base,subs):
+                    return [(base + s.id,s) for s in subs]
+
+                # Depth first search, storing unchecked components in check
+                check = add_subs_to_check(Id('.'),self.subs) 
+                while check:
+                    base,c = check.pop()
                     if isinstance(c,Component):
                         for p in c:
                             if p == i:
                                 # Found, return with correct path.
-                                return c.id + p.id
-   
-            # Found nothing
-            raise KeyError, i
+                                return base + p.id
+                    check += add_subs_to_check(base,c.subs)
+
+            # Found nothing.
+
+            # This is needed as we must return KeyError even if i is something
+            # invalid, like None
+            try:
+                raise KeyError, 'Pin \'%s\' not found under \'%s\'' % (i.id,self.id)
+            except AttributeError:
+                raise KeyError, 'Not a valid pin'
 
         a = deref(a)
         b = deref(b)
