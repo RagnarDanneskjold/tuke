@@ -53,13 +53,15 @@ class Element(object):
         # there are no errors... Probably has something to do with the
         # SingleElement class, which doesn't have subs.
         if not hasattr(self,'subs'):
-            raise AttributeError, name
+            raise AttributeError, \
+                'Element has no sub-elements and no attribute \'%s\'' % name
 
         for s in self.subs:
             if Id(name) == s.id:
                 return s
 
-        raise AttributeError, name
+        raise AttributeError, \
+            'Element has sub-elements but no attribute \'%s\'' % name
 
     def add(self,b):
         self.subs.append(b)
