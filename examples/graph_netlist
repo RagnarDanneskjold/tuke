@@ -30,6 +30,7 @@ graph_netlist foo.png < foo.xml
 from Tuke import Id,rndId,load_element_from_file
 from Tuke.sch import Component,Pin
 import sys
+import pydot
 
 
 sch = load_element_from_file(sys.stdin)
@@ -50,21 +51,60 @@ def graph_sch(self,base = Id()):
         elif isinstance(e,Component):
             subs.append(e)
 
+    # Create a pydot Node representing this component and it's pins
+    n = pydot.Node(base)
+
+    # Add each pin as a port
+    l = '|'.join(
+            ['<%s> %s' % (p.id,p.id) for p in pins])
+
+    print base
+    n.label = '{%s|{%s}}' % (base,l) 
+    n.shape = 'Mrecord'
+
+    nodes = [n]
+
     # Turn netlist entries into edges for pydot
     edges = []
     for edge in self.netlist.itervalues():
-        edges.append([base + str(i) for i in tuple(edge)])
+        edge = tuple(edge)
+        a = edge[0]
+        b = edge[1]
+
+        
+        # Pins are being implemented as graphviz ports, so we need to seperate
+        # the last part of each Id
+        def id_to_node_port(i):
+            id_elements = str(i).split('/')
+            port = id_elements.pop()
+            node = '/'.join(id_elements)
+
+            return '%s:%s' % (node,port)
+
+        a = id_to_node_port(base + a) 
+        b = id_to_node_port(base + b) 
+        e = pydot.Edge(a,b)
+
+        edges.append(e)
 
     for s in subs:
-        edges += graph_sch(s,base + s.id)
-    return edges
+        n,e = graph_sch(s,base + s.id)
+        nodes += n
+        edges += e
+
+    return (nodes,edges)
 
 
 
 import pydot
 
-edges = graph_sch(sch,base = sch.id)
+(nodes,edges) = graph_sch(sch,base = sch.id)
 
-g = pydot.graph_from_edges(edges)
+g = pydot.Dot()
 
+for n,e in zip(nodes,edges):
+    g.add_node(n)
+    g.add_edge(e)
+
+print g.to_string()
 g.write_png(sys.argv[1])
