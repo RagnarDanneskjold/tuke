@@ -97,6 +97,31 @@ class IdTest(TestCase):
         self.assert_(hash(a) == hash(c))
         self.assert_(hash(a) != hash(b))
 
+    def testId__getitem__(self):
+        """Id.__getitem__"""
+
+        a = Id('a/b/c/d')
+
+        def T(x):
+            self.assert_(x)
+
+        T(isinstance(a[0],Id))
+        T(isinstance(a[0:3],Id))
+
+        T(a[0] == 'a')
+        T(a[1] == 'b')
+        T(a[2] == 'c')
+        T(a[3] == 'd')
+
+        T(a[-1] == 'd')
+
+        self.assertRaises(IndexError,a.__getitem__,4) 
+
+        T(a[0:2] == 'a/b')
+        T(a[2:0] == '.')
+        T(a[2:0:-1] == 'c/b') # useless? who knows
+        T(a[-2:] == 'c/d')
+
     def testIdInitWithId(self):
         """Id(Id('foo'))"""
 
