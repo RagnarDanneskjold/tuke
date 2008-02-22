@@ -103,7 +103,9 @@ class IdTest(TestCase):
     def testId__getitem__(self):
         """Id.__getitem__"""
 
-        a = Id('a/b/c/d')
+        # Why the aa? At one point a subtle bug was present that wasn't being
+        # caught with single character path elements.
+        a = Id('aa/b/c/d')
 
         def T(x):
             self.assert_(x)
@@ -111,7 +113,7 @@ class IdTest(TestCase):
         T(isinstance(a[0],Id))
         T(isinstance(a[0:3],Id))
 
-        T(a[0] == 'a')
+        T(a[0] == 'aa')
         T(a[1] == 'b')
         T(a[2] == 'c')
         T(a[3] == 'd')
@@ -120,7 +122,7 @@ class IdTest(TestCase):
 
         self.assertRaises(IndexError,a.__getitem__,4) 
 
-        T(a[0:2] == 'a/b')
+        T(a[0:2] == 'aa/b')
         T(a[2:0] == '.')
         T(a[2:0:-1] == 'c/b') # useless? who knows
         T(a[-2:] == 'c/d')
