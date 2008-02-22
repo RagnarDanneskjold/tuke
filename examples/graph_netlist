@@ -24,36 +24,47 @@ Generates a Netlist graph using pydot
 
 Usage:
 
-graph_netlist < foo.xml > foo.jpg
+graph_netlist foo.png < foo.xml
 """
 
 from Tuke import Id,rndId,load_element_from_file
-from Tuke.sch import Pin
+from Tuke.sch import Component,Pin
 import sys
 
 
 sch = load_element_from_file(sys.stdin)
 
 
-def graph_sch(elem,base = Id()):
+def graph_sch(self,base = Id()):
     """Recursive grapher
     
-    elem - element
+    self - element
     base - Id prefix
     """
 
     pins = []
     subs = []
-    for e in elem.subs:
+    for e in self.subs:
         if isinstance(e,Pin):
             pins.append(e)
-        else:
+        elif isinstance(e,Component):
             subs.append(e)
 
-    print [p.id for p in pins]
+    # Turn netlist entries into edges for pydot
+    edges = []
+    for edge in self.netlist.itervalues():
+        edges.append([base + str(i) for i in tuple(edge)])
 
     for s in subs:
-        graph_sch(s,base + s.id)
+        edges += graph_sch(s,base + s.id)
+    return edges
 
-# Walk down sch, building the graph as we go
-graph_sch(sch)
+
+
+import pydot
+
+edges = graph_sch(sch,base = sch.id)
+
+g = pydot.graph_from_edges(edges)
+
+g.write_png(sys.argv[1])
