@@ -53,8 +53,6 @@ def graph_sch(self,base = Id()):
 
     # Represent the whole component as a subgraph
     g = pydot.Subgraph('"cluster_%s"' % str(base))
-
-    g.style = 'filled'
     g.label = str(base[-1])
 
     # Create a Mrecord Node to hold the pins, if there are any
@@ -72,12 +70,7 @@ def graph_sch(self,base = Id()):
 
 
     # Generate edges from the netlist 
-    for edge in self.netlist.itervalues():
-        edge = tuple(edge)
-        a = edge[0]
-        b = edge[1]
-
-        
+    for edges in self.netlist.itervalues():
         # Pins are being implemented as graphviz ports, so we need to seperate
         # the last part of each Id
         def id_to_node_port(i):
@@ -87,12 +80,30 @@ def graph_sch(self,base = Id()):
 
             return '%s:%s' % (node,port)
 
-        a = id_to_node_port(base + a) 
-        b = id_to_node_port(base + b)
-        #print '%s -> %s' % (a,b)
-        e = pydot.Edge(a,b)
+        edges = list(edges)
 
-        g.add_edge(e) 
+        # The junction is for the case where there are >2 edges, it's the node
+        # all the other nodes connect too.
+        junction = None
+        if len(edges) > 2 and None:
+            # DISABLED: It'd be nice to have a central floating point for this,
+            # but it doesn't seem possible, the point sits on a known subgraph
+            # and looks bad.
+
+            # Make a floating junction node to connect everything too
+            junction = pydot.Node(str(rndId()))
+            junction.shape = 'point'
+            g.add_node(junction)
+            junction = junction.name
+        else:
+            a = edges.pop()
+            junction = id_to_node_port(base + a)
+
+        for e in edges:
+            e = id_to_node_port(base + e)
+            e = pydot.Edge(junction,e)
+
+            g.add_edge(e) 
 
     for s in subs:
         g.add_subgraph(graph_sch(s,base + s.id))
@@ -103,11 +114,9 @@ def graph_sch(self,base = Id()):
 
 
 g = pydot.Dot()
-g.graph_type = 'digraph' # circuits only make sense as undirectional graphs
-g.pack = True
-g.packmode = 'clust'
+g.graph_type = 'graph' # circuits only make sense as undirectional graphs
 
 g.add_subgraph(graph_sch(sch,base = sch.id))
 
 print g.to_string()
-g.write_png(sys.argv[1])
+g.write_svg(sys.argv[1])
