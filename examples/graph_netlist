@@ -82,8 +82,10 @@ def graph_sch(self,base = Id()):
 
         edges = list(edges)
 
-        # The junction is for the case where there are >2 edges, it's the node
-        # all the other nodes connect too.
+        # If there are more than 2 nodes in edges we need to pick a central
+        # junction. The sorted just keeps things hierarchial, although, dot
+        # seems to ignores it and connects things as it wishes.
+        edges = sorted(edges)
         junction = None
         if len(edges) > 2 and None:
             # DISABLED: It'd be nice to have a central floating point for this,
