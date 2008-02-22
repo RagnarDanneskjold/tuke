@@ -85,6 +85,11 @@ class Id(object):
     def __getitem__(self,s):
         e = self.id.__getitem__(s)
 
+        # In the Id[0] case, e is bare, however the following code is assuming
+        # that e is a tuple. Fix.
+        if not isinstance(e,tuple):
+            e = (e,)
+
         # Convert to an Id to return
         return Id('/'.join(e))
 
