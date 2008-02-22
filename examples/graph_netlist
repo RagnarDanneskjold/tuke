@@ -51,21 +51,27 @@ def graph_sch(self,base = Id()):
         elif isinstance(e,Component):
             subs.append(e)
 
-    # Create a pydot Node representing this component and it's pins
-    n = pydot.Node(base)
+    # Represent the whole component as a subgraph
+    g = pydot.Subgraph('"cluster_%s"' % str(base))
 
-    # Add each pin as a port
-    l = '|'.join(
-            ['<%s> %s' % (p.id,p.id) for p in pins])
+    g.style = 'filled'
+    g.label = str(base[-1])
 
-    print base
-    n.label = '{%s|{%s}}' % (base,l) 
-    n.shape = 'Mrecord'
+    # Create a Mrecord Node to hold the pins, if there are any
+    if pins:
+        n = pydot.Node('"%s"' % str(base))
 
-    nodes = [n]
+        # Add each pin as a port
+        l = '|'.join(
+                ['<%s> %s' % (p.id,p.id) for p in pins])
 
-    # Turn netlist entries into edges for pydot
-    edges = []
+        n.label = '%s' % l
+        n.shape = 'record'
+
+        g.add_node(n)
+
+
+    # Generate edges from the netlist 
     for edge in self.netlist.itervalues():
         edge = tuple(edge)
         a = edge[0]
@@ -82,29 +88,26 @@ def graph_sch(self,base = Id()):
             return '%s:%s' % (node,port)
 
         a = id_to_node_port(base + a) 
-        b = id_to_node_port(base + b) 
+        b = id_to_node_port(base + b)
+        #print '%s -> %s' % (a,b)
         e = pydot.Edge(a,b)
 
-        edges.append(e)
+        g.add_edge(e) 
 
     for s in subs:
-        n,e = graph_sch(s,base + s.id)
-        nodes += n
-        edges += e
+        g.add_subgraph(graph_sch(s,base + s.id))
 
-    return (nodes,edges)
+    return g 
 
 
 
-import pydot
-
-(nodes,edges) = graph_sch(sch,base = sch.id)
 
 g = pydot.Dot()
+g.graph_type = 'digraph' # circuits only make sense as undirectional graphs
+g.pack = True
+g.packmode = 'clust'
 
-for n,e in zip(nodes,edges):
-    g.add_node(n)
-    g.add_edge(e)
+g.add_subgraph(graph_sch(sch,base = sch.id))
 
 print g.to_string()
 g.write_png(sys.argv[1])
