@@ -24,7 +24,7 @@ Generates a Netlist graph using pydot
 
 Usage:
 
-graph_netlist foo.png < foo.xml
+graph_netlist < foo.xml > foo.dot
 """
 
 from Tuke import Id,rndId,load_element_from_file
@@ -119,4 +119,3 @@ g.graph_type = 'graph' # circuits only make sense as undirectional graphs
 g.add_subgraph(graph_sch(sch,base = sch.id))
 
 print g.to_string()
-g.write_svg(sys.argv[1])
