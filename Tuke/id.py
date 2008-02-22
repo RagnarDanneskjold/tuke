@@ -88,6 +88,12 @@ class Id(object):
 
         return 'Id(\'%s\')' % s
 
+    def __getitem__(self,s):
+        e = self.id.__getitem__(s)
+
+        # Convert to an Id to return
+        return Id('/'.join(e))
+
     def __hash__(self):
         return hash(self.id)
 
