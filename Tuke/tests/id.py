@@ -124,6 +124,20 @@ class IdTest(TestCase):
         T(a[2:0:-1] == 'c/b') # useless? who knows
         T(a[-2:] == 'c/d')
 
+    def testId__cmp__(self):
+        """Id comparisons"""
+
+        def T(x):
+            self.assert_(x)
+
+        T(Id('a') < Id('b'))
+        T(not Id('a') > Id('b'))
+
+        T(Id('a/b') > Id('b'))
+        T(not Id('a/b') < Id('b'))
+
+        T(Id() < Id('a'))
+
     def testIdInitWithId(self):
         """Id(Id('foo'))"""
 

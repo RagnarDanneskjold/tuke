@@ -77,6 +77,23 @@ class Id(object):
     def __ne__(self,b):
         return not self.__eq__(b)
 
+    def __len__(self):
+        return len(self.id)
+
+    def __cmp__(self,other):
+        """Compare
+
+        This is done in terms of higher or lower in the hierarchy, with equal
+        hierarchies being compared alphabetically."""
+
+        if len(self) == len(other):
+            return cmp(self.id,other.id)
+        else:
+            if len(self) < len(other):
+                return -1
+            else:
+                return 1
+
     def __repr__(self):
         s = str(self)
 
