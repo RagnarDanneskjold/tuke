@@ -17,8 +17,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from Tuke import Id
-from xml.dom.minidom import Document
+from Tuke import Id,Netlist
+from xml.dom.minidom import Document,parse
 
 class Element(object):
     """Base element class.
@@ -109,14 +109,27 @@ class Element(object):
 def load_Element(dom):
     """Loads elements from a saved minidom"""
 
+
     # Since the xml is saved as a tree, and elements depend on their
     # subelements, the load operation must be done in a depth-first recursive
     # manner.
 
     subs = []
     for sub in dom.childNodes:
-        subs.append(load_Element(sub))
+        s = load_Element(sub)
+        if s:
+            subs.append(s)
 
+    # An actual dom from the disk will include a number of node types we don't
+    # need, like text nodes and comment nodes, ignore everything but element
+    # nodes.
+    if dom.nodeType != dom.ELEMENT_NODE:
+        if dom.nodeType == dom.DOCUMENT_NODE:
+            # Ooops, special case here. The dom is wrapped by a
+            # "document_node", which has children that we need to return.
+            assert len(subs) == 1
+            return subs[0]
+        return None 
     
     # De-repr() the element attributes to generate a dict.
     attr = {}
@@ -178,3 +191,11 @@ def save_element_to_file(elem,f):
     doc = Document()
 
     f.write(elem.save(doc).toprettyxml(indent="  "))
+
+def load_element_from_file(f):
+    """Load the element represented by file object f"""
+
+    doc = parse(f)
+
+    e = load_Element(doc)
+    return e

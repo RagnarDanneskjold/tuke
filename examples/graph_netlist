@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # vim: tabstop=4 expandtab shiftwidth=4 fileencoding=utf8
 # ### BOILERPLATE ###
 # Tuke - Electrical Design Automation toolset
@@ -17,6 +18,42 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from id import Id,rndId
-from netlist import Netlist
-from element import Element,load_Element,SingleElement,save_element_to_file,load_element_from_file
+
+"""
+Generates a Netlist graph using pydot
+
+Usage:
+
+graph_netlist < foo.xml > foo.jpg
+"""
+
+from Tuke import Id,rndId,load_element_from_file
+from Tuke.sch import Pin
+import sys
+
+
+sch = load_element_from_file(sys.stdin)
+
+
+def graph_sch(elem,base = Id()):
+    """Recursive grapher
+    
+    elem - element
+    base - Id prefix
+    """
+
+    pins = []
+    subs = []
+    for e in elem.subs:
+        if isinstance(e,Pin):
+            pins.append(e)
+        else:
+            subs.append(e)
+
+    print [p.id for p in pins]
+
+    for s in subs:
+        graph_sch(s,base + s.id)
+
+# Walk down sch, building the graph as we go
+graph_sch(sch)

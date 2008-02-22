@@ -91,8 +91,7 @@ class Component(Element):
                             if p == i:
                                 # Found, return with correct path.
                                 return base + p.id
-                    if hasattr(c,'subs'):
-                        check += add_subs_to_check(base,c.subs)
+                    check += add_subs_to_check(base,c.subs)
 
             # Found nothing.
 
