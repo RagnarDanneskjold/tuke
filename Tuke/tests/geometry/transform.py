@@ -31,6 +31,8 @@ class GeometrytransformTest(TestCase):
         T(a == a)
         T(a == Transformation(v = (1,0)))
         T(a != b)
+        T(not a != a)
+        T(not a != Transformation(v = (1,0)))
 
         T(a.v == (1,0))
 

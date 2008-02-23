@@ -62,6 +62,9 @@ class Transformation:
     def __eq__(self,other):
         return self.v == other.v
 
+    def __ne__(self,other):
+        return not self.__eq__(other)
+
     @repr_helper
     def __repr__(self):
         return (None,{'v':self.v})
