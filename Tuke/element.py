@@ -115,11 +115,11 @@ class Element(object):
             from Tuke.geometry import Transformation
             transform = Transformation()
 
-        if hasattr(self,'transformed'):
-            transform = transform + self.transformed
+        if hasattr(self,'transform'):
+            transform = transform + self.transform
 
         class geometry_wrapper(object):
-            """Class to wrap a Geometry object's id and transformed attrs."""
+            """Class to wrap a Geometry object's id and transform attrs."""
             def __init__(self,base_id,base_transform,obj):
                 self.__base_id = base_id
                 self.__base_transform = base_transform
@@ -128,9 +128,9 @@ class Element(object):
             def __getattr__(self,n):
                 if n == 'id':
                     return self.__base_id + self.__obj.id
-                elif n == 'transformed':
-                    if hasattr(self.__obj,'transformed'):
-                        return self.__base_transform + self.__obj.transformed
+                elif n == 'transform':
+                    if hasattr(self.__obj,'transform'):
+                        return self.__base_transform + self.__obj.transform
                     else:
                         return self.__base_transform
                 else:

@@ -57,7 +57,7 @@ class ElementTest(TestCase):
         from Tuke.geometry import translate,Transformation
         translate(e.chip,v=(1,1))
 
-        [T(elem.transformed == Transformation(v = (1.0, 1.0)))
+        [T(elem.transform == Transformation(v = (1.0, 1.0)))
             for elem in e.iterlayout()]
 
         translate(e.chip.pad,v=(2,3))
@@ -66,7 +66,7 @@ class ElementTest(TestCase):
              Id('base/chip/pad/pad'):Transformation(v = (3.0, 4.0))}
 
         for elem in e.iterlayout():
-            T(r[elem.id] == elem.transformed)
+            T(r[elem.id] == elem.transform)
 
         # Check layer filtering works
         T(set([elem.id for elem in e.iterlayout(layer_mask='top.*')]) ==

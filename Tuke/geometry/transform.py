@@ -23,7 +23,7 @@ Geometry transformations are implemented by decorating every object method that
 returns geometry with an appropriate type of transformation decoration.
 Secondly to transform an object, use an appropriate transformation function.
 
-Behind the scenes objects have a 'transformed' attribute automatically added
+Behind the scenes objects have a 'transform' attribute automatically added
 and updated as needed. The decorators then apply transformations to the
 geometry data before returning it.
 """
@@ -38,7 +38,7 @@ class Transformation:
     """Holder for geometry transformations.
     
     After applying a geometry transformation to a class instance a
-    Transformation instance with the name 'transformed' will be inserted into
+    Transformation instance with the name 'transform' will be inserted into
     the objects dict.
     """
 
@@ -75,10 +75,10 @@ def translate(e,v):
     assert(isinstance(e,Element))
     assert(len(v) == 2)
 
-    if not hasattr(e,'transformed'):
-        e.transformed = Transformation(v = (0,0))
+    if not hasattr(e,'transform'):
+        e.transform = Transformation(v = (0,0))
 
-    e.transformed.v = (e.transformed.v[0] + v[0],
-                       e.transformed.v[1] + v[1])
+    e.transform.v = (e.transform.v[0] + v[0],
+                       e.transform.v[1] + v[1])
 
     return e
