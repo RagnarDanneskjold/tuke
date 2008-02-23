@@ -106,9 +106,10 @@ class Element(object):
      
         # We can't import Tuke.geometry earlier, due to circular imports, hence
         # the weird layer_mask = None type junk.
+        from Tuke.geometry import Layer
         if not layer_mask:
-            from Tuke.geometry import Layer
-            layer_mask = Layer('*')
+            layer_mask = '*'
+        layer_mask = Layer(layer_mask)
 
         if not transform:
             from Tuke.geometry import Transformation

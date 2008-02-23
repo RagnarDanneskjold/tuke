@@ -46,7 +46,7 @@ class ElementTest(TestCase):
 
         e.add(Element(id = 'chip'))
         e.chip.add(Element(id = 'pad'))
-        e.chip.add(Geometry(layer = 'sch',id = 'sym'))
+        e.chip.add(Geometry(layer = 'sch.lines',id = 'sym'))
         e.chip.pad.add(Geometry(layer = 'top.copper',id = 'pad'))
 
         # Check returned objects and Id auto-mangling
@@ -67,6 +67,12 @@ class ElementTest(TestCase):
 
         for elem in e.iterlayout():
             T(r[elem.id] == elem.transformed)
+
+        # Check layer filtering works
+        T(set([elem.id for elem in e.iterlayout(layer_mask='top.*')]) ==
+          set((Id('base/chip/pad'),)))
+        T(set([elem.id for elem in e.iterlayout(layer_mask='sch.*')]) ==
+          set((Id('base/sym'),)))
 
     def testElementIdAttr(self):
         """Auto-magical attribute lookup from sub-element Id's"""
