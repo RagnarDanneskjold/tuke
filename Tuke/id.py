@@ -17,6 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
+from Tuke import repr_helper
 from Tuke.uuid import uuid4
 
 class Id(object):
@@ -68,10 +69,11 @@ class Id(object):
     def __ne__(self,b):
         return not self.__eq__(b)
 
+    @repr_helper
     def __repr__(self):
         s = str(self)
 
-        return 'Id(\'%s\')' % s
+        return ((s,),None) 
 
     def __hash__(self):
         return hash(self.id)

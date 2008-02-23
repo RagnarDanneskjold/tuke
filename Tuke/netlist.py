@@ -18,7 +18,7 @@
 # ### BOILERPLATE ###
 
 from Tuke.id import Id
-
+from Tuke import repr_helper
 
 class Net(set):
     """Helper class for Netlist
@@ -103,6 +103,7 @@ class Netlist(dict):
                 # same net.
                 self[s[0]].add(n)
 
+    @repr_helper
     def __repr__(self):
         # Generate a list of unique Id sets
         #
@@ -113,14 +114,7 @@ class Netlist(dict):
         # Turn into tuples for nice printing
         s = [tuple(v) for v in s]
 
-        r = 'Netlist('
-
-        for v in s:
-            r += repr(v) + ','
-
-        r += 'id=%s)' % repr(self.id)
-
-        return r
+        return (s,{'id':self.id}) 
 
     def __getitem__(self,i):
         """Returns the nets i is connected to, including itself."""
