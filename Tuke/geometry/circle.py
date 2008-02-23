@@ -17,9 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from Tuke import SingleElement,Id
-from Tuke.geometry import transform_render
-import shapely.geometry
+from Tuke.geometry import Geometry
 
 from math import sin,cos,pi
 
@@ -39,27 +37,19 @@ def arc_points(a,b,r,segments):
 
     return t
 
-class Circle(SingleElement):
+class Circle(Geometry):
     """A circle with a specified diameter."""
 
-    def __init__(self,dia,layer=None,id=Id()):
-        SingleElement.__init__(self,id=id)
+    def __init__(self,dia,layer=None,id=''):
+        Geometry.__init__(self,layer=layer,id=id)
 
-        if not layer:
-            raise Exception('Missing layer value')
         if not dia > 0:
-            raise Exception('Diameter must be greater than zero')
+            raise ValueError, 'Diameter must be greater than zero: %d' % dia
 
         self.dia = float(dia)
 
-        self.layer = layer
 
-    @transform_render
     def render(self):
-        v = []
-
         v = arc_points(0,2*pi,self.dia / 2,32)
 
-        p = shapely.geometry.Polygon(v)
-
-        return [(self.id,self.layer,p)]
+        return (v,()) 

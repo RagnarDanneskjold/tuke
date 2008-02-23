@@ -17,19 +17,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from Tuke import SingleElement,Id
-from Tuke.geometry import transform_render
+from Tuke.geometry import Geometry
 
-class Hole(SingleElement):
+class Hole(Geometry):
 
-    def __init__(self,dia,id=Id()):
-        SingleElement.__init__(self,id=id)
+    def __init__(self,dia,id='',layer='pcb.*.drill'):
+        Geometry.__init__(self,layer=layer,id=id)
 
         if not dia > 0:
-            raise Exception('Hole diameter must be greater than zero')
+            raise ValueError, 'Hole diameter must be greater than zero: %d' % dia
 
         self.dia = dia
-
-    @transform_render
-    def render(self):
-        return [(self.id,'*.drill',self)]

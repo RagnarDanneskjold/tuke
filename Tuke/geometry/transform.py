@@ -69,33 +69,6 @@ class Transformation:
     def __repr__(self):
         return (None,{'v':self.v})
 
-def transform_render(fn):
-    """Element.render() geometry transformation decorator"""
-    def f(self):
-        geo = fn(self)
-
-        if not hasattr(self,'transformed'):
-            return geo
-
-        v = geo.transformed.v
-
-        gnew = []
-        for i,l,s in geo:
-            # some shape-specific knowledge
-            coords = []
-            if isinstance(s,shapely.geometry.Polygon):
-                for x,y in s.exterior.coords:
-                    coords += [(x + v[0],y + v[1])]
-
-                # make a new polygon
-                s = shapely.geometry.Polygon(coords)
-
-            gnew += [(i,l,s)]
-
-        return gnew
-
-    return f
-
 def translate(e,v):
     """Translate element by vertex"""
 

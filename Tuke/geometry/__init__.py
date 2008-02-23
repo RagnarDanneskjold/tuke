@@ -20,7 +20,7 @@
 
 # Ordering is important for these three
 from layer import Layer
-from transform import Transformation,transform_render,translate
+from transform import Transformation,translate
 from geometry import Geometry
 
 # Not so much here.

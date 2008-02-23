@@ -17,10 +17,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from Tuke import SingleElement,Id
-import shapely.geometry
+from Tuke.geometry import Geometry
 
-from Tuke.geometry import transform_render
 from Tuke.geometry.circle import arc_points 
 from math import atan2,pi,degrees
 
@@ -44,29 +42,23 @@ def make_line_vertexes(a,b,thickness,segments):
 
     return arc_a + arc_b
 
-class Line(SingleElement):
+class Line(Geometry):
     """A line with a specified thickness."""
 
-    def __init__(self,a,b,thickness,layer=None,id=Id()):
-        SingleElement.__init__(self,id=id)
+    def __init__(self,a,b,thickness,layer='',id=''):
+        Geometry.__init__(self,layer=layer,id=id)
 
-        if not layer:
-            raise Exception('Missing layer value')
         if not thickness > 0:
-            raise Exception('Thickness must be greater than zero')
+            raise ValueError, 'Thickness must be greater than zero: %d' % thickness
 
         self.a = a
         self.b = b
         self.thickness = thickness
-        self.layer = layer
 
-    @transform_render
     def render(self):
-        p = make_line_vertexes(self.a,self.b,self.thickness,16)
+        v = make_line_vertexes(self.a,self.b,self.thickness,16)
 
-        p = shapely.geometry.Polygon(p)
-
-        return [(self.id,self.layer,p)]
+        return (v,())
 
 class ThinLine(Line):
     """A line who's thickness is a multiple of the minimum resolution on the output device."""

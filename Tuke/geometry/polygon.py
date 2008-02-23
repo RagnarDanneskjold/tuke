@@ -17,37 +17,31 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from Tuke import SingleElement,Id
-import shapely.geometry
+from Tuke.geometry import Geometry,Transformation 
 
-class Polygon(SingleElement,shapely.geometry.Polygon):
+class Polygon(Geometry):
+    """A polygon"""
+    
+    def __init__(self,*args,**kwargs):
+        """Polygon(external-coords,[internal-coords],layer='',id='')
 
-    def __getstate__(self):
-        ext = tuple(self.exterior.coords)
-        int = ()
-        return {'id':self.id,
-                'layer':self.layer,
-                'exterior-coords':ext,
-                'interior-coords':int}
+        external_coords - ((x,y),(x,y),...)
+        internal_coords - (
+                           ((x,y),(x,y),...)
+                           ((x,y),(x,y),...))
+        """
 
-    def __setstate__(self,attr):
-        self.__init__(attr['exterior-coords'],layer=attr['layer'],id=attr['id'])
+        Geometry.__init__(self,
+                layer=kwargs.setdefault('layer',''),
+                id=kwargs.setdefault('id',''))
 
-    def __init__(*args,**kwargs):
-        self = args[0]
+        assert(0 < len(args) < 3)
 
-        if not kwargs.has_key('id'):
-            kwargs['id'] = Id()
-
-        SingleElement.__init__(self,id=kwargs['id'])
-
-        shapely.geometry.Polygon.__init__(*args)
-
-
-        if not kwargs.has_key('layer'):
-            raise Exception('Missing layer value') 
-
-        self.layer = kwargs['layer']
+        self.external_coords = args[0]
+        if len(args) == 2:
+            self.internal_coords = args[1]
+        else:
+            self.internal_coords = ()
 
     def render(self):
-        return [(self.id,self.layer,self)]
+        return (self.external_coords,self.internal_coords)
