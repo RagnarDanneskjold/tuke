@@ -23,6 +23,7 @@ from Tuke.tests.meta import *
 from Tuke.tests.element import *
 from Tuke.tests.id import *
 from Tuke.tests.netlist import *
+from Tuke.tests.repr_helper import *
 
 from Tuke.tests.geda.footprint import *
 
