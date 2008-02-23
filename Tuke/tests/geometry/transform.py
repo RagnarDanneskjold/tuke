@@ -8,35 +8,18 @@
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
 # PURPOSE.
 
-from unittest import TestCase
+import os
+import shutil
 
 import Tuke.tests.common
 
+from unittest import TestCase
 
-import Tuke
 from Tuke import Id
-from Tuke.geometry import translate,Hole,Polygon,Transformation
+from Tuke.geometry import translate,Hole,Polygon
 
 class GeometrytransformTest(TestCase):
     """Perform tests of the geometry.transform"""
-
-    def testGeometryTransformation(self):
-        """Transformation class"""
-        def T(x):
-            self.assert_(x)
-
-        a = Transformation(v = (1,0))
-        b = Transformation(v = (2,3))
-
-        T(a == a)
-        T(a == Transformation(v = (1,0)))
-        T(a != b)
-        T(not a != a)
-        T(not a != Transformation(v = (1,0)))
-
-        T(a.v == (1,0))
-
-        T(a + b == Transformation(v = (3,3)))
 
     def testGeometrytranslate(self):
         """translate()"""
