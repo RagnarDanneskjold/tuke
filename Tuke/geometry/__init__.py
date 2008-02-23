@@ -22,5 +22,6 @@ from transform import Transformation,transform_render,translate
 
 from circle import Circle
 from hole import Hole
+from layer import Layer
 from line import Line,ThinLine
 from polygon import Polygon

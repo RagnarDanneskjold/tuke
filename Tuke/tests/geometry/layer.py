@@ -11,14 +11,14 @@
 import os
 import shutil
 
-import common
+import Tuke.tests.common
 
 from unittest import TestCase
 import Tuke
-from Tuke import Layer
+from Tuke.geometry import Layer
 
-class LayerTest(TestCase):
-    """Perform tests of the Layer module"""
+class geometryLayerTest(TestCase):
+    """Perform tests of the geometry.Layer module"""
 
     def testLayerInLayer(self):
         """Layer in operator"""
@@ -32,10 +32,6 @@ class LayerTest(TestCase):
         T(not Layer('foo.bar') in Layer('foo'))
         T(Layer('foo.bar') in Layer('foo.*'))
         T(Layer('*.foo') in Layer('bar.*'))
-        T(not Layer('*.foo.*') in Layer('*.bar.*'))
-        T(not Layer('foo.*') in Layer('bar.foo.*'))
-        T(not Layer('foo.*') in Layer('bar.*'))
-        T(not Layer('foo.bar.*') in Layer('foo'))
         T(not Layer('*.foo') in Layer('goo.bar.foo'))
         T(eval(repr(Layer('*.foo.*'))) == Layer('*.foo.*'))
 

@@ -64,14 +64,10 @@ class Layer(str):
         other = other.split('.')
 
         # Special case first, if self and other are of a different length, last
-        # entry of the shorter must be * for contains to be true. The zip()
+        # entry of one of them must be * for contains to be true. The zip()
         # won't catch that due to it's truncated behavior.
         if len(self) != len(other):
-            if len(self) < len(other):
-                shorter = self
-            else:
-                shorter = other
-            if '*' not in shorter[-1]:
+            if '*' not in (self[-1],other[-1]):
                 return False
 
         for (a,b) in zip(self,other):
