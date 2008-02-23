@@ -54,6 +54,7 @@ class GeometrytransformTest(TestCase):
 
         T(Transformation(v = (1,0))(()) == ())
         T(Transformation(v = (1,0))([]) == [])
+        T(Transformation(v = (1,0))([(),()]) == [(),()])
 
     def testGeometrytranslate(self):
         """translate()"""
