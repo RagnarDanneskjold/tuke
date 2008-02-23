@@ -50,7 +50,10 @@ class GeometrytransformTest(TestCase):
         T(Transformation(v = (10,10)) \
             (((0,1),((3,4),(5,6)))) == (((10,11),((13,14),(15,16)))))
         T(Transformation(v = (10,10)) \
-            (((0,1),[(3,4),(5,6)])) == (((10,11),[(13,14),(15,16)])))
+            (((0,1),[],[(3,4),(5,6)])) == (((10,11),[],[(13,14),(15,16)])))
+
+        T(Transformation(v = (1,0))(()) == ())
+        T(Transformation(v = (1,0))([]) == [])
 
     def testGeometrytranslate(self):
         """translate()"""
