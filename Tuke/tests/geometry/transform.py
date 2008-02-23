@@ -16,18 +16,18 @@ import Tuke.tests.common
 from unittest import TestCase
 
 from Tuke import Id
-from Tuke.geometry import Translate,Hole,Polygon
+from Tuke.geometry import translate,Hole,Polygon
 
-class GeometryTranslateTest(TestCase):
-    """Perform tests of the geometry.Translate class"""
+class GeometrytransformTest(TestCase):
+    """Perform tests of the geometry.transform"""
 
-    def testGeometryTranslate(self):
-        """Basic tests"""
+    def testGeometrytranslate(self):
+        """translate()"""
 
         a = Polygon(((0,0),(1,1),(1,0)),layer='front.solder')
         b = Hole(1)
 
-        x = Translate(a,(1,1))
-        y = Translate(b,(1,1))
+        x = translate(a,(1,1))
+        y = translate(b,(1,1))
 
-        z = Translate(x,(-1,-1))
+        z = translate(x,(-1,-1))

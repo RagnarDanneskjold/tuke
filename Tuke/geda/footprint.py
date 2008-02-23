@@ -19,7 +19,7 @@
 
 from Tuke.units import *
 from Tuke import Element,Id
-from Tuke.geometry import Translate
+from Tuke.geometry import translate
 from Tuke.pcb.footprint import Pin,Pad
 
 import re
@@ -32,7 +32,7 @@ class Footprint(Element):
 
         f = open(file,"r")
 
-        translate = None
+        translate_func = None
 
         for l in f:
             l = l.strip()
@@ -62,7 +62,7 @@ class Footprint(Element):
                     text_y *= source_units
 
                     # Setup translation function
-                    translate = lambda x: Translate(x,(mark_x,mark_y))
+                    translate_func = lambda x: translate(x,(mark_x,mark_y))
 
                 elif tag[0] == 'Pin':
                     (x,y,thickness,clearance,mask,dia,name,pin_number,flags) = v
@@ -86,9 +86,9 @@ class Footprint(Element):
                     pin_number = Id(pin_number[1:-1]) # remove quotes
 
                     p = Pin(dia,thickness,clearance,mask,id=pin_number)
-                    p = Translate(p,(x,y))
+                    p = translate(p,(x,y))
 
-                    self.add(translate(p))
+                    self.add(translate_func(p))
 
                 elif tag[0] == 'Pad':
                     (x1,y1,x2,y2,thickness,clearance,mask,name,pad_number,flags) = v
@@ -110,4 +110,4 @@ class Footprint(Element):
 
                     p = Pad((x1,y1),(x2,y2),thickness,clearance,mask,id=pad_number)
 
-                    self.add(translate(p))
+                    self.add(translate_func(p))

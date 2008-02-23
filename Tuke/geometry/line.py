@@ -20,6 +20,7 @@
 from Tuke import SingleElement,Id
 import shapely.geometry
 
+from Tuke.geometry import transform_render
 from Tuke.geometry.circle import arc_points 
 from math import atan2,pi,degrees
 
@@ -59,6 +60,7 @@ class Line(SingleElement):
         self.thickness = thickness
         self.layer = layer
 
+    @transform_render
     def render(self):
         p = make_line_vertexes(self.a,self.b,self.thickness,16)
 

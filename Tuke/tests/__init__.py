@@ -31,7 +31,7 @@ from Tuke.tests.geometry.circle import *
 from Tuke.tests.geometry.hole import *
 from Tuke.tests.geometry.line import *
 from Tuke.tests.geometry.polygon import *
-from Tuke.tests.geometry.translate import *
+from Tuke.tests.geometry.transform import *
 
 from Tuke.tests.pcb.footprint.pad import *
 from Tuke.tests.pcb.footprint.pin import *

@@ -18,6 +18,7 @@
 # ### BOILERPLATE ###
 
 from Tuke import SingleElement,Id
+from Tuke.geometry import transform_render
 import shapely.geometry
 
 from math import sin,cos,pi
@@ -52,7 +53,8 @@ class Circle(SingleElement):
         self.dia = float(dia)
 
         self.layer = layer
-        
+
+    @transform_render
     def render(self):
         v = []
 

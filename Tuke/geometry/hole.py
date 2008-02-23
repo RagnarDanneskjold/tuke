@@ -18,6 +18,7 @@
 # ### BOILERPLATE ###
 
 from Tuke import SingleElement,Id
+from Tuke.geometry import transform_render
 
 class Hole(SingleElement):
 
@@ -29,5 +30,6 @@ class Hole(SingleElement):
 
         self.dia = dia
 
+    @transform_render
     def render(self):
         return [(self.id,'*.drill',self)]

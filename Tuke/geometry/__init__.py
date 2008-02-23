@@ -17,8 +17,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
+# must be first, lots of stuff depends on this
+from transform import Transformation,transform_render,translate
+
 from circle import Circle
 from hole import Hole
 from line import Line,ThinLine
 from polygon import Polygon
-from translate import Translate
