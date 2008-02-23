@@ -56,6 +56,14 @@ class GeometrytransformTest(TestCase):
         T(Transformation(v = (1,0))([]) == [])
         T(Transformation(v = (1,0))([(),()]) == [(),()])
 
+        def T(i):
+            self.assertRaises(TypeError,lambda x: Transformation()(x),i)
+        T('asdf')
+        T(None)
+        T((None,))
+        T((1,2,3))
+        T(((1,1),((3,4),(),(lambda x: x,1))))
+
     def testGeometrytranslate(self):
         """translate()"""
 

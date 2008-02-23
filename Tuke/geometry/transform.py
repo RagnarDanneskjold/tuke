@@ -56,12 +56,28 @@ class Transformation:
         """
 
         try:
+            if isinstance(v,str):
+                raise TypeError
+
             r = []
             for n in v:
                r.append(self(n))
             return type(v)(r)
         except TypeError:
-            return (self.v[0] + v[0],self.v[1] + v[1])
+            try:
+                assert len(v) == 2
+                return (self.v[0] + v[0],self.v[1] + v[1])
+            except:
+                # This bit is really clever... You'd think that the resulting
+                # error message would be for the inner most tuple right? But it
+                # doesn't work that way, as the TypeError propegates to the
+                # next outer call, and the next, and the next, each time
+                # running into the following raise, until finally it gets
+                # re-raised no more, this time with the full error message!
+                #
+                # That said, this occured completely by accident, and I only
+                # noticed it had the correct behavior during testing.
+                raise TypeError, 'Invalid geometry: %s' % repr(v)
 
     def __add__(self,other):
         """Apply the effects of other to self and return a transformation
