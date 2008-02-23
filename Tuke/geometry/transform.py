@@ -32,6 +32,7 @@ from Tuke import repr_helper
 from Tuke import Element,Id
 
 import shapely.geometry
+import numpy
 
 class Transformation:
     """Holder for geometry transformations.
@@ -41,12 +42,25 @@ class Transformation:
     the objects dict.
     """
 
-    def __init__(self,v = None):
+    def __init__(self,v = (0.0,0.0)):
         """Create geometry transformation.
 
         v - Translation vector.
         """
         self.v = v
+
+    def __add__(self,other):
+        """Apply the effects of other to self and return a transformation
+        encompassing both."""
+
+        r = Transformation()
+
+        r.v = (self.v[0] + other.v[0],self.v[1] + other.v[1])
+
+        return r
+
+    def __eq__(self,other):
+        return self.v == other.v
 
     @repr_helper
     def __repr__(self):
