@@ -49,6 +49,20 @@ class Transformation:
         """
         self.v = v
 
+    def __call__(self,v):
+        """Apply the Transformation to v
+
+        v may be a bare tuple, or tuple/list of tuples, or any other combo.
+        """
+
+        try:
+            r = []
+            for n in v:
+               r.append(self(n))
+            return type(v)(r)
+        except TypeError:
+            return (self.v[0] + v[0],self.v[1] + v[1])
+
     def __add__(self,other):
         """Apply the effects of other to self and return a transformation
         encompassing both."""

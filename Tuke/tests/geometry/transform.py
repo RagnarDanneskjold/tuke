@@ -38,6 +38,20 @@ class GeometrytransformTest(TestCase):
 
         T(a + b == Transformation(v = (3,3)))
 
+    def testGeometryTransformationCallable(self):
+        """Transformation class objects are callable"""
+        def T(x):
+            self.assert_(x)
+
+        T(Transformation(v = (1,0))((0,0)) == (1,0))
+        T(Transformation(v = (1,0))((0,1)) == (1,1))
+
+        T(Transformation(v = (1,0))(((0,1),(3,4))) == ((1,1),(4,4)))
+        T(Transformation(v = (10,10)) \
+            (((0,1),((3,4),(5,6)))) == (((10,11),((13,14),(15,16)))))
+        T(Transformation(v = (10,10)) \
+            (((0,1),[(3,4),(5,6)])) == (((10,11),[(13,14),(15,16)])))
+
     def testGeometrytranslate(self):
         """translate()"""
 
