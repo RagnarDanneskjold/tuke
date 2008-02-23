@@ -17,6 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
+import Tuke
 from Tuke import Id,Netlist
 from xml.dom.minidom import Document,parse
 
