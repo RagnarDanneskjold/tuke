@@ -34,6 +34,40 @@ class ElementTest(TestCase):
 
         self.assert_(set(a.subs) == j)
 
+    def testElementIterlayout(self):
+        """Element.iterlayout()"""
+
+        def T(x):
+            self.assert_(x)
+
+        from Tuke.geometry import Geometry
+
+        e = Element(id='base')
+
+        e.add(Element(id = 'chip'))
+        e.chip.add(Element(id = 'pad'))
+        e.chip.add(Geometry(layer = 'sch',id = 'sym'))
+        e.chip.pad.add(Geometry(layer = 'top.copper',id = 'pad'))
+
+        # Check returned objects and Id auto-mangling
+        T(set([elem.id for elem in e.iterlayout()]) ==
+          set((Id('base/chip/pad'), Id('base/sym'))))
+
+        # Check that transforms are working
+        from Tuke.geometry import translate,Transformation
+        translate(e.chip,v=(1,1))
+
+        [T(elem.transformed == Transformation(v = (1.0, 1.0)))
+            for elem in e.iterlayout()]
+
+        translate(e.chip.pad,v=(2,3))
+
+        r = {Id('base/sym'):Transformation(v = (1.0, 1.0)),
+             Id('base/chip/pad'):Transformation(v = (3.0, 4.0))}
+
+        for elem in e.iterlayout():
+            T(r[elem.id] == elem.transformed)
+
     def testElementIdAttr(self):
         """Auto-magical attribute lookup from sub-element Id's"""
 

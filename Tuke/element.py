@@ -28,8 +28,6 @@ class Element(object):
     This applies equally to things in schematic view and layout view. What is
     common to elements is as follows:
         
-    They can be "rendered" into a graphical representation.
-
     They can be loaded and saved to disk.
 
     They have an immutable Id()
@@ -98,14 +96,55 @@ class Element(object):
         """Returns an XML minidom object representing the Element"""
         return self._save(doc,getattr(self,'subs',[]))
 
-    def render(self):
-        geo = []
+
+    def iterlayout(self,layer_mask = None,base_id = Id(), transform = None):
+        """Iterate through layout.
+
+        Layout iteration is done depth first filtering the results with the
+        layer_mask. All geometry transforms are handled transparently.
+        """
+     
+        # We can't import Tuke.geometry earlier, due to circular imports, hence
+        # the weird layer_mask = None type junk.
+        if not layer_mask:
+            from Tuke.geometry import Layer
+            layer_mask = Layer('*')
+
+        if not transform:
+            from Tuke.geometry import Transformation
+            transform = Transformation()
+
+        if hasattr(self,'transformed'):
+            transform = transform + self.transformed
+
+        class geometry_wrapper(object):
+            """Class to wrap a Geometry object's id and transformed attrs."""
+            def __init__(self,base_id,base_transform,obj):
+                self.__base_id = base_id
+                self.__base_transform = base_transform
+                self.__obj = obj
+
+            def __getattr__(self,n):
+                if n == 'id':
+                    return self.__base_id + self.__obj.id
+                elif n == 'transformed':
+                    if hasattr(self.__obj,'transformed'):
+                        return self.__base_transform + self.__obj.transformed
+                    else:
+                        return self.__base_transform
+                else:
+                    return getattr(self.__obj,n)
 
         for s in self.subs:
-            for i,l,s in s.render():
-                geo += [(self.id + i,l,s)]
-
-        return geo
+            from Tuke.geometry import Geometry
+            if isinstance(s,Geometry):
+                if s.layer in layer_mask:
+                    yield geometry_wrapper(base_id,transform,s)
+            else:
+                for l in s.iterlayout(layer_mask,
+                        base_id = base_id + self.id,
+                        transform = transform):
+                    yield l
 
 def load_Element(dom):
     """Loads elements from a saved minidom"""

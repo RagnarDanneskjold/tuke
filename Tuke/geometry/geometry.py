@@ -17,14 +17,25 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
+from Tuke import SingleElement,Id
 
-# Ordering is important for these three
-from layer import Layer
-from transform import Transformation,transform_render,translate
-from geometry import Geometry
+from Tuke.geometry import Layer
 
-# Not so much here.
-from circle import Circle
-from hole import Hole
-from line import Line,ThinLine
-from polygon import Polygon
+class Geometry(SingleElement):
+    """Base geometry class.
+
+    Geometry elements define layout data such as polygons, lines and holes. All
+    geometry elements have a layer attribute defining what layer(s) they belong
+    too. That a object isinstance Geometry does not define how to retrieve the
+    actual geometry data. That is type dependent and requires special casing by
+    the renderer.
+
+    See the Polygon and Hole classes for more info.
+    """
+
+    def __init__(self,layer = '*',id = ''):
+        SingleElement.__init__(self,id = id)
+        self.layer = Layer(layer)
+
+    def render(self):
+        assert False
