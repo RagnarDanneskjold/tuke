@@ -136,6 +136,7 @@ class Element(object):
                 else:
                     return getattr(self.__obj,n)
 
+        base_id = base_id + self.id
         for s in self.subs:
             from Tuke.geometry import Geometry
             if isinstance(s,Geometry):
@@ -143,7 +144,7 @@ class Element(object):
                     yield geometry_wrapper(base_id,transform,s)
             else:
                 for l in s.iterlayout(layer_mask,
-                        base_id = base_id + self.id,
+                        base_id = base_id,
                         transform = transform):
                     yield l
 

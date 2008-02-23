@@ -51,7 +51,7 @@ class ElementTest(TestCase):
 
         # Check returned objects and Id auto-mangling
         T(set([elem.id for elem in e.iterlayout()]) ==
-          set((Id('base/chip/pad'), Id('base/sym'))))
+          set((Id('base/chip/pad/pad'), Id('base/chip/sym'))))
 
         # Check that transforms are working
         from Tuke.geometry import translate,Transformation
@@ -62,17 +62,17 @@ class ElementTest(TestCase):
 
         translate(e.chip.pad,v=(2,3))
 
-        r = {Id('base/sym'):Transformation(v = (1.0, 1.0)),
-             Id('base/chip/pad'):Transformation(v = (3.0, 4.0))}
+        r = {Id('base/chip/sym'):Transformation(v = (1.0, 1.0)),
+             Id('base/chip/pad/pad'):Transformation(v = (3.0, 4.0))}
 
         for elem in e.iterlayout():
             T(r[elem.id] == elem.transformed)
 
         # Check layer filtering works
         T(set([elem.id for elem in e.iterlayout(layer_mask='top.*')]) ==
-          set((Id('base/chip/pad'),)))
+          set((Id('base/chip/pad/pad'),)))
         T(set([elem.id for elem in e.iterlayout(layer_mask='sch.*')]) ==
-          set((Id('base/sym'),)))
+          set((Id('base/chip/sym'),)))
 
     def testElementIdAttr(self):
         """Auto-magical attribute lookup from sub-element Id's"""
