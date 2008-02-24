@@ -32,6 +32,10 @@ class LayerTest(TestCase):
         T(not Layer('foo.bar') in Layer('foo'))
         T(Layer('foo.bar') in Layer('foo.*'))
         T(Layer('*.foo') in Layer('bar.*'))
+        T(not Layer('*.foo.*') in Layer('*.bar.*'))
+        T(not Layer('foo.*') in Layer('bar.foo.*'))
+        T(not Layer('foo.*') in Layer('bar.*'))
+        T(not Layer('foo.bar.*') in Layer('foo'))
         T(not Layer('*.foo') in Layer('goo.bar.foo'))
         T(eval(repr(Layer('*.foo.*'))) == Layer('*.foo.*'))
 
