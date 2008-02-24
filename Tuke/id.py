@@ -18,7 +18,6 @@
 # ### BOILERPLATE ###
 
 from Tuke import repr_helper
-from Tuke.uuid import uuid4
 
 class Id(object):
     """Element identifiers.
@@ -31,6 +30,11 @@ class Id(object):
     __slots__ = ('id')
 
     def __init__(self,s = '.'):
+        """Create a new Id from s
+
+        s may be a string or another Id
+        """
+
         if isinstance(s,Id):
             s = str(s)
 
@@ -40,6 +44,19 @@ class Id(object):
         self.id = s.split('/')
 
         self.normalize()
+
+    def random(cls,bits = 64):
+        """Create a random Id
+        
+        bits - bits of randomness
+        """
+
+        import random
+        
+        s = hex(random.randint(0,2 ** bits))[2:-1].zfill(bits / 4).lower()
+
+        return cls(s) 
+    random = classmethod(random)
 
     def normalize(self):
         id = []
@@ -54,6 +71,9 @@ class Id(object):
                 id.append(i)
 
             prev = i
+
+        if not id:
+            id = ['.']
 
         self.id = tuple(id)
 
@@ -73,7 +93,7 @@ class Id(object):
         if self.id:
             return reduce(lambda a,b: a + '/' + b,self.id)
         else:
-            return '.'
+            return ''
 
     def __eq__(self,b):
         return str(self) == str(b)
@@ -119,8 +139,5 @@ class Id(object):
         return hash(self.id)
 
 def rndId():
-    """Returns a randomized element Id
-
-    Internally simply generates a UUID to insure uniqueness."""
-
-    return Id(str(uuid4()))
+    """Alias for Id.random()"""
+    return Id.random()
