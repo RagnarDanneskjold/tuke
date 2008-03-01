@@ -34,6 +34,11 @@ class IdTest(TestCase):
         self.assert_(str(Id('foo/./')) == 'foo')
         self.assert_(str(Id('foo/././')) == 'foo')
 
+        self.assert_(str(Id('foo/../')) == '.')
+        self.assert_(str(Id('foo/../../')) == '..')
+        self.assert_(str(Id('foo/../../bar')) == '../bar')
+        self.assert_(str(Id('foo/.././../bar')) == '../bar')
+
         self.assert_(str(Id('./foo')) == 'foo')
         self.assert_(str(Id('././foo')) == 'foo')
         self.assert_(str(Id('./././foo')) == 'foo')

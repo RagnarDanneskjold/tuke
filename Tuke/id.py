@@ -61,16 +61,16 @@ class Id(object):
     def normalize(self):
         id = []
 
-        prev = None
         for i in self.id:
-            if i == '..' and prev not in ('..',None):
-                id.pop()
+            if i == '..':
+                if id and id[-1] != '..':
+                    id.pop()
+                else:
+                    id.append(i)
             elif i in ('.',''):
-                continue # to avoid setting prev
+                continue
             else:
                 id.append(i)
-
-            prev = i
 
         if not id:
             id = ['.']
