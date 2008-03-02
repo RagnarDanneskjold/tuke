@@ -19,6 +19,7 @@
 
 
 # Ordering is important for these three
+from v import V
 from layer import Layer
 from transform import Transformation,translate
 from geometry import Geometry

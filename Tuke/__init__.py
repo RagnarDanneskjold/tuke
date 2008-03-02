@@ -22,4 +22,3 @@ from repr_helper import repr_helper
 from id import Id,rndId
 from netlist import Netlist
 from element import Element,load_Element,SingleElement,save_element_to_file,load_element_from_file
-from v import V

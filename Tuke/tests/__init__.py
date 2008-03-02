@@ -24,7 +24,6 @@ from Tuke.tests.element import *
 from Tuke.tests.id import *
 from Tuke.tests.netlist import *
 from Tuke.tests.repr_helper import *
-from Tuke.tests.v import *
 
 from Tuke.tests.geda.footprint import *
 
@@ -34,6 +33,7 @@ from Tuke.tests.geometry.layer import *
 from Tuke.tests.geometry.line import *
 from Tuke.tests.geometry.polygon import *
 from Tuke.tests.geometry.transform import *
+from Tuke.tests.geometry.v import *
 
 from Tuke.tests.pcb.footprint.pad import *
 from Tuke.tests.pcb.footprint.pin import *

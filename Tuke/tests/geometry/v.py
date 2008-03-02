@@ -10,7 +10,7 @@
 
 from unittest import TestCase
 import Tuke
-from Tuke import V 
+from Tuke.geometry import V 
 
 from numpy import matrix
 
