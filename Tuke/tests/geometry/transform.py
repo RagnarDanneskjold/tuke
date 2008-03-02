@@ -68,7 +68,7 @@ class GeometrytransformTest(TestCase):
         T(((1,1),((3,4),(),(lambda x: x,1))))
 
     def testGeometrytranslate(self):
-        """translate, rotate, rotate_about_center, scale"""
+        """translate, rotate, rotate_around_center, scale"""
 
         def T(a,b,f,*args,**kwargs):
             """Element transform function test harness.
