@@ -16,3 +16,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
+
+from Tuke import Element
+
+class Footprint(Element):
+    """Defines a Footprint.
+  
+    A footprint is the holder for the geometry data comprising a pcb footprint.
+    Footprints contain any number of geometry elements, from simple
+    constructions such as lines to more complex constructions such as Pins and
+    Pads. Electrical connectivity is defined by the netlist, the footprint
+    itself will have sub-elements who's Id's are referenced in the netlist.
+    """
+    pass

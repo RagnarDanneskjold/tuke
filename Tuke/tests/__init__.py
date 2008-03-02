@@ -35,8 +35,8 @@ from Tuke.tests.geometry.polygon import *
 from Tuke.tests.geometry.transform import *
 from Tuke.tests.geometry.v import *
 
-from Tuke.tests.pcb.footprint.pad import *
-from Tuke.tests.pcb.footprint.pin import *
+from Tuke.tests.pcb.pad import *
+from Tuke.tests.pcb.pin import *
 
 from Tuke.tests.sch.component import *
 

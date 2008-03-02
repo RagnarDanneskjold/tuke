@@ -96,7 +96,7 @@ class ElementTest(TestCase):
         a = Element()
 
         from Tuke.geometry import Circle,Hole,Line
-        from Tuke.pcb.footprint import Pin,Pad
+        from Tuke.pcb import Pin,Pad
 
 #        a.add(Element(Id('asdf')))
 #        a.add(Circle(1,'foo',id=rndId()))

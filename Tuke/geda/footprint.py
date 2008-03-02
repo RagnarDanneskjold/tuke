@@ -20,11 +20,12 @@
 from Tuke.units import *
 from Tuke import Element,Id
 from Tuke.geometry import V,translate
-from Tuke.pcb.footprint import Pin,Pad
+from Tuke.pcb import Pin,Pad
+import Tuke.pcb.footprint
 
 import re
 
-class Footprint(Element):
+class Footprint(Tuke.pcb.footprint.Footprint):
     """Wrapper for gEDA/PCB footprints"""
 
     def __init__(self,file,id=Id()):

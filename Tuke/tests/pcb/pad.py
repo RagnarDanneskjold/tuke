@@ -16,12 +16,12 @@ import Tuke.tests.common
 from unittest import TestCase
 
 from Tuke import Id
-from Tuke.pcb.footprint import Pin 
+from Tuke.pcb import Pad 
 
-class PcbFootprintPinTest(TestCase):
-    """Perform tests of the pcb.footprint.Pin class"""
+class PcbFootprintPadTest(TestCase):
+    """Perform tests of the pcb.footprint.Pad class"""
 
-    def testPcbFootprintPin(self):
+    def testPcbFootprintPad(self):
         """Basic tests"""
 
-        a = Pin(1,1,1,1,id=Id('1'))
+        a = Pad((0,0),(1,1),0.5,0.2,0.6)

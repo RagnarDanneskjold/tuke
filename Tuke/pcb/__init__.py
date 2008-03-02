@@ -16,3 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
+
+from footprint import Footprint
+from pad import Pad
+from pin import Pin
+#from two_hole import TwoHole
