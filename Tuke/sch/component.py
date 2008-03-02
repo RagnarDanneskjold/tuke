@@ -82,17 +82,28 @@ class Component(Element):
                 def add_subs_to_check(base,subs):
                     return [(base + s.id,s) for s in subs]
 
+                # This bit here sucks up a lot of cpu time if not written
+                # carefully. First of all most link operations will find their
+                # targets in shallow ids, rather than deep references, so use a
+                # a breadth-first search is performed. Secondly only Components
+                # are searched, sub elements that aren't a Component subclass
+                # are ignored. Only Components have pins, and also importantly
+                # Components have Footprints, which have *many* sub-elements
+                # due to their geometry.
+
+                from collections import deque
+
                 # Depth first search, storing unchecked components in check
-                check = add_subs_to_check(Id('.'),self.subs) 
+                check = deque(add_subs_to_check(Id('.'),self.subs))
                 while check:
-                    base,c = check.pop()
+                    base,c = check.popleft()
                     if isinstance(c,Component):
                         for p in c:
                             if p == i:
                                 # Found, return with correct path.
                                 return base + p.id
-                    if hasattr(c,'subs'):
-                        check += add_subs_to_check(base,c.subs)
+
+                        check.extend(add_subs_to_check(base,c.subs))
 
             # Found nothing.
 
