@@ -56,7 +56,7 @@ class V(matrix):
         if self.shape != (1,2):
             raise self._odd_shape_error
 
-        x = int(self[0:,0])
-        y = int(self[0:,1])
+        x = self[0,0]
+        y = self[0,1]
         return (((x,y)),{})
 

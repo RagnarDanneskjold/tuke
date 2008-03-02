@@ -23,10 +23,10 @@ class VTest(TestCase):
         def T(x):
             self.assert_(x)
 
-        v = V(5,6)
-        T((v == V(5,6)).all())
+        v = V(5,6.6)
+        T((v == V(5,6.6)).all())
 
-        T((v + v == V(10,12)).all())
+        T((v + v == V(10,13.2)).all())
 
     def testVrepr(self):
         """repr(V)"""
@@ -39,7 +39,7 @@ class VTest(TestCase):
         T(V(0,0))
         T(V(1,2))
         T(V(1.0,2))
-        T(V(1.0,2))
+        T(V(1.1,2))
 
     def testVslice(self):
         """V[] reprs to matrix"""
