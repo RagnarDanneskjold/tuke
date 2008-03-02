@@ -17,9 +17,26 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from repr_helper import repr_helper
+from numpy import matrix
 
-from id import Id,rndId
-from netlist import Netlist
-from element import Element,load_Element,SingleElement,save_element_to_file,load_element_from_file
-from v import V
+from Tuke import repr_helper
+
+class V(matrix):
+    """2d vector
+    
+    Based on a numpy matrix.
+    """
+
+    def __new__(cls,x,y):
+        """Create a new vector with x,y as the coordinates."""
+
+        return super(V,cls).__new__(cls,(float(x),float(y)))
+
+    @repr_helper
+    def __repr__(self):
+        assert self.shape == (1,2)
+
+        x = int(self[0:,0])
+        y = int(self[0:,1])
+        return (((x,y)),{})
+
