@@ -21,6 +21,8 @@ from numpy import matrix
 
 from Tuke import repr_helper
 
+from Tuke.geometry.matrix_subclassing import OddShapeError,odd_shape_handler
+
 class V(matrix):
     """2d vector
     
@@ -32,29 +34,11 @@ class V(matrix):
 
         return super(V,cls).__new__(cls,(float(x),float(y)))
 
-    # Black magic time... Basic repr is pretty easy. What's not so easy is
-    # handling the V[] case, which creates a V, but with a weird shape, that
-    # really should be treated, and repr-ed, as a matrix. So we leave the
-    # __repr__ code as is, and insert a test to make sure the shape makes
-    # sense. If it doesn't, throw an exception. The magic, is that this
-    # exception gets caught by a decorator that calls the underlying
-    # matrix.__repr__ method instead.
-    class _odd_shape_error:
-        pass
-
-    def _odd_shape_handler(fn):
-        def f(self):
-            try:
-                return fn(self)
-            except self._odd_shape_error:
-                return super(V,self.__class__).__repr__(self)
-        return f
-
-    @_odd_shape_handler
+    @odd_shape_handler
     @repr_helper
     def __repr__(self):
         if self.shape != (1,2):
-            raise self._odd_shape_error
+            raise OddShapeError 
 
         x = self[0,0]
         y = self[0,1]
