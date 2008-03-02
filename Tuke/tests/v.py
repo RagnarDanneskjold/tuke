@@ -32,7 +32,9 @@ class VTest(TestCase):
         """repr(V)"""
 
         def T(v):
-            self.assert_((v == eval(repr(v))).all())
+            v2 = eval(repr(v))
+            self.assert_(isinstance(v2,V))
+            self.assert_((v == v2).all())
 
         T(V(0,0))
         T(V(1,2))
