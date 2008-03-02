@@ -111,12 +111,12 @@ class Element(object):
             layer_mask = '*'
         layer_mask = Layer(layer_mask)
 
-        if not transform:
+        if transform == None:
             from Tuke.geometry import Transformation
             transform = Transformation()
 
         if hasattr(self,'transform'):
-            transform = transform + self.transform
+            transform = self.transform * transform
 
         class geometry_wrapper(object):
             """Class to wrap a Geometry object's id and transform attrs."""

@@ -17,6 +17,8 @@ from unittest import TestCase
 import Tuke
 from Tuke import load_Element,Element,Id,rndId
 
+from Tuke.geometry import Geometry,V,Transformation,Translation,translate
+
 from xml.dom.minidom import Document
 
 class ElementTest(TestCase):
@@ -40,8 +42,6 @@ class ElementTest(TestCase):
         def T(x):
             self.assert_(x)
 
-        from Tuke.geometry import Geometry
-
         e = Element(id='base')
 
         e.add(Element(id = 'chip'))
@@ -54,19 +54,18 @@ class ElementTest(TestCase):
           set((Id('base/chip/pad/pad'), Id('base/chip/sym'))))
 
         # Check that transforms are working
-        from Tuke.geometry import translate,Transformation
-        translate(e.chip,v=(1,1))
+        translate(e.chip,V(1,1))
 
-        [T(elem.transform == Transformation(v = (1.0, 1.0)))
+        [T(repr(elem.transform) == repr(Translation(V(1.0, 1.0))))
             for elem in e.iterlayout()]
 
-        translate(e.chip.pad,v=(2,3))
+        translate(e.chip.pad,V(2,3))
 
-        r = {Id('base/chip/sym'):Transformation(v = (1.0, 1.0)),
-             Id('base/chip/pad/pad'):Transformation(v = (3.0, 4.0))}
+        r = {Id('base/chip/sym'):Translation(V(1.0, 1.0)),
+             Id('base/chip/pad/pad'):Translation(V(3.0, 4.0))}
 
         for elem in e.iterlayout():
-            T(r[elem.id] == elem.transform)
+            T(repr(r[elem.id]) == repr(elem.transform))
 
         # Check layer filtering works
         T(set([elem.id for elem in e.iterlayout(layer_mask='top.*')]) ==
