@@ -27,6 +27,8 @@ Usage:
 graph_netlist < foo.xml > foo.dot
 """
 
+import iam_tuke_example
+
 from Tuke import Id,rndId,load_element_from_file
 from Tuke.sch import Component,Pin
 import sys

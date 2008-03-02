@@ -30,6 +30,8 @@ Generates a series-parallel grid of leds and prints the resulting XML to
 stdout.
 """
 
+import iam_tuke_example
+
 from Tuke import Id,rndId,save_element_to_file
 from Tuke.sch import Component,Pin
 
