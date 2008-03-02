@@ -14,8 +14,10 @@ import Tuke.tests.common
 
 
 import Tuke
-from Tuke import Id
-from Tuke.geometry import translate,Hole,Polygon,Transformation
+from Tuke import Element
+from Tuke.geometry import V,Transformation,Translation,translate,Rotation,rotate,RotationAroundCenter,rotate_around_center,Scale,scale
+
+from math import pi
 
 class GeometrytransformTest(TestCase):
     """Perform tests of the geometry.transform"""
@@ -25,20 +27,21 @@ class GeometrytransformTest(TestCase):
         def T(x):
             self.assert_(x)
 
-        a = Transformation(v = (1,0))
-        b = Transformation(v = (2,3))
+        a = Transformation()
 
-        T(a == a)
-        T(a == Transformation(v = (1,0)))
-        T(a != b)
-        T(not a != a)
-        T(not a != Transformation(v = (1,0)))
+        T((a(V(5,6.6)) == V(5,6.6)).all())
 
-        T(a.v == (1,0))
+    def testGeometryTransformaton__repr__(self):
+        """repr(Transformation)"""
 
-        T(a + b == Transformation(v = (3,3)))
+        t = Transformation()
+        self.assert_((eval(repr(t)) == t).all())
+
+        self.assert_(repr(Transformation(((1,2),))) == 'matrix([[1, 2]])')
 
     def testGeometryTransformationCallable(self):
+        return
+
         """Transformation class objects are callable"""
         def T(x):
             self.assert_(x)
@@ -65,12 +68,24 @@ class GeometrytransformTest(TestCase):
         T(((1,1),((3,4),(),(lambda x: x,1))))
 
     def testGeometrytranslate(self):
-        """translate()"""
+        """translate, rotate, rotate_about_center"""
 
-        a = Polygon(((0,0),(1,1),(1,0)),layer='front.solder')
-        b = Hole(1)
+        def T(a,b,f,*args,**kwargs):
+            """Element transform function test harness.
 
-        x = translate(a,(1,1))
-        y = translate(b,(1,1))
+            Applies f(e,*args,**kwargs) to element e. Then applies e.transform
+            to a and checks that the resulting vertex is == b.
+            """
 
-        z = translate(x,(-1,-1))
+            e = Element()
+
+            f(e,*args,**kwargs)
+
+            # The repr()-based comparison seems to avoid floating point
+            # "almost" equal errors.
+            self.assert_(repr(e.transform(a)) == repr(b))
+
+        T(V(2,3),V(5,-1),translate,V(3,-4))
+        T(V(1,1),V(-1,-1),rotate,pi)
+        T(V(-1,5),V(-2,15),scale,V(2,3))
+        T(V(1,1),V(3,3),rotate_around_center,pi,V(2,2))

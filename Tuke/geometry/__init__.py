@@ -21,7 +21,7 @@
 # Ordering is important for these three
 from v import V
 from layer import Layer
-from transform import Transformation,translate
+from transform import Transformation,Translation,translate,Rotation,rotate,RotationAroundCenter,rotate_around_center,Scale,scale
 from geometry import Geometry
 
 # Not so much here.

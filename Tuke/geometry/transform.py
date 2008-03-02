@@ -31,32 +31,43 @@ geometry data before returning it.
 from Tuke import repr_helper
 from Tuke import Element,Id
 
-import shapely.geometry
-import numpy
+from Tuke.geometry import V
 
-class Transformation:
+from Tuke.geometry.matrix_subclassing import OddShapeError,odd_shape_handler
+
+from numpy import matrix,identity
+from numpy.matlib import ones
+
+from math import sin,cos
+
+class Transformation(matrix):
     """Holder for geometry transformations.
     
     After applying a geometry transformation to a class instance a
     Transformation instance with the name 'transform' will be inserted into
     the objects dict.
+
+    The actual transformation information is stored as a single homogeneous
+    coordinate system matrix.
     """
 
-    def __init__(self,v = (0.0,0.0)):
-        """Create geometry transformation.
+    def __new__(cls,*args):
+        """Create new geometry transformation"""
 
-        v - Translation vector.
-        """
-        self.v = v
+        if not args:
+            args = (identity(3),)
+
+        return super(Transformation,cls).__new__(cls,*args)
+        
 
     def __call__(self,v):
         """Apply the Transformation to v
 
-        v may be a bare tuple, or tuple/list of tuples, or any other combo.
+        v may be a bare V, or tuple/list of Vs, or any other combo.
         """
 
         try:
-            if isinstance(v,str):
+            if isinstance(v,(V,str)):
                 raise TypeError
 
             r = []
@@ -65,9 +76,18 @@ class Transformation:
             return type(v)(r)
         except TypeError:
             try:
-                assert len(v) == 2
-                return (self.v[0] + v[0],self.v[1] + v[1])
+                assert isinstance(v,V)
+                assert v.shape == (1,2)
+
+                # Convert v to homogenous coordinates.
+                v2 = ones(3)
+                v2[0,0:2] = v
+
+                v2 = self * v2.T
+
+                return V(v2[0],v2[1])
             except:
+                raise
                 # This bit is really clever... You'd think that the resulting
                 # error message would be for the inner most tuple right? But it
                 # doesn't work that way, as the TypeError propegates to the
@@ -89,26 +109,80 @@ class Transformation:
 
         return r
 
-    def __eq__(self,other):
-        return self.v == other.v
-
-    def __ne__(self,other):
-        return not self.__eq__(other)
-
+    @odd_shape_handler
     @repr_helper
     def __repr__(self):
-        return (None,{'v':self.v})
+        if self.shape != (3,3):
+            raise OddShapeError
 
+        rows = []
+        for y in xrange(3):
+            cols = []
+            for x in xrange(3):
+                cols.append(self[y,x])
+            rows.append(tuple(cols))
+
+        return ((tuple(rows),),{})
+
+def element_transform_helper(fn):
+    """Decorator for Element.transform modifying functions.
+    
+    Allows the function to be written in this form:
+
+    f(*args,*kwargs) -> Transformation
+
+    Creation of the 'transform' attribute and applying the transformation is
+    handled automaticly.
+    """
+    def f(self,*args,**kwargs):
+        if not hasattr(self,'transform'):
+            self.transform = Transformation()
+
+        self.transform = self.transform * fn(self.transform,*args,**kwargs)
+    return f
+
+
+def Translation(v):
+    """Return a Transformation that translates by vertex v"""
+
+    return \
+        Transformation(((1.0,0.0,v[0,0]),
+                        (0.0,1.0,v[0,1]),
+                        (0.0,0.0,1.0)))
+
+@element_transform_helper
 def translate(e,v):
-    """Translate element by vertex"""
+    return Translation(v)
 
-    assert(isinstance(e,Element))
-    assert(len(v) == 2)
 
-    if not hasattr(e,'transform'):
-        e.transform = Transformation(v = (0,0))
+def Rotation(a):
+    """Return a Transformation that rotates by angle a"""
+    return \
+        Transformation((( cos(a),sin(a),0.0),
+                        (-sin(a),cos(a),0.0),
+                        (    0.0,   0.0,1.0)))
 
-    e.transform.v = (e.transform.v[0] + v[0],
-                       e.transform.v[1] + v[1])
+@element_transform_helper
+def rotate(e,a):
+    return Rotation(a)
 
-    return e
+
+def RotationAroundCenter(a,v):
+    """Return a Transformation that rotates by angle a about v"""
+    return Translation(v) * Rotation(a) * Translation(-v) 
+
+@element_transform_helper
+def rotate_around_center(e,a,v):
+    return RotationAroundCenter(a,v)
+
+
+def Scale(s):
+    """Return a Transformation that scales by vector s"""
+    return \
+        Transformation(((s[0,0],   0.0,0.0),
+                        (   0.0,s[0,1],0.0),
+                        (   0.0,   0.0,1.0)))
+
+@element_transform_helper
+def scale(e,s):
+    return Scale(s)
