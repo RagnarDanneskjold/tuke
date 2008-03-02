@@ -40,3 +40,12 @@ class VTest(TestCase):
         T(V(1,2))
         T(V(1.0,2))
         T(V(1.0,2))
+
+    def testVslice(self):
+        """V[] reprs to matrix"""
+
+        v = V(5,6)
+
+        vs = v[0:,0]
+
+        self.assert_(repr(vs) == 'matrix([[ 5.]])') 
