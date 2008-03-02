@@ -15,7 +15,7 @@ import Tuke.tests.common
 
 from unittest import TestCase
 
-from Tuke import Id,Netlist
+from Tuke import Id,Netlist,SingleElement
 from Tuke.sch import Component,Pin
 
 class SchComponentTest(TestCase):
@@ -30,7 +30,10 @@ class SchComponentTest(TestCase):
         bar = Component(pins=('a','b','c'),id='bar')
         moo = Component(pins=('a','b','c'),id='moo')
 
+        single = SingleElement(id='single')
+
         root.add(foo)
+        root.add(single)
         root.add(bar)
 
         bar.add(moo)
