@@ -18,7 +18,7 @@
 # ### BOILERPLATE ###
 
 from Tuke import Element,Id
-from Tuke.geometry import Polygon
+from Tuke.geometry import Polygon,V
 
 class Pad(Element):
     """Defines a pad"""
@@ -53,7 +53,7 @@ class Pad(Element):
         For makng pads, clearances etc.
         """
 
-        return Polygon(((self.a[0] - thickness/2,self.a[1] - thickness/2),
-            (self.b[0] + thickness/2,self.b[1] - thickness/2),
-            (self.b[0] + thickness/2,self.b[1] + thickness/2),
-            (self.a[0] - thickness/2,self.a[1] + thickness/2)),id=id,layer=layer)
+        return Polygon((V(self.a[0] - thickness/2,self.a[1] - thickness/2),
+            V(self.b[0] + thickness/2,self.b[1] - thickness/2),
+            V(self.b[0] + thickness/2,self.b[1] + thickness/2),
+            V(self.a[0] - thickness/2,self.a[1] + thickness/2)),id=id,layer=layer)

@@ -18,7 +18,7 @@
 # ### BOILERPLATE ###
 
 from Tuke import Element,Id
-from Tuke.geometry import Circle,Hole,Polygon
+from Tuke.geometry import Circle,Hole,Polygon,V
 
 class Pin(Element):
     """Defines a pin"""
@@ -42,7 +42,7 @@ class Pin(Element):
 
         def gen_pad_shape(dia,layer=None):
             if self.square:
-                return Polygon(((-dia,-dia),(dia,-dia),(dia,dia),(-dia,dia)),id=self.id,layer=layer)
+                return Polygon((V(-dia,-dia),V(dia,-dia),V(dia,dia),V(-dia,dia)),id=self.id,layer=layer)
             else:
                 return Circle(dia,id=Id(),layer=layer)
 
