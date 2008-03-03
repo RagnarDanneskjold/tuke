@@ -17,18 +17,34 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from Tuke import Element
+from Tuke import Netlist,Element,Id
 
-class Footprint(Element):
-    """Defines a Footprint.
-  
-    A footprint is the holder for the geometry data comprising a pcb footprint.
-    Footprints contain any number of geometry elements, from simple
-    constructions such as lines to more complex constructions such as Pins and
-    Pads. Electrical connectivity is defined by the netlist, the footprint
-    itself will have sub-elements who's Id's are referenced in the netlist.
+from Tuke.sch import Component,Pin
+from Tuke.pcb import Footprint
 
-    Footprints always have an id of 'footprint'
+class Symbol(Component):
+    """Defines a Symbol.
+   
+    A Symbol is a Component with a Footprint.
     """
-    def __init__(self):
-        Element.__init__(self,id='footprint')
+
+    def __init__(self,pins=(),footprint=None,id=Id()):
+        """Create a symbol.
+
+        pins - Pin list. Order is important, each pin will be linked to it's
+               corresponding footprint pin, starting at 1.
+        footprint - Footprint element to use.
+        id - Id name
+        """
+
+        Component.__init__(self,id=id)
+
+        assert isinstance(footprint,Footprint)
+        self.add(footprint)
+
+        for i,p in enumerate(pins):
+            if not isinstance(p,Pin):
+                p = Pin(p)
+            self.add(p)
+
+            self.link(p,Id('%s/%d' % (footprint.id,i)))

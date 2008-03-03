@@ -29,8 +29,7 @@ class Dil(Footprint):
                  pad=60 * MIL,
                  drill=28 * MIL,
                  clearance=10 * MIL,
-                 mask=60 * MIL,
-                 id=''):
+                 mask=60 * MIL):
         """Create new dual-inline package footprint.
 
         n - number of pins
@@ -42,7 +41,7 @@ class Dil(Footprint):
         mask - diameter of the mask, independent of other values
         """
 
-        Footprint.__init__(self,id=id)
+        Footprint.__init__(self)
 
         assert not n % 2
         self.n = n

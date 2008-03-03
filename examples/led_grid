@@ -33,12 +33,14 @@ stdout.
 import iam_tuke_example
 
 from Tuke import Id,rndId,save_element_to_file
-from Tuke.sch import Component,Pin
+from Tuke.sch import Component,Pin,Symbol
+from Tuke.library.footprint import Dil
 
-class Led(Component):
+class Led(Symbol):
     def __init__(self,id):
-        Component.__init__(self,
+        Symbol.__init__(self,
                 pins = (Pin('anode'),Pin('cathode')),
+                footprint = Dil(2),
                 id = id)
 
 class LedGrid(Component):

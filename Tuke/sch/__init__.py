@@ -17,6 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
+from pin import Pin
 from component import Component
 from sheet import Sheet
-from pin import Pin
+from symbol import Symbol
