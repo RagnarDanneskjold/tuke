@@ -42,9 +42,17 @@ class Symbol(Component):
         assert isinstance(footprint,Footprint)
         self.add(footprint)
 
+        self.add_footprint_linked_pins(pins)
+
+    def add_footprint_linked_pins(self,pins):
+        """Adds footprint linked pins.
+
+        Seperated out from __init__ for the use of multi-slot symbols.
+        """
+
         for i,p in enumerate(pins):
             if not isinstance(p,Pin):
                 p = Pin(p)
             self.add(p)
 
-            self.link(p,Id('%s/%d' % (footprint.id,i)))
+            self.link(p,Id('%s/%d' % (self.footprint.id,i)))
