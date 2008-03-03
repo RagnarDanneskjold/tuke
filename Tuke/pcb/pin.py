@@ -42,7 +42,8 @@ class Pin(Element):
 
         def gen_pad_shape(dia,layer=None):
             if self.square:
-                return Polygon((V(-dia,-dia),V(dia,-dia),V(dia,dia),V(-dia,dia)),id=self.id,layer=layer)
+                r = dia / 2
+                return Polygon((V(-r,-r),V(r,-r),V(r,r),V(-r,r)),id=self.id,layer=layer)
             else:
                 return Circle(dia,id=Id(),layer=layer)
 
