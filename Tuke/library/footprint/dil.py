@@ -26,7 +26,7 @@ class Dil(Footprint):
                  n,
                  width=300 * MIL,
                  spacing=100 * MIL,
-                 pad=60 * MIL,
+                 pad=16 * MIL,
                  drill=28 * MIL,
                  clearance=10 * MIL,
                  mask=60 * MIL,
