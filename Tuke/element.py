@@ -130,7 +130,7 @@ class Element(object):
                     return self.__base_id + self.__obj.id
                 elif n == 'transform':
                     if hasattr(self.__obj,'transform'):
-                        return self.__base_transform + self.__obj.transform
+                        return self.__base_transform * self.__obj.transform
                     else:
                         return self.__base_transform
                 else:

@@ -30,10 +30,7 @@ def to_gerber(elem):
 
     layers = {}
 
-    for i,l,g in elem.render():
-        if not isinstance(g,shapely.geometry.Polygon):
-            continue
-
+    for g in elem.iterlayout():
         def s(n):
             """Convert float n meters to gerber 3.5 format, (inches) leading zeros removed"""
            
@@ -42,15 +39,25 @@ def to_gerber(elem):
             # The int() effectively removes tailing decimals and leading zeros.
             return str(int(n))
 
-        # convert coords to mm
-        coords = [(s(x),s(y)) for (x,y) in g.exterior.coords]
+        if not hasattr(g,'render'):
+            continue
+
+        (coords,ext_coords) = g.render()
+
+        l = str(g.layer)
+
+        # transform and convert coords to mm
+        def t(v,trans):
+            v = trans(v)
+            return (s(v[0,0]),s(v[0,1]))
+        coords = [t(v,g.transform) for v in coords]
 
         # Create gerber layers for each element layer.
         if not layers.has_key(l):
             layers[l] = ''
 
         # Comment for debugging
-        layers[l] += 'G04 id: %s *\n' % str(i)
+        layers[l] += 'G04 id: %s *\n' % str(g.id)
 
         # start Polygon Area Fill code
         layers[l] += 'G36*\n'

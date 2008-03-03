@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # vim: tabstop=4 expandtab shiftwidth=4 fileencoding=utf8
 # ### BOILERPLATE ###
 # Tuke - Electrical Design Automation toolset
@@ -17,22 +18,28 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from Tuke import SingleElement,Id
 
-from Tuke.geometry import Layer
+"""
+Generates gerbers 
 
-class Geometry(SingleElement):
-    """Base geometry class.
+Usage:
 
-    Geometry elements define layout data such as polygons, lines and holes. All
-    geometry elements have a layer attribute defining what layer(s) they belong
-    too. That a object isinstance Geometry does not define how to retrieve the
-    actual geometry data. That is type dependent and requires special casing by
-    the renderer.
+cat foo.xml | export_gerbers base_name 
+"""
 
-    See the Polygon and Hole classes for more info.
-    """
+import iam_tuke_example
 
-    def __init__(self,layer = '*',id = ''):
-        SingleElement.__init__(self,id = id)
-        self.layer = Layer(layer)
+import sys
+
+from Tuke import load_element_from_file
+from Tuke.export import to_gerber
+
+
+sch = load_element_from_file(sys.stdin)
+
+gerbs = to_gerber(sch)
+
+for k in gerbs:
+    f = open(sys.argv[1] + '.' + k,'w')
+
+    f.write(gerbs[k])
