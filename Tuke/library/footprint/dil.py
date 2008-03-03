@@ -69,12 +69,13 @@ class Dil(Footprint):
 
             x = None
             y = None
+            height = (self.n / 2) * self.spacing
             if i < self.n / 2:
                 x = -(self.width / 2)
-                y = ((self.n / 4) - i) * self.spacing
+                y = (-i * self.spacing) + (height / 2) - self.spacing / 2
             else:
                 x = self.width / 2
-                y = ((self.n / 4) - i) * -self.spacing
+                y = -((-(i - self.n / 2) * self.spacing) + (height / 2) - self.spacing / 2)
 
             translate(p,V(x,y))
 
