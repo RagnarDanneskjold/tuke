@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # vim: tabstop=4 expandtab shiftwidth=4 fileencoding=utf8
 # ### BOILERPLATE ###
 # Tuke - Electrical Design Automation toolset
@@ -18,30 +17,4 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-
-"""
-Example Tuke-using program to generate an led grid.
-
-Usage:
-
-led_grid rows cols
-
-Generates a series-parallel grid of leds and prints the resulting XML to
-stdout.
-"""
-
-import iam_tuke_example
-
-from Tuke import rndId,save_element_to_file
-from Tuke.units import *
-from LedGrid import Led,LedGrid
-
-if __name__ == "__main__":
-    import sys
-
-    rows = int(sys.argv[1])
-    cols = int(sys.argv[2])
-
-    grid = LedGrid(rows,cols,spacing=0.5 * IN, id=rndId())
-
-    save_element_to_file(grid,sys.stdout)
+from ledgrid import Led,LedGrid
