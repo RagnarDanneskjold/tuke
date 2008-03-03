@@ -24,10 +24,9 @@ from math import atan2,pi,degrees
 
 def make_line_vertexes(a,b,thickness,segments):
     # first find the angle of the given line
-    dx = b[0] - a[0]
-    dy = b[1] - a[1]
+    d = b - a
 
-    alpha = atan2(dy,dx)
+    alpha = atan2(d[0,1],d[0,0])
 
     # create half-circles for either end
     arc_a = arc_points(alpha + pi/2,alpha - pi/2,float(thickness)/2,segments)  
@@ -35,8 +34,8 @@ def make_line_vertexes(a,b,thickness,segments):
 
     # half circles aren't complete yet, need to shift them relative to the end
     # positions
-    def t(v,a):
-        return [(x + a[0],y + a[1]) for (x,y) in v]
+    def t(vs,a):
+        return [v + a for v in vs]
     arc_a = t(arc_a,a)
     arc_b = t(arc_b,b)
 

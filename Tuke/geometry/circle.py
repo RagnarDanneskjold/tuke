@@ -17,7 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from Tuke.geometry import Geometry
+from Tuke.geometry import Geometry,V
 
 from math import sin,cos,pi
 
@@ -31,7 +31,7 @@ def arc_points(a,b,r,segments):
 
     i = a
     for j in range(segments + 1):
-        t += [(cos(i) * r,sin(i) * r)]
+        t += [V(cos(i) * r,sin(i) * r)]
 
         i += abs(b - a) / segments
 

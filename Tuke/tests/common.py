@@ -118,7 +118,7 @@ def vert_equal(a,b):
     for v1,v2 in zip(a,b):
         if len(v1) != len(v2):
             return False
-        for x1,x2 in zip(v1,v2):
-            if not fcmp(x1,x2):
-                return False
+        if not (fcmp(v1[0,0],v2[0,0]) and
+                fcmp(v1[0,1],v2[0,1])):
+            return False
     return True

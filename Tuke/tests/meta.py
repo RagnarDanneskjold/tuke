@@ -103,19 +103,17 @@ class MetaTest(TestCase):
     def testVert_equal(self):
         """vert_equal()"""
 
+        from Tuke.geometry import V
+
         def T(a,b):
             self.assert_(common.vert_equal(a,b))
         def F(a,b):
             self.assert_(not common.vert_equal(a,b))
 
         # Test our new comparison function
-        T(((0,0),(1,1)),((0,0),(1,1)))
-        F(((1,0),(1,1)),((0,0),(1,1)))
-        F(((0,0),(1,0)),((0,0),(1,1)))
+        T((V(0,0),V(1,1)),(V(0,0),V(1,1)))
+        F((V(1,0),V(1,1)),(V(0,0),V(1,1)))
+        F((V(0,0),V(1,0)),(V(0,0),V(1,1)))
 
         # extra items must fail
-        F(((0,0),(1,0)),((0,0),(1,0),(1,1)))
-
-        # as well as vertexes with odd numbers of elements
-        F(((0,0),(1,0)),((0,0),(1,)))
-        F(((0,0),(1,0)),((0,0),(1,1,1)))
+        F((V(0,0),V(1,0)),(V(0,0),V(1,0),V(1,1)))

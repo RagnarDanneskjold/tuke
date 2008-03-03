@@ -16,7 +16,7 @@ from Tuke.tests import common
 from unittest import TestCase
 
 from Tuke import Id
-from Tuke.geometry import Circle 
+from Tuke.geometry import Circle,V
 
 from Tuke.geometry.circle import arc_points
 
@@ -35,28 +35,28 @@ class GeometryCircleTest(TestCase):
 
         # test arc_points() finally
         T(arc_points(0,pi,1,1),
-                ((1,0),(-1,0)))
+                (V(1,0),V(-1,0)))
         T(arc_points(pi,0,1,1),
-                ((-1,0),(1,0)))
+                (V(-1,0),V(1,0)))
 
         # three points, note rotation is always anti-clockwise
         T(arc_points(0,pi,1,2),
-                ((1,0),(0,1),(-1,0)))
+                (V(1,0),V(0,1),V(-1,0)))
         T(arc_points(pi,0,1,2),
-                ((-1,0),(0,-1),(1,0)))
+                (V(-1,0),V(0,-1),V(1,0)))
 
         # full circle
         T(arc_points(0,2*pi,1,4),
-                ((1,0),(0,1),(-1,0),(0,-1),(1,0)))
+                (V(1,0),V(0,1),V(-1,0),V(0,-1),V(1,0)))
         T(arc_points(2*pi,0,1,4), # note same result as above
-                ((1,0),(0,1),(-1,0),(0,-1),(1,0)))
+                (V(1,0),V(0,1),V(-1,0),V(0,-1),V(1,0)))
 
         T(arc_points(pi / 2,pi*1.5,0.5,4),
-                ((0,0.5),
-                 (-cos(radians(45))/2,sin(radians(45))/2),
-                 (-0.5,0),
-                 (-cos(radians(45))/2,-sin(radians(45))/2),
-                 (0,-0.5)))
+                (V(0,0.5),
+                 V(-cos(radians(45))/2,sin(radians(45))/2),
+                 V(-0.5,0),
+                 V(-cos(radians(45))/2,-sin(radians(45))/2),
+                 V(0,-0.5)))
 
     def testGeometryCircle(self):
         """geometry.Circle()"""
