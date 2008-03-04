@@ -31,4 +31,4 @@ def centerof(e):
     try:
         return e.transform(V(0,0))
     except AttributeError:
-        raise TypeError, "Can't take the centerof(%s)" % repr(e)
+        return V(0,0)

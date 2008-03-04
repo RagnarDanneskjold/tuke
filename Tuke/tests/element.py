@@ -61,7 +61,6 @@ class ElementTest(TestCase):
         # Check that transforms are working
         translate(e.chip,V(1,1))
 
-        print [repr(elem.transform) for elem in e.iterlayout()]
         [T(repr(elem.transform) == repr(Translation(V(1.0, 1.0))))
             for elem in e.iterlayout()]
 

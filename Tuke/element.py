@@ -135,13 +135,20 @@ class subelement_wrapper(object):
         self._base_transform = base_transform
         self._obj = obj
 
+    def _wrapper_get_id(self):
+        return self._base_id + self._obj.id
+    id = property(_wrapper_get_id)
+
+    def _wrapper_get_transform(self):
+        return self._base_transform * self._obj.transform
+    def _wrapper_set_transform(self,value):
+        # FIXME: life is far more complex than this...
+        self._obj.transform = value
+
+    transform = property(_wrapper_get_transform,_wrapper_set_transform)
+
     def __getattr__(self,n):
-        if n == 'id':
-            return self._base_id + self._obj.id
-        elif n == 'transform':
-            return self._base_transform * self._obj.transform
-        else:
-            return getattr(self._obj,n)
+        return getattr(self._obj,n)
 
 def load_Element(dom):
     """Loads elements from a saved minidom"""
