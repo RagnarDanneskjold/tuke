@@ -34,7 +34,9 @@ class Element(object):
     """
 
     def __init__(self,id=''):
+        from Tuke.geometry import Transformation
         self.id = Id(id)
+        self.transform = Transformation()
 
         self.subs = []
 
@@ -96,8 +98,30 @@ class Element(object):
         """Returns an XML minidom object representing the Element"""
         return self._save(doc,getattr(self,'subs',[]))
 
+    def _wrap_subelement(self,base_id,base_transform,obj):
+        """Wrap a subelement's id and transform attrs.
 
-    def iterlayout(self,layer_mask = None,base_id = Id(), transform = None):
+        Used so that a callee sees a consistant view of id and transform in
+        sub-elements. For instance foo.bar.id == 'foo/bar'
+        """
+        class subelement_wrapper(object):
+            """Class to wrap a sub-Element's id and transform attrs."""
+            def __init__(self,base_id,base_transform,obj):
+                self._base_id = base_id
+                self._base_transform = base_transform
+                self._obj = obj
+
+            def __getattr__(self,n):
+                if n == 'id':
+                    return self._base_id + self._obj.id
+                elif n == 'transform':
+                    return self._base_transform * self._obj.transform
+                else:
+                    return getattr(self._obj,n)
+
+        return subelement_wrapper(base_id,base_transform,obj)
+
+    def iterlayout(self,layer_mask = None,base_id = Id(), base_transform = None):
         """Iterate through layout.
 
         Layout iteration is done depth first filtering the results with the
@@ -111,41 +135,21 @@ class Element(object):
             layer_mask = '*'
         layer_mask = Layer(layer_mask)
 
-        if transform == None:
-            from Tuke.geometry import Transformation
-            transform = Transformation()
-
-        if hasattr(self,'transform'):
-            transform = self.transform * transform
-
-        class geometry_wrapper(object):
-            """Class to wrap a Geometry object's id and transform attrs."""
-            def __init__(self,base_id,base_transform,obj):
-                self.__base_id = base_id
-                self.__base_transform = base_transform
-                self.__obj = obj
-
-            def __getattr__(self,n):
-                if n == 'id':
-                    return self.__base_id + self.__obj.id
-                elif n == 'transform':
-                    if hasattr(self.__obj,'transform'):
-                        return self.__base_transform * self.__obj.transform
-                    else:
-                        return self.__base_transform
-                else:
-                    return getattr(self.__obj,n)
+        if base_transform != None:
+            base_transform = self.transform * base_transform
+        else:
+            base_transform = self.transform
 
         base_id = base_id + self.id
         for s in self.subs:
             from Tuke.geometry import Geometry
             if isinstance(s,Geometry):
                 if s.layer in layer_mask:
-                    yield geometry_wrapper(base_id,transform,s)
+                    yield self._wrap_subelement(base_id,base_transform,s)
             else:
                 for l in s.iterlayout(layer_mask,
                         base_id = base_id,
-                        transform = transform):
+                        base_transform = base_transform):
                     yield l
 
 def load_Element(dom):
@@ -224,8 +228,8 @@ class SingleElement(Element):
     __iter__ = None
     add = None
     def __init__(self,id=Id()):
-        self.id = id
-
+        Element.__init__(self,id=id)
+        del self.subs
 
 def save_element_to_file(elem,f):
     """Save element to file object f"""
