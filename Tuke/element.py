@@ -120,7 +120,7 @@ class Element(object):
 
         return subelement_wrapper(base_id,base_transform,obj)
 
-    def iterlayout(self,layer_mask = None,base_id = Id(), base_transform = None):
+    def iterlayout(self,layer_mask = None):
         """Iterate through layout.
 
         Layout iteration is done depth first filtering the results with the
@@ -134,22 +134,15 @@ class Element(object):
             layer_mask = '*'
         layer_mask = Layer(layer_mask)
 
-        if base_transform != None:
-            base_transform = self.transform * base_transform
-        else:
-            base_transform = self.transform
-
-        base_id = base_id + self.id
         for s in self:
             from Tuke.geometry import Geometry
-            if isinstance(s,Geometry):
+            if s.isinstance(Geometry):
                 if s.layer in layer_mask:
-                    yield self._wrap_subelement(base_id,base_transform,s)
+                    yield s
             else:
-                for l in s.iterlayout(layer_mask,
-                        base_id = base_id,
-                        base_transform = base_transform):
-                    yield l
+                print s
+                for l in s.iterlayout(layer_mask):
+                    yield l 
 
 class subelement_wrapper(object):
     """Class to wrap a sub-Element's id and transform attrs."""
@@ -183,6 +176,10 @@ class subelement_wrapper(object):
     def __iter__(self):
         for v in self._obj:
             yield subelement_wrapper(self._base_id,self._base_transform,v)
+
+    def iterlayout(self,*args,**kwargs):
+        for l in self._obj.iterlayout(*args,**kwargs):
+            yield subelement_wrapper(self._base_id,self._base_transform,l)
 
     def __getitem__(self,key):
         r = self._obj[key]
@@ -262,7 +259,6 @@ class _EmptyClass(object):
 
 class SingleElement(Element):
     """Base class for elements without subelements."""
-    __iter__ = None
     add = None
     def __init__(self,id=Id()):
         Element.__init__(self,id=id)

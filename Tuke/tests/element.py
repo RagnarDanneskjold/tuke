@@ -98,8 +98,8 @@ class ElementTest(TestCase):
     def testElementIterlayout(self):
         """Element.iterlayout()"""
 
-        def T(x):
-            self.assert_(x)
+        def T(got,expected = True):
+            self.assert_(expected == got,'expected: %s  got: %s' % (expected,got))
 
         e = Element(id='base')
 
@@ -109,13 +109,13 @@ class ElementTest(TestCase):
         e.chip.pad.add(Geometry(layer = 'top.copper',id = 'pad'))
 
         # Check returned objects and Id auto-mangling
-        T(set([elem.id for elem in e.iterlayout()]) ==
+        T(set([elem.id for elem in e.iterlayout()]),
           set((Id('base/chip/pad/pad'), Id('base/chip/sym'))))
 
         # Check that transforms are working
         translate(e.chip,V(1,1))
 
-        [T(repr(elem.transform) == repr(Translation(V(1.0, 1.0))))
+        [T(repr(elem.transform), repr(Translation(V(1.0, 1.0))))
             for elem in e.iterlayout()]
 
         translate(e.chip.pad,V(2,3))
@@ -124,12 +124,12 @@ class ElementTest(TestCase):
              Id('base/chip/pad/pad'):Translation(V(3.0, 4.0))}
 
         for elem in e.iterlayout():
-            T(repr(r[elem.id]) == repr(elem.transform))
+            T(repr(r[elem.id]), repr(elem.transform))
 
         # Check layer filtering works
-        T(set([elem.id for elem in e.iterlayout(layer_mask='top.*')]) ==
+        T(set([elem.id for elem in e.iterlayout(layer_mask='top.*')]),
           set((Id('base/chip/pad/pad'),)))
-        T(set([elem.id for elem in e.iterlayout(layer_mask='sch.*')]) ==
+        T(set([elem.id for elem in e.iterlayout(layer_mask='sch.*')]),
           set((Id('base/chip/sym'),)))
 
     def testElementIdAttr(self):
