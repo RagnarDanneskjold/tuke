@@ -140,7 +140,6 @@ class Element(object):
                 if s.layer in layer_mask:
                     yield s
             else:
-                print s
                 for l in s.iterlayout(layer_mask):
                     yield l
 
@@ -160,8 +159,11 @@ class subelement_wrapper(object):
     def _wrapper_get_transform(self):
         return self._base.transform * self._obj.transform
     def _wrapper_set_transform(self,value):
-        # FIXME: life is far more complex than this...
-        self._obj.transform = value
+        # The code setting transform will be dealing with the transform
+        # relative to the wrapper, however _obj.transform needs to be stored
+        # relative to _obj. So apply the inverse of the base transformation
+        # before storing the value to undo.
+        self._obj.transform = self._base.transform.I * value
 
     transform = property(_wrapper_get_transform,_wrapper_set_transform)
 
