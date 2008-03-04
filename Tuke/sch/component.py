@@ -49,8 +49,9 @@ class Component(Element):
 
         for p in pins:
             try:
-                assert p.isinstance(Pin)
-            except AttributeError,AssertionError:
+                if not p.isinstance(Pin):
+                    raise AttributeError
+            except AttributeError:
                 p = Pin(p)
             self.add(p)
 
@@ -60,61 +61,21 @@ class Component(Element):
         Both a and b must either be a pin on self, or a child of self.
         """
 
-        # Note that a and b are simply Pin objects, we have to figure out where
-        # they are by searching through our sub elements.
-
         def deref(i):
-            # First case, valid Id's get passed on unchanged, so you can state
-            # obj.link(self.Vcc,Id('../Vcc'))
             try:
+                # First case, valid Id's get passed on unchanged, so you can
+                # state obj.link(self.Vcc,Id('../Vcc'))
                 i = Id(i)
                 return i
             except TypeError:
-                # Must be from a Component pin. Find out which one.
-
-                for p in self:
-                    if p == i:
-                        # One of our pins, return id unchanged.
-                        return p.id
-
-                # Look in sub-components
-
-                # Need to keep track of what Id() level the search is at, hence
-                # base.
-                def add_subs_to_check(base,subs):
-                    return [(base + s.id,s) for s in subs]
-
-                # This bit here sucks up a lot of cpu time if not written
-                # carefully. First of all most link operations will find their
-                # targets in shallow ids, rather than deep references, so use a
-                # a breadth-first search is performed. Secondly only Components
-                # are searched, sub elements that aren't a Component subclass
-                # are ignored. Only Components have pins, and also importantly
-                # Components have Footprints, which have *many* sub-elements
-                # due to their geometry.
-
-                from collections import deque
-
-                # Depth first search, storing unchecked components in check
-                check = deque(add_subs_to_check(Id('.'),iter(self)))
-                while check:
-                    base,c = check.popleft()
-                    if c.isinstance(Component):
-                        for p in c:
-                            if p == i:
-                                # Found, return with correct path.
-                                return base + p.id
-
-                        check.extend(add_subs_to_check(base,iter(c)))
-
-            # Found nothing.
-
-            # This is needed as we must return KeyError even if i is something
-            # invalid, like None
-            try:
-                raise KeyError, 'Pin \'%s\' not found under \'%s\'' % (i.id,self.id)
-            except AttributeError:
-                raise KeyError, 'Not a valid pin'
+                # Second case, an actual Pin objects, just return the id, minus
+                # self.id
+                try:
+                    if not i.isinstance(Pin):
+                        raise AttributeError
+                    return i.id[len(self.id):]
+                except AttributeError:
+                    raise TypeError, 'link() got %s instead of Pin' % repr(i)
 
         a = deref(a)
         b = deref(b)

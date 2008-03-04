@@ -44,8 +44,9 @@ class Symbol(Component):
 
         for p in pins:
             try:
-                assert p.isinstance(Pin)
-            except AttributeError,AssertionError: 
+                if not p.isinstance(Pin):
+                    raise AttributeError
+            except AttributeError: 
                 p = Pin(p)
             self.add(p)
 
@@ -60,4 +61,4 @@ class Symbol(Component):
         """
 
         for i,p in enumerate(pins):
-            self.link(p,Id('%s/%d' % (self.footprint.id,i)))
+            self.link(p,Id('%s/%s/%d' % (self.id,self.footprint.id,i)))

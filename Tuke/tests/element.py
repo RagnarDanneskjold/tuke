@@ -29,6 +29,15 @@ class ElementTest(TestCase):
 
         self.assertRaises(ValueError,lambda:Element('foo/bar'))
 
+    def testElementAddReturnsWrapped(self):
+        """Element.add(obj) returns wrapped obj"""
+
+        a = Element()
+        b = Element('b')
+        r = a.add(b)
+
+        self.assert_(id(a.b) == id(r))
+
     def testElementInteration(self):
         """Element interation"""
 

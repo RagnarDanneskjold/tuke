@@ -80,6 +80,8 @@ class Element(object):
     def add(self,obj):
         """Add Element as sub-element.
 
+        Returns the element, correctly wrapped.
+
         If the element's id is a valid Python identifier and there isn't
         already an attribute of that name, it will be accessible as self.(id)
         """
@@ -92,8 +94,10 @@ class Element(object):
         if hasattr(self,n):
             n = str(rndId())
 
-        setattr(self,n,
-                self._wrap_subelement(self.id,self.transform,obj))
+        r = self._wrap_subelement(self.id,self.transform,obj)
+        setattr(self,n,r)
+
+        return r
 
     def save(self,doc):
         """Returns an XML minidom object representing the Element"""

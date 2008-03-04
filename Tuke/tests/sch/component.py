@@ -24,6 +24,9 @@ class SchComponentTest(TestCase):
     def testComponent(self):
         """Basic tests"""
 
+        def T(got,expected):
+            self.assert_(got == expected,'\ngot: %s\nexpected: %s' % (repr(got),repr(expected)))
+
         root = Component(pins=(Pin('a'),'b','c'))
         
         foo = Component(pins=('a','b','c'),id='foo')
@@ -32,11 +35,11 @@ class SchComponentTest(TestCase):
 
         single = SingleElement(id='single')
 
-        root.add(foo)
-        root.add(single)
-        root.add(bar)
+        foo = root.add(foo)
+        single = root.add(single)
+        bar = root.add(bar)
 
-        bar.add(moo)
+        moo = bar.add(moo)
 
         root.link(root.a,foo.a)
         root.link(root.b,foo.b)
@@ -48,12 +51,12 @@ class SchComponentTest(TestCase):
 
         root.link(root.a,root.bar.moo.a)
 
-        self.assert_(root.netlist ==
-        Netlist(
-            (Id('a'),Id('foo/a'), Id('bar/c'), Id('bar/moo/a')),
-            (Id('b'), Id('foo/b'), Id('bar/b')),
-            (Id('c'), Id('foo/c'), Id('bar/a')),
-            id=Id('.')))
+        T(root.netlist,
+            Netlist(
+                (Id('a'),Id('foo/a'), Id('bar/c'), Id('bar/moo/a')),
+                (Id('b'), Id('foo/b'), Id('bar/b')),
+                (Id('c'), Id('foo/c'), Id('bar/a')),
+                id=Id('.')))
 
     def testComponentLinksNonePins(self):
         """obj.link(None,None) fails"""
@@ -61,8 +64,8 @@ class SchComponentTest(TestCase):
         root = Component(pins=(Pin('a'),'b','c'))
         root2 = Component(pins=(Pin('a'),'b','c'))
 
-        self.assertRaises(KeyError,
+        self.assertRaises(TypeError,
                 lambda x: x.link(x.a,None),root)
 
-        self.assertRaises(KeyError,
+        self.assertRaises(TypeError,
                 lambda x: x.link(x.a,root2),root)
