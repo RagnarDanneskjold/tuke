@@ -44,6 +44,17 @@ class ElementTest(TestCase):
 
         T(a,set(('a/1','a/2','a/3')))
 
+    def testElement_isinstance(self):
+        """Element.isinstance()"""
+
+        def T(x):
+            self.assert_(x)
+
+        a = Element('a')
+        T(a.isinstance(Element))
+        a.add(Element('b'))
+        T(a.b.isinstance(Element))
+
     def testElement__getitem__(self):
         """Element[] matching"""
         def T(elem,key,expected):
