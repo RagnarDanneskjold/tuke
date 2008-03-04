@@ -33,6 +33,7 @@ from Tuke.tests.geometry.layer import *
 from Tuke.tests.geometry.line import *
 from Tuke.tests.geometry.polygon import *
 from Tuke.tests.geometry.transform import *
+from Tuke.tests.geometry.util import *
 from Tuke.tests.geometry.v import *
 
 from Tuke.tests.pcb.pad import *
