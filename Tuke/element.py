@@ -197,17 +197,14 @@ def load_Element(dom):
     obj = _EmptyClass() 
     obj.__class__ = klass
 
-    # Populate the subs first, to give any __setstate__ function possibly
-    # needed info.
-    obj.subs = subs
+    # Setup attributes
+    for n,v in attr.iteritems():
+        setattr(obj,n,v)
 
-    # If the class defines __setstate__, let it handle the state, otherwise
-    # just populate the object's dict. 
-    if hasattr(obj,'__setstate__'):
-        obj.__setstate__(attr)
-    else:
-        for n,v in attr.iteritems():
-            setattr(obj,n,v)
+    # Finally load the add sub-elements, this must be done second, as add()
+    # depends on the attributes id and transform
+    for s in subs:
+        obj.add(s)
 
     return obj
 
