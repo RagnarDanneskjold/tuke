@@ -18,8 +18,9 @@
 # ### BOILERPLATE ###
 
 import Tuke
-from Tuke import Id,Netlist
+from Tuke import Id,rndId,Netlist
 from xml.dom.minidom import Document,parse
+
 
 class Element(object):
     """Base element class.
@@ -30,73 +31,60 @@ class Element(object):
         
     They can be loaded and saved to disk.
 
-    They have an immutable Id()
+    They have an immutable Id
+
+    That Id must have a single path component, IE, Id('foo/bar') is invalid.
     """
 
     def __init__(self,id=''):
         from Tuke.geometry import Transformation
         self.id = Id(id)
+
+        if len(self.id) != 1:
+            raise ValueError, 'Invalid Element Id \'%s\': more than one path component' % str(self.id)
+
         self.transform = Transformation()
 
-        self.subs = []
-
     def __iter__(self):
-        for i in self.subs:
-            yield i
+        for v in self.__dict__.itervalues():
+            if v.__class__ == subelement_wrapper:
+                yield v._obj
 
-    def __getattr__(self,name):
-        """Resolve named references to sub elements.
+    def add(self,obj):
+        """Add Element as sub-element.
 
-        Allows obj.foo where foo is an Id() of a sub element.
+        The Elements id must be unique, or == '.'
+
+        If the element's id is a valid Python identifier and there isn't
+        already an attribute of that name, it will be accessible as self.(id)
         """
 
-        # Um... why is this needed? Without, you get recursion problems, with,
-        # there are no errors... Probably has something to do with the
-        # SingleElement class, which doesn't have subs.
-        if not hasattr(self,'subs'):
-            raise AttributeError, \
-                'Element has no sub-elements and no attribute \'%s\'' % name
+        # Note that there is no actual test for valid identifiers... We said it
+        # will not be accessible, not that it won't be in self.__dict__...
+        n = str(obj.id)
 
-        for s in self.subs:
-            if Id(name) == s.id:
-                return s
+        # If the id == '.' we'll have to come up with a fake name for it.
+        if n == '.':
+            n = str(rndId())
+            # Not gonna check for a collision, I'm not worried about lightning.
 
-        raise AttributeError, \
-            'Element has sub-elements but no attribute \'%s\'' % name
-
-    def add(self,b):
-        self.subs.append(b)
-
-    def _save(self,doc,subs):
-        """Actual save function, seperated out for Translate-type subclassing."""
-
-        r = doc.createElement(self.__module__ + '.' + self.__class__.__name__)
-
-        # Save state.
-        state = None
-        try:
-            state = self.__getstate__()
-        except AttributeError:
-            state = self.__dict__
-
-        for n,v in state.iteritems():
-            # subs is handled below, so ignore it if appropriate.
-            #
-            # Note that this means that a custom __savestate__ function can't
-            # return a dict with 'subs' in it...
-            if n == 'subs':
-                continue 
-
-            r.setAttribute(n,repr(v))
-
-        for s in subs:
-            r.appendChild(s.save(doc))
-
-        return r
+        if not hasattr(self,n):
+            setattr(self,n,
+                    self._wrap_subelement(self.id,self.transform,obj))
+        else:
+            raise KeyError, 'Could not add Element with id=%s due to identifier collision.' % repr(n)
 
     def save(self,doc):
         """Returns an XML minidom object representing the Element"""
-        return self._save(doc,getattr(self,'subs',[]))
+        r = doc.createElement(self.__module__ + '.' + self.__class__.__name__)
+
+        for n,v in self.__dict__.iteritems():
+            if v.__class__  == subelement_wrapper: 
+                r.appendChild(v.save(doc))
+            else:
+                r.setAttribute(n,repr(v))
+
+        return r
 
     def _wrap_subelement(self,base_id,base_transform,obj):
         """Wrap a subelement's id and transform attrs.
@@ -104,20 +92,6 @@ class Element(object):
         Used so that a callee sees a consistant view of id and transform in
         sub-elements. For instance foo.bar.id == 'foo/bar'
         """
-        class subelement_wrapper(object):
-            """Class to wrap a sub-Element's id and transform attrs."""
-            def __init__(self,base_id,base_transform,obj):
-                self._base_id = base_id
-                self._base_transform = base_transform
-                self._obj = obj
-
-            def __getattr__(self,n):
-                if n == 'id':
-                    return self._base_id + self._obj.id
-                elif n == 'transform':
-                    return self._base_transform * self._obj.transform
-                else:
-                    return getattr(self._obj,n)
 
         return subelement_wrapper(base_id,base_transform,obj)
 
@@ -140,8 +114,10 @@ class Element(object):
         else:
             base_transform = self.transform
 
+        print 'base_transform = %s' % repr(base_transform)
+
         base_id = base_id + self.id
-        for s in self.subs:
+        for s in self:
             from Tuke.geometry import Geometry
             if isinstance(s,Geometry):
                 if s.layer in layer_mask:
@@ -151,6 +127,21 @@ class Element(object):
                         base_id = base_id,
                         base_transform = base_transform):
                     yield l
+
+class subelement_wrapper(object):
+    """Class to wrap a sub-Element's id and transform attrs."""
+    def __init__(self,base_id,base_transform,obj):
+        self._base_id = base_id
+        self._base_transform = base_transform
+        self._obj = obj
+
+    def __getattr__(self,n):
+        if n == 'id':
+            return self._base_id + self._obj.id
+        elif n == 'transform':
+            return self._base_transform * self._obj.transform
+        else:
+            return getattr(self._obj,n)
 
 def load_Element(dom):
     """Loads elements from a saved minidom"""
@@ -229,7 +220,6 @@ class SingleElement(Element):
     add = None
     def __init__(self,id=Id()):
         Element.__init__(self,id=id)
-        del self.subs
 
 def save_element_to_file(elem,f):
     """Save element to file object f"""

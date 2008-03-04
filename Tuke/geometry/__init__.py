@@ -29,3 +29,4 @@ from circle import Circle
 from hole import Hole
 from line import Line,ThinLine
 from polygon import Polygon
+from util import centerof

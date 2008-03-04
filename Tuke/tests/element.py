@@ -17,12 +17,17 @@ from unittest import TestCase
 import Tuke
 from Tuke import load_Element,Element,Id,rndId
 
-from Tuke.geometry import Geometry,V,Transformation,Translation,translate
+from Tuke.geometry import Geometry,V,Transformation,Translation,translate,centerof
 
 from xml.dom.minidom import Document
 
 class ElementTest(TestCase):
     """Perform tests of the element module"""
+
+    def testElementIdChecks(self):
+        """Element id validity checks"""
+
+        self.assertRaises(ValueError,lambda:Element('foo/bar'))
 
     def testElementInterator(self):
         """Element interation"""
@@ -34,7 +39,7 @@ class ElementTest(TestCase):
         for i in j:
             a.add(i)
 
-        self.assert_(set(a.subs) == j)
+        self.assert_(set(iter(a)) == j)
 
     def testElementIterlayout(self):
         """Element.iterlayout()"""
@@ -56,6 +61,7 @@ class ElementTest(TestCase):
         # Check that transforms are working
         translate(e.chip,V(1,1))
 
+        print [repr(elem.transform) for elem in e.iterlayout()]
         [T(repr(elem.transform) == repr(Translation(V(1.0, 1.0))))
             for elem in e.iterlayout()]
 
@@ -76,17 +82,22 @@ class ElementTest(TestCase):
     def testElementIdAttr(self):
         """Auto-magical attribute lookup from sub-element Id's"""
 
-        a = Element()
+        a = Element(id='a')
+        translate(a,V(1,1))
 
         foo = Element(id='foo')
+        translate(foo,V(2,1))
         bar = Element(id='bar')
+        translate(bar,V(1,2))
 
         a.add(foo)
         a.add(bar)
 
-        self.assert_(a.foo == foo)
-        self.assert_(a.bar == bar)
-        self.assertRaises(AttributeError,a.__getattr__,'foobar')
+        self.assert_(a.foo.id == 'a/foo')
+        self.assert_(repr(centerof(a.foo)) == repr(V(3,2)))
+        self.assert_(a.bar.id == 'a/bar')
+        self.assert_(repr(centerof(a.bar)) == repr(V(2,3)))
+        self.assertRaises(AttributeError,lambda: a.foobar)
 
     def testElementSave(self):
         """Element.save()"""

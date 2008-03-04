@@ -94,7 +94,7 @@ class Component(Element):
                 from collections import deque
 
                 # Depth first search, storing unchecked components in check
-                check = deque(add_subs_to_check(Id('.'),self.subs))
+                check = deque(add_subs_to_check(Id('.'),iter(self)))
                 while check:
                     base,c = check.popleft()
                     if isinstance(c,Component):
@@ -103,7 +103,7 @@ class Component(Element):
                                 # Found, return with correct path.
                                 return base + p.id
 
-                        check.extend(add_subs_to_check(base,c.subs))
+                        check.extend(add_subs_to_check(base,iter(c)))
 
             # Found nothing.
 
