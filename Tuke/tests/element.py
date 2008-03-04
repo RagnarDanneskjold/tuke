@@ -60,11 +60,19 @@ class ElementTest(TestCase):
         T(a,'b',('a/b',))
         T(a,'b/b',())
 
+        a.add(Element('b'))
+        T(a,'b',('a/b','a/b'))
+        T(a,'b/b',())
+
         a.add(Element('c'))
         T(a,'c',('a/c',))
 
         a.b.add(Element('d'))
         T(a,'b/d',('a/b/d',))
+
+        a.b.add(Element('d'))
+        T(a,'b',('a/b','a/b'))
+        T(a,'b/d',('a/b/d','a/b/d'))
 
 
     def testElementIterlayout(self):

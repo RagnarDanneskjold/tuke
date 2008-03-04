@@ -141,19 +141,10 @@ class Element(object):
 
 class subelement_wrapper(object):
     """Class to wrap a sub-Element's id and transform attrs."""
-    def __new__(cls,base_id,base_transform,obj):
-        # It'd be inefficient to stack subelement_wrappers, so check if obj is
-        # one.
-        if obj.__class__ == subelement_wrapper:
-            obj._base_id = base_id + obj._base_id
-            obj._base_transform = base_transform * obj._base_transform
-            return obj
-        else:
-            self = super(subelement_wrapper,cls).__new__(cls)
-            self._base_id = base_id
-            self._base_transform = base_transform
-            self._obj = obj
-            return self
+    def __init__(self,base_id,base_transform,obj):
+        self._base_id = base_id
+        self._base_transform = base_transform
+        self._obj = obj
 
     def _wrapper_get_id(self):
         return self._base_id + self._obj.id
