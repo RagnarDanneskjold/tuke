@@ -56,7 +56,7 @@ class LedGrid(Component):
             for y in xrange(rows):
                 l = Led(id=Id('LED%s-%s' % (str(x),str(y))))
                 translate(l,V((x * spacing) - ((cols - 1) * spacing / 2),(y * spacing) - ((rows - 1) * spacing / 2)))
-                self.add(l)
+                l = self.add(l)
 
                 if not prev:
                     top_leds.append(l)
