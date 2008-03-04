@@ -39,13 +39,11 @@ class Symbol(Component):
 
         Component.__init__(self,id=id)
 
-        assert footprint.isinstance(Footprint)
+        assert isinstance(footprint,Footprint)
         self.add(footprint)
 
         for p in pins:
-            try:
-                assert p.isinstance(Pin)
-            except AttributeError,AssertionError: 
+            if not isinstance(p,Pin):
                 p = Pin(p)
             self.add(p)
 

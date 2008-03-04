@@ -44,17 +44,6 @@ class ElementTest(TestCase):
 
         T(a,set(('a/1','a/2','a/3')))
 
-    def testElement_isinstance(self):
-        """Element.isinstance()"""
-
-        def T(x):
-            self.assert_(x)
-
-        a = Element('a')
-        T(a.isinstance(Element))
-        a.add(Element('b'))
-        T(a.b.isinstance(Element))
-
     def testElement__getitem__(self):
         """Element[] matching"""
         def T(elem,key,expected):
@@ -89,8 +78,8 @@ class ElementTest(TestCase):
     def testElementIterlayout(self):
         """Element.iterlayout()"""
 
-        def T(x):
-            self.assert_(x)
+        def T(got,expected=True):
+            self.assert_(got == expected,'got: %s expected: %s' % (got,expected))
 
         e = Element(id='base')
 
@@ -100,7 +89,7 @@ class ElementTest(TestCase):
         e.chip.pad.add(Geometry(layer = 'top.copper',id = 'pad'))
 
         # Check returned objects and Id auto-mangling
-        T(set([elem.id for elem in e.iterlayout()]) ==
+        T(set([elem.id for elem in e.iterlayout()]),
           set((Id('base/chip/pad/pad'), Id('base/chip/sym'))))
 
         # Check that transforms are working
