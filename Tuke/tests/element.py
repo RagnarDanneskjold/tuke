@@ -36,7 +36,7 @@ class ElementTest(TestCase):
         b = Element('b')
         r = a.add(b)
 
-        self.assert_(id(a.b) == id(r))
+        self.assert_(a.b is r)
 
     def testElementInteration(self):
         """Element interation"""
