@@ -40,7 +40,7 @@ class Element(object):
         from Tuke.geometry import Transformation
         self.id = Id(id)
 
-        if len(self.id) != 1:
+        if len(self.id) > 1:
             raise ValueError, 'Invalid Element Id \'%s\': more than one path component' % str(self.id)
 
         self.transform = Transformation()
