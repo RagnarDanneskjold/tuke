@@ -94,7 +94,7 @@ class Element(object):
         if hasattr(self,n):
             n = str(rndId())
 
-        r = self._wrap_subelement(self.id,self.transform,obj)
+        r = self._wrap_subelement(obj)
         setattr(self,n,r)
 
         return r
@@ -111,14 +111,14 @@ class Element(object):
 
         return r
 
-    def _wrap_subelement(self,base_id,base_transform,obj):
+    def _wrap_subelement(self,obj):
         """Wrap a subelement's id and transform attrs.
 
         Used so that a callee sees a consistant view of id and transform in
         sub-elements. For instance foo.bar.id == 'foo/bar'
         """
 
-        return subelement_wrapper(base_id,base_transform,obj)
+        return subelement_wrapper(self,obj)
 
     def iterlayout(self,layer_mask = None):
         """Iterate through layout.
@@ -142,24 +142,23 @@ class Element(object):
             else:
                 print s
                 for l in s.iterlayout(layer_mask):
-                    yield l 
+                    yield l
 
 class subelement_wrapper(object):
     """Class to wrap a sub-Element's id and transform attrs."""
-    def __init__(self,base_id,base_transform,obj):
-        self._base_id = base_id
-        self._base_transform = base_transform
+    def __init__(self,base,obj):
+        self._base = base
         self._obj = obj
 
     def isinstance(self,cls):
         return self._obj.isinstance(cls)
 
     def _wrapper_get_id(self):
-        return self._base_id + self._obj.id
+        return self._base.id + self._obj.id
     id = property(_wrapper_get_id)
 
     def _wrapper_get_transform(self):
-        return self._base_transform * self._obj.transform
+        return self._base.transform * self._obj.transform
     def _wrapper_set_transform(self,value):
         # FIXME: life is far more complex than this...
         self._obj.transform = value
@@ -169,22 +168,20 @@ class subelement_wrapper(object):
     def __getattr__(self,n):
         r = getattr(self._obj,n)
         if r.__class__ == subelement_wrapper: 
-            r = subelement_wrapper(self._base_id,self._base_transform,r)
-        #print '__getattr__(%s,%s) -> %s' % (str(self._base_id + self._obj.id),n,repr(r))
+            r = subelement_wrapper(self._base,r)
         return r
 
     def __iter__(self):
         for v in self._obj:
-            yield subelement_wrapper(self._base_id,self._base_transform,v)
+            yield subelement_wrapper(self._base,v)
 
     def iterlayout(self,*args,**kwargs):
         for l in self._obj.iterlayout(*args,**kwargs):
-            yield subelement_wrapper(self._base_id,self._base_transform,l)
+            yield subelement_wrapper(self._base,l)
 
     def __getitem__(self,key):
         r = self._obj[key]
-        #print '__getitem__(%s,%s) -> %s' % (str(self._base_id + self._obj.id),key,repr([e.id for e in r]))
-        return [subelement_wrapper(self._base_id,self._base_transform,e) for e in r]
+        return [subelement_wrapper(self._base,e) for e in r]
 
 def load_Element(dom):
     """Loads elements from a saved minidom"""
