@@ -63,6 +63,18 @@ class IdTest(TestCase):
         # Adding strings to Id's
         self.assert_(Id('foo') + 'bar' == Id('foo/bar'))
 
+    def testId_len(self):
+        """len(Id)"""
+
+        def T(x):
+            self.assert_(x)
+
+        T(len(Id('1/2/3')) == 3)
+        T(len(Id('1/2')) == 2)
+        T(len(Id('1')) == 1)
+        T(len(Id('.')) == 0)
+        T(len(Id()) == 0)
+
     def testIdAddSide_effects(self):
         """Id() + Id() has no side effects"""
 

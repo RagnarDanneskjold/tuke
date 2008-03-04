@@ -55,9 +55,6 @@ class Id(object):
 
             prev = i
 
-        if not id:
-            id = ['.']
-
         self.id = tuple(id)
 
 
@@ -76,7 +73,7 @@ class Id(object):
         if self.id:
             return reduce(lambda a,b: a + '/' + b,self.id)
         else:
-            return ''
+            return '.'
 
     def __eq__(self,b):
         return str(self) == str(b)
