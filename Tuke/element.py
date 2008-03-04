@@ -49,7 +49,7 @@ class Element(object):
         """Iterate through sub-elements."""
 
         for v in self.__dict__.itervalues():
-            if isinstance(v,Element):
+            if v.__class__ == subelement_wrapper:
                 yield v
 
     def __getitem__(self,key):
@@ -61,7 +61,7 @@ class Element(object):
         key = Id(key)
         r = [] 
         for v in self.__dict__.itervalues():
-            if isinstance(v,Element) \
+            if v.__class__ == subelement_wrapper \
                and v._obj.id == key[0]: 
                 if len(key) > 1:
                     r += v[key[1:]]
@@ -92,7 +92,7 @@ class Element(object):
         r = doc.createElement(self.__module__ + '.' + self.__class__.__name__)
 
         for n,v in self.__dict__.iteritems():
-            if isinstance(v,Element): 
+            if v.__class__  == subelement_wrapper: 
                 r.appendChild(v.save(doc))
             else:
                 r.setAttribute(n,repr(v))
@@ -139,17 +139,6 @@ class Element(object):
                         base_transform = base_transform):
                     yield l
 
-def issubelement_wrapper(obj):
-    """Returns True if obj is a subelement_wrapper
-
-    Needed as subelement_wrapper fakes __class__
-    """
-    try:
-        object.__getattribute__(obj,'_obj')
-        return True
-    except AttributeError:
-        return False
-
 class subelement_wrapper(object):
     """Class to wrap a sub-Element's id and transform attrs."""
     def __init__(self,base_id,base_transform,obj):
@@ -169,27 +158,12 @@ class subelement_wrapper(object):
 
     transform = property(_wrapper_get_transform,_wrapper_set_transform)
 
-    def __getattribute__(self_real,n):
-        # This could be written as a __getattr__, except that we need to modify
-        # __class__ so isinstance() calls work as expected.
-        print '__getattribute__(self,%s)' % n
-
-        self = lambda n: object.__getattribute__(self_real,n)
-
-        if n == '__class__':
-            return self('_obj').__class__
-        elif n == 'id':
-            return self('_base_id') + self('_obj').id
-        elif n == 'transform':
-            return self('_base_transform') * self('_obj').transform
-        # Much nicer to just use self._obj...
-        elif n in ('_obj','_base_id','_base_transform'):
-            return self(n) 
-        else:
-            r = getattr(self('_obj'),n)
-            if isinstance(r,Element):
-                r = subelement_wrapper(self('_base_id'),self('_base_transform'),r)
-            return r
+    def __getattr__(self,n):
+        r = getattr(self._obj,n)
+        if r.__class__ == subelement_wrapper: 
+            r = subelement_wrapper(self._base_id,self._base_transform,r)
+        #print '__getattr__(%s,%s) -> %s' % (str(self._base_id + self._obj.id),n,repr(r))
+        return r
 
     def __iter__(self):
         for v in self._obj:
