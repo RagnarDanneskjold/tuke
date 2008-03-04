@@ -29,17 +29,43 @@ class ElementTest(TestCase):
 
         self.assertRaises(ValueError,lambda:Element('foo/bar'))
 
-    def testElementInterator(self):
+    def testElementInteration(self):
         """Element interation"""
 
-        a = Element()
+        def T(elem,id_set):
+            ids = [str(e.id) for e in elem]
+            self.assert_(set(ids) == set(id_set))
 
-        j = set((Element(),Element(),Element()))
+        a = Element('a')
+        T(a,set())
 
-        for i in j:
-            a.add(i)
+        for i in range(1,4):
+            a.add(Element(str(i)))
 
-        self.assert_(set(iter(a)) == j)
+        T(a,set(('a/1','a/2','a/3')))
+
+    def testElement__getitem__(self):
+        """Element[] matching"""
+        def T(elem,key,expected):
+            expected = sorted([Id(i) for i in expected])
+            got = sorted([e.id for e in elem[key]])
+            self.assert_(expected == got,'expected: %s  got: %s' % (expected,got))
+
+        a = Element('a')
+        T(a,Id(),())
+        T(a,'foo',())
+        T(a,Id('foo'),())
+
+        a.add(Element('b'))
+        T(a,'b',('a/b',))
+        T(a,'b/b',())
+
+        a.add(Element('c'))
+        T(a,'c',('a/c',))
+
+        a.b.add(Element('d'))
+        T(a,'b/d',('a/b/d',))
+
 
     def testElementIterlayout(self):
         """Element.iterlayout()"""

@@ -46,14 +46,31 @@ class Element(object):
         self.transform = Transformation()
 
     def __iter__(self):
+        """Iterate through sub-elements."""
+
         for v in self.__dict__.itervalues():
             if v.__class__ == subelement_wrapper:
-                yield v._obj
+                yield v
+
+    def __getitem__(self,key):
+        """Get sub-elements by Id
+
+        Returns the list of matching sub-elements.
+        """
+
+        key = Id(key)
+        r = [] 
+        for v in self.__dict__.itervalues():
+            if v.__class__ == subelement_wrapper \
+               and v._obj.id == key[0]: 
+                if len(key) > 1:
+                    r += v[key[1:]]
+                else:
+                    r.append(v) 
+        return r
 
     def add(self,obj):
         """Add Element as sub-element.
-
-        The Elements id must be unique, or == '.'
 
         If the element's id is a valid Python identifier and there isn't
         already an attribute of that name, it will be accessible as self.(id)
@@ -63,16 +80,12 @@ class Element(object):
         # will not be accessible, not that it won't be in self.__dict__...
         n = str(obj.id)
 
-        # If the id == '.' we'll have to come up with a fake name for it.
-        if n == '.':
+        # If the id already exists have to come up with a fake name for it.
+        if hasattr(self,n):
             n = str(rndId())
-            # Not gonna check for a collision, I'm not worried about lightning.
 
-        if not hasattr(self,n):
-            setattr(self,n,
-                    self._wrap_subelement(self.id,self.transform,obj))
-        else:
-            raise KeyError, 'Could not add Element with id=%s due to identifier collision.' % repr(n)
+        setattr(self,n,
+                self._wrap_subelement(self.id,self.transform,obj))
 
     def save(self,doc):
         """Returns an XML minidom object representing the Element"""
@@ -114,8 +127,6 @@ class Element(object):
         else:
             base_transform = self.transform
 
-        print 'base_transform = %s' % repr(base_transform)
-
         base_id = base_id + self.id
         for s in self:
             from Tuke.geometry import Geometry
@@ -130,10 +141,19 @@ class Element(object):
 
 class subelement_wrapper(object):
     """Class to wrap a sub-Element's id and transform attrs."""
-    def __init__(self,base_id,base_transform,obj):
-        self._base_id = base_id
-        self._base_transform = base_transform
-        self._obj = obj
+    def __new__(cls,base_id,base_transform,obj):
+        # It'd be inefficient to stack subelement_wrappers, so check if obj is
+        # one.
+        if obj.__class__ == subelement_wrapper:
+            obj._base_id = base_id + obj._base_id
+            obj._base_transform = base_transform * obj._base_transform
+            return obj
+        else:
+            self = super(subelement_wrapper,cls).__new__(cls)
+            self._base_id = base_id
+            self._base_transform = base_transform
+            self._obj = obj
+            return self
 
     def _wrapper_get_id(self):
         return self._base_id + self._obj.id
@@ -148,7 +168,20 @@ class subelement_wrapper(object):
     transform = property(_wrapper_get_transform,_wrapper_set_transform)
 
     def __getattr__(self,n):
-        return getattr(self._obj,n)
+        r = getattr(self._obj,n)
+        if r.__class__ == subelement_wrapper: 
+            r = subelement_wrapper(self._base_id,self._base_transform,r)
+        #print '__getattr__(%s,%s) -> %s' % (str(self._base_id + self._obj.id),n,repr(r))
+        return r
+
+    def __iter__(self):
+        for v in self._obj:
+            yield subelement_wrapper(self._base_id,self._base_transform,v)
+
+    def __getitem__(self,key):
+        r = self._obj[key]
+        #print '__getitem__(%s,%s) -> %s' % (str(self._base_id + self._obj.id),key,repr([e.id for e in r]))
+        return [subelement_wrapper(self._base_id,self._base_transform,e) for e in r]
 
 def load_Element(dom):
     """Loads elements from a saved minidom"""
