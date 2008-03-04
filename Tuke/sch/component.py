@@ -48,7 +48,9 @@ class Component(Element):
         self.netlist = Netlist(id=id)
 
         for p in pins:
-            if not isinstance(p,Pin):
+            try:
+                assert p.isinstance(Pin)
+            except AttributeError,AssertionError:
                 p = Pin(p)
             self.add(p)
 
@@ -97,7 +99,7 @@ class Component(Element):
                 check = deque(add_subs_to_check(Id('.'),iter(self)))
                 while check:
                     base,c = check.popleft()
-                    if isinstance(c,Component):
+                    if c.isinstance(Component):
                         for p in c:
                             if p == i:
                                 # Found, return with correct path.

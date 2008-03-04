@@ -69,6 +69,14 @@ class Element(object):
                     r.append(v) 
         return r
 
+    def isinstance(self,cls):
+        """Return isinstance(self,cls)
+
+        Due to the behind the scenes element wrapping this must be used instead
+        of isinstance.
+        """
+        return isinstance(self,cls)
+
     def add(self,obj):
         """Add Element as sub-element.
 
@@ -145,6 +153,9 @@ class subelement_wrapper(object):
         self._base_id = base_id
         self._base_transform = base_transform
         self._obj = obj
+
+    def isinstance(self,cls):
+        return self._obj.isinstance(cls)
 
     def _wrapper_get_id(self):
         return self._base_id + self._obj.id
