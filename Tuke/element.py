@@ -198,6 +198,11 @@ class subelement_wrapper(object):
         r = self._obj[key]
         return [subelement_wrapper(self._base,e) for e in r]
 
+    @non_evalable_repr_helper
+    def __repr__(self):
+        return {'_obj.id':self._obj.id}
+
+
 def load_Element(dom):
     """Loads elements from a saved minidom"""
 
