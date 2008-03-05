@@ -70,13 +70,15 @@ def non_evalable_repr_helper(fn):
     <Frob.foo instance at 0xb782bf2c, has_bar=True, frob_speed=100>
 
     To use simply have your __repr__ function return a dict of keys and values.
+
+    Note that old-style classes are not supported.
     """
 
     def f(self):
         kw = fn(self)
 
         # Think, recursion...
-        rpr = super(self.__class__,self).__repr__()
+        rpr = object.__repr__(self)
 
         if not kw:
             return rpr
