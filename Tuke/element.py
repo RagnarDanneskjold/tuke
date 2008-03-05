@@ -18,7 +18,7 @@
 # ### BOILERPLATE ###
 
 import Tuke
-from Tuke import Id,rndId,Netlist
+from Tuke import Id,rndId,Netlist,non_evalable_repr_helper
 from xml.dom.minidom import Document,parse
 
 
@@ -151,6 +151,11 @@ class Element(object):
                 for l in s.iterlayout(layer_mask):
                     yield l
 
+    @non_evalable_repr_helper
+    def __repr__(self):
+        return {'id':self.id}
+
+
 class subelement_wrapper(object):
     """Class to wrap a sub-Element's id and transform attrs."""
     def __init__(self,base,obj):
@@ -180,10 +185,6 @@ class subelement_wrapper(object):
         if r.__class__ == subelement_wrapper: 
             r = subelement_wrapper(self._base,r)
         return r
-
-    @non_evalable_repr_helper
-    def __repr__(self):
-        return {'id':self.id}
 
     def __iter__(self):
         for v in self._obj:
