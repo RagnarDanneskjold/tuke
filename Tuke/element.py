@@ -200,7 +200,7 @@ class subelement_wrapper(object):
 
     @non_evalable_repr_helper
     def __repr__(self):
-        return {'_obj.id':self._obj.id}
+        return {'id':self._base.id + self._obj.id}
 
 
 def load_Element(dom):
