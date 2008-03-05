@@ -32,18 +32,11 @@ class ElementTest(TestCase):
     def testElementAddReturnsWrapped(self):
         """Element.add(obj) returns wrapped obj"""
 
-        def T(got,expected = True):
-            self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
-
-
         a = Element()
+        b = Element('b')
+        r = a.add(b)
 
-        r = a.add(Element('b'))
         self.assert_(a.b is r)
-
-        r = a.b.add(Element('c'))
-        self.assert_(a.b.c is r)
-
 
     def testElementAddObjChecks(self):
         """Element.add(obj) checks that obj is valid"""
