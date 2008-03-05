@@ -153,7 +153,7 @@ class Element(object):
 
     @non_evalable_repr_helper
     def __repr__(self):
-        return {'id':self.id}
+        return {'id':str(self.id)}
 
 
 class subelement_wrapper(object):
@@ -200,7 +200,7 @@ class subelement_wrapper(object):
 
     @non_evalable_repr_helper
     def __repr__(self):
-        return {'id':self._base.id + self._obj.id}
+        return {'id':str(self._base.id + self._obj.id)}
 
 
 def load_Element(dom):
