@@ -29,14 +29,39 @@ class ElementTest(TestCase):
 
         self.assertRaises(ValueError,lambda:Element('foo/bar'))
 
+    def testElementAddCollisions(self):
+        """Element.add() attr collisions"""
+
+        def T(got,expected = True):
+            self.assert_(expected == got,'expected: %s  got: %s' % (expected,got))
+
+        # collide with existing 
+        a = Element('a')
+        b1 = a.add(Element('b'))
+        b2 = a.add(Element('b'))
+
+        T(a.b,set((b1,b2)))
+   
+        # collide with attr
+        a = Element('a')
+        a.b = 10
+        b1 = a.add(Element('b'))
+        b2 = a.add(Element('b'))
+        T(a.b,10)
+        T(a['b'],set((b1,b2)))
+
     def testElementAddReturnsWrapped(self):
         """Element.add(obj) returns wrapped obj"""
 
         a = Element()
+
         b = Element('b')
         r = a.add(b)
-
         self.assert_(a.b is r)
+
+        b = Element('b')
+        r = a.add(b)
+        self.assert_(r in a.b)
 
     def testElementAddObjChecks(self):
         """Element.add(obj) checks that obj is valid"""
@@ -78,35 +103,40 @@ class ElementTest(TestCase):
         a.add(Element('b'))
         T(a.b.isinstance(Element))
 
-    def testElement__getitem__(self):
-        """Element[] matching"""
+    def testElementbyid(self):
+        """Element.byid()"""
         def T(elem,key,expected):
-            expected = sorted([Id(i) for i in expected])
-            got = sorted([e.id for e in elem[key]])
+            got = elem.byid(key)
             self.assert_(expected == got,'expected: %s  got: %s' % (expected,got))
 
+        def R(elem,key,ex):
+            self.assertRaises(ex,lambda: elem[key])
+
         a = Element('a')
-        T(a,Id(),())
-        T(a,'foo',())
-        T(a,Id('foo'),())
+        R(a,Id(),KeyError)
+        R(a,'foo',KeyError)
+        R(a,Id('foo'),KeyError)
 
-        a.add(Element('b'))
-        T(a,'b',('a/b',))
-        T(a,'b/b',())
+        b1 = a.add(Element('b'))
+        T(a,'b',set((b1,)))
+        R(a,'b/b',KeyError)
 
-        a.add(Element('b'))
-        T(a,'b',('a/b','a/b'))
-        T(a,'b/b',())
+        b2 = a.add(Element('b'))
+        T(a,'b',set((b1,b2)))
+        R(a,'b/b',KeyError)
 
-        a.add(Element('c'))
-        T(a,'c',('a/c',))
+        c1 = a.add(Element('c'))
+        T(a,'c',set((c1,)))
 
-        a.b.add(Element('d'))
-        T(a,'b/d',('a/b/d',))
+        print 'GO'
+        d1 = a.b.add(Element('d'))
+        print [z.id for z in a.byid('b')]
+        T(a,'b',set((b1,b2)))
+        T(a,'b/d',set((d1,)))
 
-        a.b.add(Element('d'))
-        T(a,'b',('a/b','a/b'))
-        T(a,'b/d',('a/b/d','a/b/d'))
+        d2 = a.b.add(Element('d'))
+        T(a,'b',set((b1,b2)))
+        T(a,'b/d',set((d1,d2)))
 
 
     def testElementIterlayout(self):

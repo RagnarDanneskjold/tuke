@@ -34,6 +34,8 @@ class Element(object):
     They have an immutable Id
 
     That Id must have a single path component, IE, Id('foo/bar') is invalid.
+
+    They can have one or more sub-elements.
     """
 
     def __init__(self,id=''):
@@ -45,37 +47,104 @@ class Element(object):
 
         self.transform = Transformation()
 
+    # Some notes on the sub-elements implementation:
+    #
+    # It can be assumed that there will be a *lot* of sub-element lookups, both
+    # using foo.bar syntax, and foo[] So a dict that can quickly map id's to
+    # elements of some sort is essential. Fortunately all Element objects have
+    # their own ready made dict, __dict__ There is no reason why we can't put
+    # anything we want in there, including sub-elements, so long as we're
+    # careful to handle name collisions consistantly.
+    #
+    # The rules for nam collisions are pretty simple. If the collision is with
+    # an existing set of subelements, just add the new element to that set. If
+    # it's with an existing Element, convert to a subelement_set containing
+    # both. Finally, if the name is used by a non-subelement-related attribute,
+    # re-try the above but using a strong hash of the name instead.
+
+
     def __iter__(self):
         """Iterate through sub-elements."""
 
-        for v in self.__dict__.itervalues():
-            if v.__class__ == subelement_wrapper:
-                yield v
+        for i in self.__dict__.itervalues():
+            if i.__class__ == subelement_wrapper:
+                yield i
+            elif i.__class__ == subelement_set:
+                for j in i:
+                    yield j
 
-    def __getitem__(self,key):
+    def _element_id_to_dict_key(self,id):
+        """Returns the dict key that Element id should be stored under.
+        
+        This is the key under which the Element of the given id will be stored
+        under.
+        """
+        assert len(id) <= 1
+
+        n = str(id)
+        if hasattr(self,n) and not isinstance(getattr(self,n),(subelement_set,subelement_wrapper)):
+            # hash(str) would be nice to use, but the documentation only says that
+            # hash collisions are unlikely, rather than crypto-unlikely.
+            #
+            # md5 and sha on Python are both basically the same speed. md5 however
+            # results in shorter strings, so we use it. hexdigest() is slightly
+            # slower than digest(), but it's really not significant.
+            import md5
+            n = md5.new(n).hexdigest()
+        return n
+
+    def __getitem__(self,id):
+        """Get sub-element by Id
+
+        Similar to byid(), but raises a LookupError if there are multiple
+        sub-elements with the same id
+        """
+        r = self.byid(id)
+
+        if len(r) > 1:
+            raise LookupError, "Multiple sub-elements match '%s'" % str(id)
+
+        return r.pop()
+
+    def byid(self,key):
         """Get sub-elements by Id
 
-        Returns the list of matching sub-elements.
+        Returns the set of matching sub-elements. Raises KeyError if there are
+        no matches.
         """
-
+        print "byid for '%s' in '%s'" % (str(key),str(self.id))
         key = Id(key)
-        r = [] 
-        for v in self.__dict__.itervalues():
-            if v.__class__ == subelement_wrapper \
-               and v._obj.id == key[0]: 
-                if len(key) > 1:
-                    r += v[key[1:]]
-                else:
-                    r.append(v) 
+
+        if not len(key):
+            raise KeyError, 'byid(Id()) will always match nothing'
+
+        # Note the pattern of r = subelement_set(), this is to pass through to
+        # the final raise KeyError at the bottom.
+        try:
+            r = self.__dict__[self._element_id_to_dict_key(key[0])]
+        except KeyError:
+            r = subelement_set()
+
+        if not isinstance(r,(subelement_set,subelement_wrapper)):
+            r = subelement_set() 
+
+        if not isinstance(r,subelement_set):
+            r = subelement_set((r,))
+
+        if len(key) > 1:
+            j = r
+            r = set()
+            for i in j:
+                try:
+                    # This is a search, which may fail, if so, ignore. 
+                    r |= i.byid(key[1:])
+                except KeyError:
+                    pass
+
+        if not r:
+            raise KeyError, "No sub-elements found matching '%s' in '%s'" % (str(key),str(self.id))
+
         return r
-
-    def isinstance(self,cls):
-        """Return isinstance(self,cls)
-
-        Due to the behind the scenes element wrapping this must be used instead
-        of isinstance.
-        """
-        return isinstance(self,cls)
 
     def add(self,obj):
         """Add Element as sub-element.
@@ -84,6 +153,9 @@ class Element(object):
 
         If the element's id is a valid Python identifier and there isn't
         already an attribute of that name, it will be accessible as self.(id)
+
+        Element id collisions, when there wasn't an attribute of the same name,
+        will result in self.foo returning a set.
         """
 
         if obj.__class__ == subelement_wrapper:
@@ -92,20 +164,34 @@ class Element(object):
         if not isinstance(obj,Element):
             raise TypeError, "Can only add Elements to Elements, not %s" % type(obj)
 
-        assert len(obj.id) <= 1
+        n = self._element_id_to_dict_key(obj.id)
 
-        # Note that there is no actual test for valid identifiers... We said it
-        # will not be accessible, not that it won't be in self.__dict__...
-        n = str(obj.id)
+        obj = self._wrap_subelement(obj)
 
-        # If the id already exists have to come up with a fake name for it.
-        if hasattr(self,n):
-            n = str(rndId())
+        if not hasattr(self,n):
+            # Simple case, attribute doesn't already exist.
+            setattr(self,n,obj)
+        else:
+            if isinstance(getattr(self,n),subelement_set):
+                # Already a set by that name
+                setattr(self,n,
+                        getattr(self,n).add(obj))
+            elif isinstance(getattr(self,n),subelement_wrapper):
+                # Convert single element to a set of elements
+                setattr(self,n,
+                        subelement_set((getattr(self,n),obj)))
+            else:
+                assert False # can't happen 
 
-        r = self._wrap_subelement(obj)
-        setattr(self,n,r)
+        return obj
 
-        return r
+    def isinstance(self,cls):
+        """Return isinstance(self,cls)
+
+        Due to the behind the scenes element wrapping this must be used instead
+        of isinstance.
+        """
+        return isinstance(self,cls)
 
     def save(self,doc):
         """Returns an XML minidom object representing the Element"""
@@ -155,6 +241,10 @@ class Element(object):
     def __repr__(self):
         return {'id':str(self.id)}
 
+
+class subelement_set(set):
+    """A set of sub-elements."""
+    pass
 
 class subelement_wrapper(object):
     """Class to wrap a sub-Element's id and transform attrs."""
