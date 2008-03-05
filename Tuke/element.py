@@ -181,6 +181,10 @@ class subelement_wrapper(object):
             r = subelement_wrapper(self._base,r)
         return r
 
+    @non_evalable_repr_helper
+    def __repr__(self):
+        return {'id':self.id}
+
     def __iter__(self):
         for v in self._obj:
             yield subelement_wrapper(self._base,v)
