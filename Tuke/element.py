@@ -18,7 +18,7 @@
 # ### BOILERPLATE ###
 
 import Tuke
-from Tuke import Id,rndId,Netlist
+from Tuke import Id,rndId,Netlist,non_evalable_repr_helper
 from xml.dom.minidom import Document,parse
 
 
@@ -31,15 +31,7 @@ class Element(object):
         
     They can be loaded and saved to disk.
 
-    # XML attributes, and there default values.
-    #
-    # This should include all state that needs to be saved in the long term.
-    # All values in this list should be eval(repr()) safe.
-    saved_state = ('id',)
-
-    def extra_saved_state(self):
-        """For extra saved state that must be auto-generated in some way."""
-        return ()
+    They have an immutable Id
 
     That Id must have a single path component, IE, Id('foo/bar') is invalid.
     """
@@ -130,10 +122,86 @@ class Element(object):
     def _wrap_subelement(self,obj):
         """Wrap a subelement's id and transform attrs.
 
+        Used so that a callee sees a consistant view of id and transform in
+        sub-elements. For instance foo.bar.id == 'foo/bar'
+        """
+
+        return subelement_wrapper(self,obj)
+
+    def iterlayout(self,layer_mask = None):
+        """Iterate through layout.
+
+        Layout iteration is done depth first filtering the results with the
+        layer_mask. All geometry transforms are handled transparently.
+        """
+     
+        # We can't import Tuke.geometry earlier, due to circular imports, hence
+        # the weird layer_mask = None type junk.
+        from Tuke.geometry import Layer
+        if not layer_mask:
+            layer_mask = '*'
+        layer_mask = Layer(layer_mask)
+
+        for s in self:
+            from Tuke.geometry import Geometry
+            if s.isinstance(Geometry):
+                if s.layer in layer_mask:
+                    yield s
+            else:
+                for l in s.iterlayout(layer_mask):
+                    yield l
 
     @non_evalable_repr_helper
     def __repr__(self):
         return {'id':self.id}
+
+
+class subelement_wrapper(object):
+    """Class to wrap a sub-Element's id and transform attrs."""
+    def __init__(self,base,obj):
+        self._base = base
+        self._obj = obj
+
+    def isinstance(self,cls):
+        return self._obj.isinstance(cls)
+
+    def _wrapper_get_id(self):
+        return self._base.id + self._obj.id
+    id = property(_wrapper_get_id)
+
+    def _wrapper_get_transform(self):
+        return self._base.transform * self._obj.transform
+    def _wrapper_set_transform(self,value):
+        # The code setting transform will be dealing with the transform
+        # relative to the wrapper, however _obj.transform needs to be stored
+        # relative to _obj. So apply the inverse of the base transformation
+        # before storing the value to undo.
+        self._obj.transform = self._base.transform.I * value
+
+    transform = property(_wrapper_get_transform,_wrapper_set_transform)
+
+    def __getattr__(self,n):
+        r = getattr(self._obj,n)
+        if r.__class__ == subelement_wrapper: 
+            r = subelement_wrapper(self._base,r)
+        return r
+
+    def __iter__(self):
+        for v in self._obj:
+            yield subelement_wrapper(self._base,v)
+
+    def iterlayout(self,*args,**kwargs):
+        for l in self._obj.iterlayout(*args,**kwargs):
+            yield subelement_wrapper(self._base,l)
+
+    def __getitem__(self,key):
+        r = self._obj[key]
+        return [subelement_wrapper(self._base,e) for e in r]
+
+    @non_evalable_repr_helper
+    def __repr__(self):
+        return {'_obj.id':self._obj.id}
+
 
 def load_Element(dom):
     """Loads elements from a saved minidom"""
