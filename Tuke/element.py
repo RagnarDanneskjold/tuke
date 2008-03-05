@@ -86,6 +86,14 @@ class Element(object):
         already an attribute of that name, it will be accessible as self.(id)
         """
 
+        if obj.__class__ == subelement_wrapper:
+            raise TypeError, 'Can only add unwrapped Elements, IE, foo.add(foo.bar) is invalid.'
+
+        if not isinstance(obj,Element):
+            raise TypeError, "Can only add Elements to Elements, not %s" % type(obj)
+
+        assert len(obj.id) <= 1
+
         # Note that there is no actual test for valid identifiers... We said it
         # will not be accessible, not that it won't be in self.__dict__...
         n = str(obj.id)

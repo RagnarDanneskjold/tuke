@@ -38,6 +38,20 @@ class ElementTest(TestCase):
 
         self.assert_(a.b is r)
 
+    def testElementAddObjChecks(self):
+        """Element.add(obj) checks that obj is valid"""
+
+        def T(ex,obj):
+            self.assertRaises(ex,lambda:Element().add(obj))
+
+        # Basic wrongness
+        T(TypeError,None)
+        T(TypeError,'asdf')
+        T(TypeError,2)
+
+        # Check for wrapped subelements
+        T(TypeError,Element().add(Element()))
+
     def testElementInteration(self):
         """Element interation"""
 
