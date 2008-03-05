@@ -57,31 +57,3 @@ def repr_helper(fn):
                               args_str)
 
     return f
-
-def non_evalable_repr_helper(fn):
-    """Decorator for __repr__ functions that return non-eval()able strings.
-
-    Lets you add informative keywords, turning:
-
-    <Frob.foo instance at 0xb782bf2c>
-
-    into:
-
-    <Frob.foo instance at 0xb782bf2c, has_bar=True, frob_speed=100>
-
-    To use simply have your __repr__ function return a dict of keys and values.
-    """
-
-    def f(self):
-        kw = fn(self)
-
-        # Think, recursion...
-        rpr = super(self.__class__,self).__repr__()
-
-        if not kw:
-            return rpr
-        else:
-            return rpr[:-1] + ', ' \
-                   + ', '.join(['%s=%s' % (n,repr(v)) for n,v in kw.iteritems()]) \
-                   + '>'
-    return f
