@@ -55,6 +55,13 @@ class Element(object):
     # their own ready made dict, __dict__ There is no reason why we can't put
     # anything we want in there, including sub-elements, so long as we're
     # careful to handle name collisions consistantly.
+    #
+    # The rules for nam collisions are pretty simple. If the collision is with
+    # an existing set of subelements, just add the new element to that set. If
+    # it's with an existing Element, convert to a subelement_set containing
+    # both. Finally, if the name is used by a non-subelement-related attribute,
+    # re-try the above but using a strong hash of the name instead.
+
 
     def __iter__(self):
         """Iterate through sub-elements."""
@@ -186,11 +193,15 @@ class Element(object):
         return {'id':str(self.id)}
 
 
+class subelement_set(set):
+    """A set of sub-elements."""
+    pass
+
 class subelement_wrapper(object):
     """Class to wrap a sub-Element's id and transform attrs."""
     def __init__(self,base,obj):
         assert(isinstance(base,Element))
-        assert(isinstance(base,(Element,subelement_wrapper)))
+        assert(isinstance(obj,(Element,subelement_wrapper)))
         self._base = base
         self._obj = obj
 
