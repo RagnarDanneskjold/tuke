@@ -199,7 +199,7 @@ class subelement_wrapper(object):
     """Class to wrap a sub-Element's id and transform attrs."""
     def __init__(self,base,obj):
         assert(isinstance(base,Element))
-        assert(isinstance(base,(Element,subelement_wrapper)))
+        assert(isinstance(obj,(Element,subelement_wrapper)))
         self._base = base
         self._obj = obj
 
