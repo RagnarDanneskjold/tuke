@@ -35,11 +35,15 @@ class ElementTest(TestCase):
         def T(got,expected = True):
             self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
 
-
-        a = Element()
+        a = Element('a')
 
         r = a.add(Element('b'))
-        self.assert_(a.b is r)
+        T(a.b is r)
+
+        r = a.b.add(Element('c'))
+        print r,a.b.c
+        T(a.b.c is r)
+
     def testElementAddCollisions(self):
         """Element.add() attr collisions"""
 
@@ -57,18 +61,6 @@ class ElementTest(TestCase):
         b1 = a.add(Element('b'))
         T(a.b,10)
         T(a['b'],b1)
-
-    def testElementAddReturnsWrapped(self):
-        """Element.add(obj) returns wrapped obj"""
-
-        r = a.b.add(Element('c'))
-        self.assert_(a.b.c is r)
-
-        a = Element()
-
-        b = Element('b')
-        r = a.add(b)
-        self.assert_(a.b is r)
 
     def testElementAddObjChecks(self):
         """Element.add(obj) checks that obj is valid"""
