@@ -194,17 +194,52 @@ class Element(object):
     def __repr__(self):
         return {'id':str(self.id)}
 
+# Cache of 
+import weakref
+subelement_wrapper_cache = weakref.WeakValueDictionary()
 
 class subelement_wrapper(object):
-    """Class to wrap a sub-Element's id and transform attrs."""
-    def __init__(self,base,obj):
-        assert(isinstance(base,Element))
-        assert(isinstance(obj,(Element,subelement_wrapper)))
-        self._base = base
-        self._obj = obj
+    """Class to wrap a sub-Element's id and transform attrs.
+    
+    This is the magic that allows foo.bar.id to be 'foo/bar', even though
+    seperately foo.id == 'foo' and bar.id == 'bar'
+
+    """
+    def __new__(cls,base,obj):
+        """Create a new subelement_wrapper
+
+        base - base element
+        obj - wrapped element
+
+        A subtle point is that for any given (id(base),id(obj)) only one
+        subelement_wrapper object will be created, subsequent calls will return
+        the same object. This is required not just for performence reasons, but
+        to maintain the following invarient:
+            
+        a.b.add(Element('c')) == a.b.c
+        """
+
+        cache_key = (id(base),id(obj))
+        print cache_key
+        try:
+            return subelement_wrapper_cache[cache_key]
+        except KeyError:
+            self = super(subelement_wrapper,cls).__new__(cls)
+
+            assert(isinstance(base,Element))
+            assert(isinstance(obj,(Element,subelement_wrapper)))
+            self._base = base
+            self._obj = obj
+
+            subelement_wrapper_cache[cache_key] = self
+            return self
 
     def isinstance(self,cls):
         return self._obj.isinstance(cls)
+
+    def add(self,obj):
+        return subelement_wrapper(self._base,
+                self._obj.add(obj))
 
     def _wrapper_get_id(self):
         return self._base.id + self._obj.id
