@@ -220,7 +220,6 @@ class subelement_wrapper(object):
         """
 
         cache_key = (id(base),id(obj))
-        print cache_key
         try:
             return subelement_wrapper_cache[cache_key]
         except KeyError:
