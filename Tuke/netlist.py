@@ -103,6 +103,14 @@ class Netlist(dict):
                 # same net.
                 self[s[0]].add(n)
 
+    def link(self,a,b=''):
+        """Link ids a and b"""
+
+        a = Id(a)
+        b = Id(b)
+
+        self[a].add(b)
+
     @repr_helper
     def __repr__(self):
         # Generate a list of unique Id sets

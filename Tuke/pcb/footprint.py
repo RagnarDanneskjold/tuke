@@ -25,8 +25,7 @@ class Footprint(Element):
     A footprint is the holder for the geometry data comprising a pcb footprint.
     Footprints contain any number of geometry elements, from simple
     constructions such as lines to more complex constructions such as Pins and
-    Pads. Electrical connectivity is defined by the netlist, the footprint
-    itself will have sub-elements who's Id's are referenced in the netlist.
+    Pads.
 
     Footprints always have an id of 'footprint'
     """

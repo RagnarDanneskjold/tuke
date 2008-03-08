@@ -28,24 +28,33 @@ class Element(object):
     Everything is an Element, from a single pad on a pcb, to a whole circuit.
     This applies equally to things in schematic view and layout view. What is
     common to elements is as follows:
-        
-    They can be loaded and saved to disk.
 
     They have an immutable Id
 
     That Id must have a single path component, IE, Id('foo/bar') is invalid.
 
-    They can have one or more sub-elements.
+    They can have one or more sub-elements, which must have unique Ids.
+    
+    Try have a transform attribute, for geometry transformation data.
+
+    They have a netlist attribute, for net list information.
+
+    They can be loaded and saved to disk.
     """
 
-    def __init__(self,id=''):
+    def __init__(self,id=None):
         from Tuke.geometry import Transformation
+        from Tuke import Netlist
+
+        if not id:
+            id = Id.random()
         self.id = Id(id)
 
         if len(self.id) > 1:
             raise ValueError, 'Invalid Element Id \'%s\': more than one path component' % str(self.id)
 
         self.transform = Transformation()
+        self.netlist = Netlist(id=self.id)
 
     # Some notes on the sub-elements implementation:
     #
@@ -201,7 +210,7 @@ class subelement_wrapper(object):
     """Class to wrap a sub-Element's id and transform attrs."""
     def __init__(self,base,obj):
         assert(isinstance(base,Element))
-        assert(isinstance(obj,(Element,subelement_wrapper)))
+        assert(isinstance(base,(Element,subelement_wrapper)))
         self._base = base
         self._obj = obj
 

@@ -17,7 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from Tuke import Netlist,Element,Id
+from Tuke import Element,Id
 
 from Tuke.sch.pin import Pin
 
@@ -27,8 +27,6 @@ class Component(Element):
     Components are representations of electrical components in a schematic.
     They are meant to be subclassed by the actual schematic symbols who will
     provide a custom rendering.
-
-    Components have a Netlist, describing the connectivity of pins within them.
 
     A component has pins, which are defined by define_pins() A component can
     link() pins of itself, or sub components, together.
@@ -44,8 +42,6 @@ class Component(Element):
         """
 
         Element.__init__(self,id=id)
-
-        self.netlist = Netlist(id=id)
 
         for p in pins:
             try:

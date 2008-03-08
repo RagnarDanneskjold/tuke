@@ -40,16 +40,17 @@ class Pin(Element):
         self.mask = mask
         self.square = square
 
-        def gen_pad_shape(dia,layer=None):
+        def gen_pad_shape(dia,id,layer=None):
             if self.square:
                 r = dia / 2
-                return Polygon((V(-r,-r),V(r,-r),V(r,r),V(-r,r)),id=self.id,layer=layer)
+                return Polygon((V(-r,-r),V(r,-r),V(r,r),V(-r,r)),id=id,layer=layer)
             else:
-                return Circle(dia,id=Id(),layer=layer)
+                return Circle(dia,id=id,layer=layer)
 
         self.add(Hole(self.dia,id=Id()))
 
-        self.add(gen_pad_shape(self.dia + (self.thickness * 2),layer='top.pad'))
-        self.add(gen_pad_shape(self.mask,layer='top.mask'))
-        self.add(gen_pad_shape(self.mask + (self.clearance * 2),layer='top.clearance'))
+        self.add(gen_pad_shape(self.dia + (self.thickness * 2),id='pad',layer='top.pad'))
+        self.add(gen_pad_shape(self.mask,id='mask',layer='top.mask'))
+        self.add(gen_pad_shape(self.mask + (self.clearance * 2),id='clearance',layer='top.clearance'))
 
+        self.netlist.link('pad')
