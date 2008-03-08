@@ -194,7 +194,10 @@ class Element(object):
     def __repr__(self):
         return {'id':str(self.id)}
 
-# Cache of 
+# Cache of subelement_wrappers, stored with (id(base),id(obj)) as keys.
+#
+# Possible bug... Could potentially return a value, if base and object are both
+# deleted and others end up at the same address, seems unlikely though.
 import weakref
 subelement_wrapper_cache = weakref.WeakValueDictionary()
 
