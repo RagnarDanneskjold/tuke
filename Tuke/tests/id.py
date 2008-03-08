@@ -68,6 +68,27 @@ class IdTest(TestCase):
         # Adding strings to Id's
         self.assert_(Id('foo') + 'bar' == Id('foo/bar'))
 
+    def testIdrelto(self):
+        def T(id,base,expected = True):
+            got = Id(id).relto(base)
+            self.assert_(got == expected,'got: %s expected: %s' % (got,expected))
+
+        def R(ex,id,base):
+            self.assertRaises(ex,lambda: Id(id).relto(base))
+
+        T('','','.')
+        T('a','','a')
+        T('a','a','..')
+        T('a/b','a','../b')
+        T('a/b/c/d','a/b/','../../c/d')
+        T('../a/b/c/d','../a/b/','../../../c/d')
+
+        R(ValueError,'','a')
+        R(ValueError,'','a/b')
+        R(ValueError,'a','a/b')
+        R(ValueError,'b','a/b')
+        R(ValueError,'b/a','a/b')
+
     def testId_len(self):
         """len(Id)"""
 

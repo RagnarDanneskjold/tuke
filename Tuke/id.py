@@ -29,7 +29,7 @@ class Id(object):
 
     __slots__ = ('_id')
 
-    def __init__(self,s = '.'):
+    def __init__(self,s = ''):
         """Create a new Id from s
 
         s may be a string or another Id
@@ -74,6 +74,21 @@ class Id(object):
 
         self._id = tuple(_id)
 
+    def relto(self,base):
+        """Returns self relative to base.
+
+        Id('a/b/c').relto('a') == '../b/c'
+        """
+
+        base = Id(base)
+
+        if len(base) > len(self) or \
+           self[:len(base)] != base:
+               raise ValueError, "'%s' is not relative to '%s'" % (self,base)
+
+        return Id('/'.join(map(lambda ignored: '..',range(len(base))) + list(self._id[len(base._id):])))
+
+        
 
     def __add__(self,b):
         n = Id()
@@ -93,7 +108,8 @@ class Id(object):
             return '.'
 
     def __eq__(self,b):
-        return str(self) == str(b)
+        b = Id(b)
+        return self._id == b._id
 
     def __ne__(self,b):
         return not self.__eq__(b)
