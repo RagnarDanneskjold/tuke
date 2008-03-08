@@ -100,7 +100,7 @@ class Element(object):
             r = self.__dict__[self._element_id_to_dict_key(id[0])]
 
             if len(id) > 1:
-                r = r[id[1:]]
+                r = subelement_wrapper(self,r[id[1:]])
         except KeyError:
             # Everything wrapped in a KeyError catch, so that inner KeyErrors
             # will give error messages relative to the outermost element.
