@@ -27,7 +27,7 @@ class Id(object):
     foo, a sub-element.
     """
 
-    __slots__ = ('id')
+    __slots__ = ('_id')
 
     def __init__(self,s = '.'):
         """Create a new Id from s
@@ -41,7 +41,7 @@ class Id(object):
         if not isinstance(s,str):
             raise TypeError, "%s is not an Id or a string: %s" % (type(s),s)
 
-        self.id = s.split('/')
+        self._id = s.split('/')
 
         self.normalize()
 
@@ -59,20 +59,20 @@ class Id(object):
     random = classmethod(random)
 
     def normalize(self):
-        id = []
+        _id = []
 
-        for i in self.id:
+        for i in self._id:
             if i == '..':
-                if id and id[-1] != '..':
-                    id.pop()
+                if _id and _id[-1] != '..':
+                    _id.pop()
                 else:
-                    id.append(i)
+                    _id.append(i)
             elif i in ('.',''):
                 continue
             else:
-                id.append(i)
+                _id.append(i)
 
-        self.id = tuple(id)
+        self._id = tuple(_id)
 
 
     def __add__(self,b):
@@ -80,15 +80,15 @@ class Id(object):
 
         # Why the Id(b)? That's to allow b to be anything that's acceptable by
         # Id(), yet, if it isn't, to properly raise a TypeError
-        n.id = self.id + Id(b).id
+        n._id = self._id + Id(b)._id
 
         n.normalize()
 
         return n 
 
     def __str__(self):
-        if self.id:
-            return reduce(lambda a,b: a + '/' + b,self.id)
+        if self._id:
+            return reduce(lambda a,b: a + '/' + b,self._id)
         else:
             return '.'
 
@@ -99,7 +99,7 @@ class Id(object):
         return not self.__eq__(b)
 
     def __len__(self):
-        return len(self.id)
+        return len(self._id)
 
     def __cmp__(self,other):
         """Compare
@@ -108,7 +108,7 @@ class Id(object):
         hierarchies being compared alphabetically."""
 
         if len(self) == len(other):
-            return cmp(self.id,other.id)
+            return cmp(self._id,other._id)
         else:
             if len(self) < len(other):
                 return -1
@@ -122,7 +122,7 @@ class Id(object):
         return ((s,),None) 
 
     def __getitem__(self,s):
-        e = self.id.__getitem__(s)
+        e = self._id.__getitem__(s)
 
         # In the Id[0] case, e is bare, however the following code is assuming
         # that e is a tuple. Fix.
@@ -133,7 +133,7 @@ class Id(object):
         return Id('/'.join(e))
 
     def __hash__(self):
-        return hash(self.id)
+        return hash(self._id)
 
 def rndId():
     """Alias for Id.random()"""

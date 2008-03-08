@@ -170,7 +170,7 @@ class IdTest(TestCase):
 
         # Must not implement the simple self.id = other.id, as other.id may
         # change.
-        self.assert_(a.id is not b.id)
+        self.assert_(a._id is not b._id)
 
     def testIdRaisesTypeErrors(self):
         """Id(1) raises TypeError"""
