@@ -33,22 +33,19 @@ class ElementTest(TestCase):
         """Element.add() attr collisions"""
 
         def T(got,expected = True):
-            self.assert_(expected == got,'expected: %s  got: %s' % (expected,got))
+            self.assert_(expected == got,'got: %s expected: %s' % (got,expected))
 
-        # collide with existing 
+        # Collide with an element 
         a = Element('a')
         b1 = a.add(Element('b'))
-        b2 = a.add(Element('b'))
+        self.assertRaises(Element.IdCollisionError,lambda:a.add(Element('b')))
 
-        T(a.b,set((b1,b2)))
-   
         # collide with attr
         a = Element('a')
         a.b = 10
         b1 = a.add(Element('b'))
-        b2 = a.add(Element('b'))
         T(a.b,10)
-        T(a['b'],set((b1,b2)))
+        T(a['b'],b1)
 
     def testElementAddReturnsWrapped(self):
         """Element.add(obj) returns wrapped obj"""
@@ -58,10 +55,6 @@ class ElementTest(TestCase):
         b = Element('b')
         r = a.add(b)
         self.assert_(a.b is r)
-
-        b = Element('b')
-        r = a.add(b)
-        self.assert_(r in a.b)
 
     def testElementAddObjChecks(self):
         """Element.add(obj) checks that obj is valid"""
@@ -81,8 +74,15 @@ class ElementTest(TestCase):
         """Element interation"""
 
         def T(elem,id_set):
-            ids = [str(e.id) for e in elem]
-            self.assert_(set(ids) == set(id_set))
+            ids = set() 
+            for e in elem:
+                try:
+                    e.isinstance(Element)
+                    ids.add(e.id)
+                except AttributeError:
+                    pass
+            id_set = set([Id(i) for i in id_set])
+            self.assert_(ids == id_set,'got: %s expected: %s' % (ids,id_set))
 
         a = Element('a')
         T(a,set())
@@ -103,11 +103,11 @@ class ElementTest(TestCase):
         a.add(Element('b'))
         T(a.b.isinstance(Element))
 
-    def testElementbyid(self):
-        """Element.byid()"""
+    def testElement__getitem__(self):
+        """Element[] lookups"""
         def T(elem,key,expected):
-            got = elem.byid(key)
-            self.assert_(expected == got,'expected: %s  got: %s' % (expected,got))
+            got = elem[key]
+            self.assert_(expected == got,'got: %s expected: %s' % (got,expected))
 
         def R(elem,key,ex):
             self.assertRaises(ex,lambda: elem[key])
@@ -117,26 +117,16 @@ class ElementTest(TestCase):
         R(a,'foo',KeyError)
         R(a,Id('foo'),KeyError)
 
-        b1 = a.add(Element('b'))
-        T(a,'b',set((b1,)))
+        b = a.add(Element('b'))
+        T(a,'b',b)
         R(a,'b/b',KeyError)
 
-        b2 = a.add(Element('b'))
-        T(a,'b',set((b1,b2)))
-        R(a,'b/b',KeyError)
+        c = a.add(Element('c'))
+        T(a,'c',c)
 
-        c1 = a.add(Element('c'))
-        T(a,'c',set((c1,)))
-
-        print 'GO'
-        d1 = a.b.add(Element('d'))
-        print [z.id for z in a.byid('b')]
-        T(a,'b',set((b1,b2)))
-        T(a,'b/d',set((d1,)))
-
-        d2 = a.b.add(Element('d'))
-        T(a,'b',set((b1,b2)))
-        T(a,'b/d',set((d1,d2)))
+        d = a.b.add(Element('d'))
+        T(a,'b',b)
+        T(a,'b/d',d)
 
 
     def testElementIterlayout(self):

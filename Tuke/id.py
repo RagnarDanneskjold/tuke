@@ -39,7 +39,7 @@ class Id(object):
             s = str(s)
 
         if not isinstance(s,str):
-            raise TypeError, s
+            raise TypeError, "%s is not an Id or a string: %s" % (type(s),s)
 
         self.id = s.split('/')
 
