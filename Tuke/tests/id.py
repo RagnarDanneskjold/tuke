@@ -68,29 +68,6 @@ class IdTest(TestCase):
         # Adding strings to Id's
         self.assert_(Id('foo') + 'bar' == Id('foo/bar'))
 
-    def testIdValidityChecking(self):
-        """Id checks for invalid ids"""
-
-        def T(str):
-            self.assert_(isinstance(Id(str),Id))
-
-        def F(str):
-            self.assertRaises(ValueError,lambda:Id(str))
-
-        T('_')
-        T('__')
-        T('.')
-        T('..')
-        T('_1234')
-        T('')
-
-        F('...')
-        F('_12 3')
-        F('_%')
-        F('%')
-        F('1')
-        F('12')
-        
     def testIdrelto(self):
         def T(id,base,expected = True):
             got = Id(id).relto(base)
@@ -118,9 +95,9 @@ class IdTest(TestCase):
         def T(x):
             self.assert_(x)
 
-        T(len(Id('_1/_2/_3')) == 3)
-        T(len(Id('_1/_2')) == 2)
-        T(len(Id('_1')) == 1)
+        T(len(Id('1/2/3')) == 3)
+        T(len(Id('1/2')) == 2)
+        T(len(Id('1')) == 1)
         T(len(Id('.')) == 0)
         T(len(Id()) == 0)
 

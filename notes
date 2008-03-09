@@ -1,64 +1,12 @@
 http://www.liquidpcb.org
 
-http://docutils.sourceforge.net/docutils/statemachine.py
--we should do things like this, Tuke is for developers!
-
-http://dirtsimple.org/2004/11/stream-of-consciousness-testing.html
--also, links to the above and talks about testing
-
-cypthon <- "python" compiled to c
 
 some quick ideas:
 
-rewrite xml saver to simply output evalable python code:
-
-Tuke.element.resolve_element_refs(\
-Tuke.element.Element._load(id='foo',_subs=(\
-  Tuke.element.Element._load(id='bar',_subs=(\
-    Tuke.element.Element._load(id='bar'),))\
-  Tuke.element.Element._load(id='aar',_subs=(\
-    Tuke.element.Element._load(id='foo'),)))))
-
-Also include a corresponding Element._dump. For performance, Element._dump
-should return a *deque* of strings rather than string concatination. Also make
-sure that stuff is sorted alphabetically where appropriate so diffs work. 
-
-Implement __version__ magic:
-
-Tuke.element.Element._load(__version__=(major,minor)
-Tuke.element.Element.__version__
-
-The version is the version of the code that *created* the object. major is for
-incompatible changes, minor is for compatible.
-
-Also create a Element.from_older_version(self,obj) that checks __version__ and
-either returns a converted object, (default, just update __version__) or raises
-Element.IncompatibleVersionError
-
-
-Make Id() enforce usage of valid python identifiers. Id.random() should be in
-the form of _1234abcd to enable that.
-
-
-Remove notion of referenced_id from ElementRefs. ElementRefs should either be
-initialized with an Id, or an Element. On load and save a master
-elementref_swizzle dict can be used to map actual refs to Ids as we find them.
-
-
-Element.connected - set of elements an element is connected too in a
-non-parent-child relationship. For instance, this can subsume the netlist.
-
-
-Could with be used to drop down a level of wrapper encapsulation?:
-
-a = Element('a')
-a.add(Element('b'))
-with a.b as b:
-    do stuff
-
-
 programmable heavy symbol generator
 
+
+make sure there are nice ways to map symbolic pin names to numerical pin numbers
 
 make embedded symbols/footprints be default, with uuid? sha1?
 
@@ -138,9 +86,15 @@ opamp.slota.in
 opamp.slota.out
 opamp.slotb.in
 
-Need to be able to exchange slots as well. Maybe a MultiSlot class, with a
-seperate Slot class, and play games with the connectivity, or heck, even just
-do delete/rename/recreate's when you want to exchage two slots.
+Need to be able to exchange slots as well.
+
+
+Can translate/rotate use decorators? Make Elements all have .v attribute? Don't
+forget rotate, mirror and scale.
+
+
+Decouple wrapper, obj = Decouple(Pic18f252(),Capacitor()) such that obj.rb0 ->
+obj.pic.rb0 but obj.pwr -> cap -> obj.pic.pwr
 
 
 For debugging Elements should include a reference to what source code file

@@ -15,6 +15,7 @@ import Tuke.tests.common
 
 from unittest import TestCase
 
+from Tuke import Id
 from Tuke.pcb import Pin 
 
 class PcbFootprintPinTest(TestCase):
@@ -23,4 +24,4 @@ class PcbFootprintPinTest(TestCase):
     def testPcbFootprintPin(self):
         """Basic tests"""
 
-        a = Pin(1,1,1,1,id='_1')
+        a = Pin(1,1,1,1,id=Id('1'))

@@ -94,9 +94,9 @@ class ElementTest(TestCase):
         T(a,set())
 
         for i in range(1,4):
-            a.add(Element('_' + str(i)))
+            a.add(Element(str(i)))
 
-        T(a,set(('a/_1','a/_2','a/_3')))
+        T(a,set(('a/1','a/2','a/3')))
 
     def testElement_isinstance(self):
         """Element.isinstance()"""
@@ -134,6 +134,13 @@ class ElementTest(TestCase):
         T(a,'b',b)
         T(a,'b/d',d)
 
+
+        e = Element('e')
+        e2 = a.add(e)
+        a['e'].foo = 'foo'
+        self.assert_(e2.foo is e.foo)
+        self.assert_(a.e.foo is e.foo)
+        self.assert_(a['e'].foo is e.foo)
 
     def testElementIterlayout(self):
         """Element.iterlayout()"""
@@ -191,6 +198,11 @@ class ElementTest(TestCase):
         self.assert_(a.bar.id == 'a/bar')
         self.assert_(repr(centerof(a.bar)) == repr(V(2,3)))
         self.assertRaises(AttributeError,lambda: a.foobar)
+
+        foo.foo = 'foo'
+        self.assert_(a.foo.foo is foo.foo)
+        a.foo.bar = 'bar'
+        self.assert_(a.foo.bar is foo.bar)
 
     def testElementSave(self):
         """Element.save()"""

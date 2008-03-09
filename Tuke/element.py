@@ -230,8 +230,8 @@ class subelement_wrapper(object):
 
             assert(isinstance(base,Element))
             assert(isinstance(obj,(Element,subelement_wrapper)))
-            self._base = base
-            self._obj = obj
+            object.__setattr__(self,'_base',base)
+            object.__setattr__(self,'_obj',obj)
 
             subelement_wrapper_cache[cache_key] = self
             return self
@@ -263,6 +263,16 @@ class subelement_wrapper(object):
         if r.__class__ == subelement_wrapper: 
             r = subelement_wrapper(self._base,r)
         return r
+
+    def __setattr__(self,n,v):
+        # Ugh, this is really ugly.
+        #
+        # For __getattr__ the transform property is called as you would expect,
+        # but __setattr__ bypasses this, so we have to handle it manually.
+        if n != 'transform':
+            setattr(self._obj,n,v)
+        else:
+            self._wrapper_set_transform(v) 
 
     def __iter__(self):
         for v in self._obj:
