@@ -38,7 +38,6 @@ from Tuke.tests.geometry.v import *
 
 from Tuke.tests.pcb.pad import *
 from Tuke.tests.pcb.pin import *
-from Tuke.tests.pcb.trace.basetrace import *
 
 from Tuke.tests.sch.component import *
 

@@ -240,7 +240,7 @@ class ElementRef(object):
         elif n == '__repr__':
             return self('__repr__')
         else:
-            if self('_ref_target') == None:
+            if self('_ref_target') is None:
                 if n == 'set_target':
                      return self('set_target')
                 else:
