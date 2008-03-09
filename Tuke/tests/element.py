@@ -15,7 +15,7 @@ import common
 
 from unittest import TestCase
 import Tuke
-from Tuke import load_Element,Element,Id,rndId
+from Tuke import load_Element,Element,ElementRef,Id,rndId
 
 from Tuke.geometry import Geometry,V,Transformation,Translation,translate,centerof
 
@@ -203,6 +203,28 @@ class ElementTest(TestCase):
         self.assert_(a.foo.foo is foo.foo)
         a.foo.bar = 'bar'
         self.assert_(a.foo.bar is foo.bar)
+
+    def testElementRef(self):
+        """ElementRef"""
+
+        def T(got,expected = True):
+            self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
+
+        a = Element('a')
+        b = a.add(Element('b'))
+
+        ref_b_orig = ElementRef('b',None)
+
+        for ref_b in (ref_b_orig,eval(repr(ref_b_orig))):
+            T(isinstance(ref_b,ElementRef))
+            self.assertRaises(ElementRef.NotResolvedError,lambda:ref_b.id)
+            ref_b.set_target(b)
+
+            T(ref_b.id,'a/b')
+            b.foo = 'foo'
+            T(ref_b.foo == 'foo')
+            ref_b.bar = 'bar'
+            T(b.bar == 'bar')
 
     def testElementSave(self):
         """Element.save()"""

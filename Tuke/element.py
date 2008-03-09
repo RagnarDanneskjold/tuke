@@ -18,9 +18,8 @@
 # ### BOILERPLATE ###
 
 import Tuke
-from Tuke import Id,rndId,Netlist,non_evalable_repr_helper
+from Tuke import Id,rndId,Netlist,repr_helper,non_evalable_repr_helper
 from xml.dom.minidom import Document,parse
-
 
 class Element(object):
     """Base element class.
@@ -193,6 +192,69 @@ class Element(object):
     @non_evalable_repr_helper
     def __repr__(self):
         return {'id':str(self.id)}
+
+class ElementRef(object):
+    """A persistant pointer to an element.
+    
+    ElementRefs, once created, act almost identically to the original element
+    in the same fashion as a weakref.proxy acts. The exceptions being that
+    ref.__class__ is still ElementRef and repr() returns the string for a new
+    ElementRef rather than the target elements repr. These changes are so the
+    Element load and save code works.
+
+    Note that ElementRefs are *not* weakrefs, and *will* increment the targets
+    reference count.
+    """
+
+    class NotResolvedError(Exception):
+        """ElementRef accessed before target resolved."""
+        pass
+
+    def __init__(self_real,target_id,target = None):
+        """Create a ElementRef pointing to target
+        
+        target_id - What the target element's id should be stored as.
+        target - The actual target Element obj, None if not yet available.
+
+        ElementRef's can be created without target set, this is for load and
+        save routines that may not have the Element instance that target refers
+        to available at initalization.
+        """
+        self = lambda n: object.__getattribute__(self_real,n)
+
+        object.__setattr__(self_real,'_ref_target_id',Id(target_id))
+
+        self('set_target')(target)
+
+    def set_target(self,target):
+        """Set target object."""
+        assert isinstance(target,(Element,subelement_wrapper,type(None)))
+
+        object.__setattr__(self,'_ref_target',target)
+
+    def __getattribute__(self_real,n):
+        self = lambda n: object.__getattribute__(self_real,n)
+
+        if n == '__class__':
+            return self('__class__')
+        elif n == '__repr__':
+            return self('__repr__')
+        else:
+            if self('_ref_target') == None:
+                if n == 'set_target':
+                     return self('set_target')
+                else:
+                    raise ElementRef.NotResolvedError, 'ElementRef not yet resolved.'
+            else:
+                return getattr(self('_ref_target'),n)
+
+    def __setattr__(self_real,n,v):
+        setattr(object.__getattribute__(self_real,'_ref_target'),n,v)
+
+    @repr_helper
+    def __repr__(self):
+        return ((object.__getattribute__(self,'_ref_target_id'),),{})
+
 
 # Cache of subelement_wrappers, stored with (id(base),id(obj)) as keys.
 #
