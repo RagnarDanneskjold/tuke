@@ -3,10 +3,24 @@ http://www.liquidpcb.org
 
 some quick ideas:
 
+rewrite xml saver to simply output evalable python code:
+
+Tuke.element.Element('a').add((\
+    Tuke.element.Element('b').add((\
+        Tuke.element.Element('c'),)),\
+    Tuke.element.Element('c'),))
+
+Not yet, correct, add doesn't currently accept list of elements. Also need to
+think out how to handle attributes correctly. Easiest would be to just dictate
+that call elements must define __repr__ such that the element is recreatable.
+Then the default __repr__ could simply scan the __dict__ and populate the
+constructor with the key=value's. As an aside, the order of the subelements
+should be alphabetically sorted, so diffs are more likely to work. Finally,
+remember that adding strings is real slow...
+
+
 programmable heavy symbol generator
 
-
-make sure there are nice ways to map symbolic pin names to numerical pin numbers
 
 make embedded symbols/footprints be default, with uuid? sha1?
 
@@ -86,15 +100,9 @@ opamp.slota.in
 opamp.slota.out
 opamp.slotb.in
 
-Need to be able to exchange slots as well.
-
-
-Can translate/rotate use decorators? Make Elements all have .v attribute? Don't
-forget rotate, mirror and scale.
-
-
-Decouple wrapper, obj = Decouple(Pic18f252(),Capacitor()) such that obj.rb0 ->
-obj.pic.rb0 but obj.pwr -> cap -> obj.pic.pwr
+Need to be able to exchange slots as well. Maybe a MultiSlot class, with a
+seperate Slot class, and play games with the connectivity, or heck, even just
+do delete/rename/recreate's when you want to exchage two slots.
 
 
 For debugging Elements should include a reference to what source code file
