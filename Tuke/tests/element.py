@@ -226,6 +226,41 @@ class ElementTest(TestCase):
             ref_b.bar = 'bar'
             T(b.bar == 'bar')
 
+    def testElementVersionChecking(self):
+        """Element __version__ checking"""
+        class elem(Element):
+            __version__ = (1,2)
+
+        def T(ver):
+            a = elem()
+            a.__version__ = ver
+            self.assert_(elem.from_older_version(a) == a)
+
+        def F(ver):
+            a = elem()
+            a.__version__ = ver
+            self.assertRaises(elem.VersionError,lambda: elem.from_older_version(a))
+
+        def R(ver):
+            a = Element()
+            a.__version__ = ver
+            self.assertRaises(ValueError,lambda: Element.from_older_version(a))
+
+        T((1,2))
+        T((1,1))
+        T((1,1,45))
+        T((1,1,45,'sdf'))
+
+        F((1,3))
+        F((0,2))
+        F((2,2))
+
+        R(None)
+        R('wr')
+        R((0,))
+        R((0,'sdf'))
+        R([0,'sdf'])
+
     def testElementSave(self):
         """Element.save()"""
 

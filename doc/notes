@@ -21,23 +21,7 @@ Tuke.element.Element._load(id='foo',_subs=(\
 
 Also include a corresponding Element._dump. For performance, Element._dump
 should return a *deque* of strings rather than string concatination. Also make
-sure that stuff is sorted alphabetically where appropriate so diffs work. 
-
-Implement __version__ magic:
-
-Tuke.element.Element._load(__version__=(major,minor)
-Tuke.element.Element.__version__
-
-The version is the version of the code that *created* the object. major is for
-incompatible changes, minor is for compatible.
-
-Also create a Element.from_older_version(self,obj) that checks __version__ and
-either returns a converted object, (default, just update __version__) or raises
-Element.IncompatibleVersionError
-
-
-Make Id() enforce usage of valid python identifiers. Id.random() should be in
-the form of _1234abcd to enable that.
+sure that stuff is sorted alphabetically where appropriate so diffs work.
 
 
 Remove notion of referenced_id from ElementRefs. ElementRefs should either be

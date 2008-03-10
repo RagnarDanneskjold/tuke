@@ -41,6 +41,8 @@ class Element(object):
     They can be loaded and saved to disk.
     """
 
+    __version__ = (0,0)
+
     def __init__(self,id=None):
         from Tuke.geometry import Transformation
         from Tuke import Netlist
@@ -188,6 +190,39 @@ class Element(object):
             else:
                 for l in s.iterlayout(layer_mask):
                     yield l
+
+    @staticmethod
+    def _basic_version_check(cur,other):
+        """Basic major/minor version check.
+
+        cur - Current version.
+        other - Version being checked.
+        """
+
+        try:
+            # Enforce numerical versions, allowing strings and their ilk would be
+            # way too confusing.
+            for n in cur[0:2] + other[0:2]:
+                if not isinstance(n,int):
+                    raise ValueError, 'Version major and minor must be ints: %s, %s' % (cur,other)
+                elif n < 0:
+                    raise ValueError, 'Version major and minor must be greater than zero: %s, %s' % (cur,other)
+
+            return cur[0] == other[0] and cur[1] >= other[1]
+        except (TypeError, IndexError):
+            raise ValueError, 'Invalid version: %s, %s' % (cur,other)
+
+    class VersionError(ValueError):
+        pass
+
+    @classmethod 
+    def from_older_version(cls,other):
+        if not cls == other.__class__:
+            raise TypeError, 'Got %s, expected %s in from_older_version()' % (cls,other.__clss__)
+        elif not cls._basic_version_check(cls.__version__,other.__version__):
+            raise cls.VersionError, '%s is an incompatible version of %s, need %s' % (other.__version__,cls,cls.__version__)
+        else:
+            return other
 
     @non_evalable_repr_helper
     def __repr__(self):
