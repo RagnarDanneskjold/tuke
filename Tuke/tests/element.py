@@ -94,9 +94,9 @@ class ElementTest(TestCase):
         T(a,set())
 
         for i in range(1,4):
-            a.add(Element(str(i)))
+            a.add(Element('_' + str(i)))
 
-        T(a,set(('a/1','a/2','a/3')))
+        T(a,set(('a/_1','a/_2','a/_3')))
 
     def testElement_isinstance(self):
         """Element.isinstance()"""

@@ -19,6 +19,10 @@
 
 from Tuke import repr_helper
 
+import re
+
+valid_id_re = re.compile('^([_A-Za-z][_A-Za-z0-9]*|\.|\.\.)$')
+
 class Id(object):
     """Element identifiers.
     
@@ -45,6 +49,12 @@ class Id(object):
 
         self.normalize()
 
+        # Has to be last, as '/'.split('/') == ('','')
+        for p in self._id:
+            if not valid_id_re.match(p):
+                raise ValueError, "'%s' is not a valid Id" % s
+
+    @classmethod
     def random(cls,bits = 64):
         """Create a random Id
         
@@ -53,10 +63,9 @@ class Id(object):
 
         import random
         
-        s = hex(random.randint(0,2 ** bits))[2:-1].zfill(bits / 4).lower()
+        s = '_' + hex(random.randint(0,2 ** bits))[2:-1].zfill(bits / 4).lower()
 
-        return cls(s) 
-    random = classmethod(random)
+        return cls(s)
 
     def normalize(self):
         _id = []

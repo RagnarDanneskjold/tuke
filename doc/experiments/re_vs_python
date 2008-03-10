@@ -28,7 +28,7 @@ import re
 
 def check_re(str,n):
     import re
-    match_re = re.compile('^[_A-Za-z][_A-Za-z0-9]*$')
+    match_re = re.compile('^([_A-Za-z][_A-Za-z0-9]*|\.|\.\.)$')
     r = True
     for i in xrange(n):
         r = r and match_re.match(str)
@@ -37,7 +37,11 @@ def check_re(str,n):
 def check_py(str,n):
     r = True
     def c(s):
-        if s[0:1].isalpha() or s[0:1] == '_':
+        if s == '.':
+            return True
+        elif s == '..':
+            return True
+        elif s[0:1].isalpha() or s[0:1] == '_':
             for c in s[1:]:
                 if not (c.isalnum() or c == '_'):
                     return False
@@ -53,6 +57,9 @@ def test(fn,n = 10000):
     assert fn('_qwerty',n)
     assert fn('_',n)
     assert fn('_123',n)
+    assert fn('.',n)
+    assert fn('..',n)
+    assert not fn('...',n)
     assert not fn('_12 3',n)
     assert not fn('',n)
     assert not fn('_%',n)

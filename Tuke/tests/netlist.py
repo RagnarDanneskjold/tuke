@@ -31,11 +31,11 @@ class NetlistTest(TestCase):
 
         n = Netlist()
 
-        i1 = Id('1')
-        i2 = Id('2')
-        i3 = Id('3')
-        i4 = Id('4')
-        i5 = Id('5')
+        i1 = Id('_1')
+        i2 = Id('_2')
+        i3 = Id('_3')
+        i4 = Id('_4')
+        i5 = Id('_5')
 
 
         # Nets are automagically created
@@ -75,9 +75,9 @@ class NetlistTest(TestCase):
         # Netlist.upate()
 
         # Same Id() level
-        n1 = Netlist((Id('1'),Id('2')),(Id('3'),Id('4')))
-        n2 = Netlist((Id('2'),Id('3')),(Id('1'),Id('4')))
-        n3 = Netlist((Id('1'),Id('2'),Id('3'),Id('4')))
+        n1 = Netlist((Id('_1'),Id('_2')),(Id('_3'),Id('_4')))
+        n2 = Netlist((Id('_2'),Id('_3')),(Id('_1'),Id('_4')))
+        n3 = Netlist((Id('_1'),Id('_2'),Id('_3'),Id('_4')))
         n2bak = repr(n2)
 
         n1.update(n2)
@@ -87,8 +87,8 @@ class NetlistTest(TestCase):
 
         # Different Id() level
         n1 = Netlist()
-        n2 = Netlist((Id('1'),Id('2')),(Id('3'),Id('4')),id=Id('a'))
-        n3 = Netlist((Id('a/1'),Id('a/2')),(Id('a/3'),Id('a/4')))
+        n2 = Netlist((Id('_1'),Id('_2')),(Id('_3'),Id('_4')),id=Id('a'))
+        n3 = Netlist((Id('a/_1'),Id('a/_2')),(Id('a/_3'),Id('a/_4')))
    
         n1.update(n2)
         T(repr(n1) == repr(n3))
