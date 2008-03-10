@@ -23,13 +23,16 @@ class PcbTraceBaseTraceTest(TestCase):
         def T(got,expected = True):
             self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
 
+
         a = Element('a')
         b = Element('b')
         a.add(Element('b'))
         b.add(Pin(1,1,1,1,id='foo'))
         b.add(Pad((0,0),(1,1),0.5,0.2,0.6,id='bar'))
 
-        a.add(BaseTrace(b.foo,b.bar,id='t',valid_endpoint_types=(Pin,Pad)))
+        class basetrace(BaseTrace):
+            valid_endpoint_types = (Pin,Pad)
+        a.add(basetrace(b.foo,b.bar,id='t'))
     
         T(a.t.a.id,'b/foo')
         T(a.t.b.id,'b/bar')
@@ -37,7 +40,10 @@ class PcbTraceBaseTraceTest(TestCase):
 
         def R(a,b,bad_endpoints,valid_endpoint_types):
             try:
-                BaseTrace(a,b,valid_endpoint_types=valid_endpoint_types)
+                class rbasetrace(BaseTrace):
+                    valid_endpoint_types = None
+                rbasetrace.valid_endpoint_types = valid_endpoint_types
+                rbasetrace(a,b)
             except BaseTrace.InvalidEndpointTypeError,ex:
                 T(ex.bad_endpoints,bad_endpoints)
                 return

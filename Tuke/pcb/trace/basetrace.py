@@ -27,6 +27,8 @@ class BaseTrace(Element):
     Trace objects are kept quite low level to keep them simple, functions are
     provided to manipulate and create groups of connected traces in a higher
     level way.
+
+    valid_endpoint_types - Endpoints will be checked against this.
     """
 
     class InvalidEndpointTypeError(Exception):
@@ -56,12 +58,15 @@ class BaseTrace(Element):
             ends = ','.join([str(t(e)) for e in self.bad_endpoints])
             return '%s: invalid endpoint(s) for traces of type %s' % (ends,self.endpoint_class)
 
+    valid_endpoint_types = ()
+    @classmethod
+    def is_valid_endpoint(cls,other):
+        return other in cls.valid_endpoint_types
 
-    def __init__(self,a,b,valid_endpoint_types=set(),id=None):
+    def __init__(self,a,b,id=None):
         """Initialize trace
         
         a,b - The endpoints.
-        valid_endpoint_types - a and b is checked against this.
 
         Upon return a and b will be setup correctly for the subclass.
         """
@@ -70,7 +75,7 @@ class BaseTrace(Element):
         bad_endpoints = []
         for e in (a,b):
             try:
-                if not e.isinstance(valid_endpoint_types):
+                if not e.isinstance(self.valid_endpoint_types):
                     bad_endpoints.append(e)
             except AttributeError:
                 bad_endpoints.append(e)
