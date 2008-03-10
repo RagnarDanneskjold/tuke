@@ -11,18 +11,25 @@ some quick ideas:
 
 rewrite xml saver to simply output evalable python code:
 
-Tuke.element.Element('a').add((\
-    Tuke.element.Element('b').add((\
-        Tuke.element.Element('c'),)),\
-    Tuke.element.Element('c'),))
+Tuke.element.resolve_element_refs(\
+Tuke.element.Element._deserialize(id='foo',_subs=(\
+  Tuke.element.Element._deserialize(id='bar',_subs=(\
+    Tuke.element.Element._deserialize(id='bar'),))\
+  Tuke.element.Element._deserialize(id='aar',_subs=(\
+    Tuke.element.Element._deserialize(id='foo'),)))))
 
-Not yet, correct, add doesn't currently accept list of elements. Also need to
-think out how to handle attributes correctly. Easiest would be to just dictate
-that call elements must define __repr__ such that the element is recreatable.
-Then the default __repr__ could simply scan the __dict__ and populate the
-constructor with the key=value's. As an aside, the order of the subelements
-should be alphabetically sorted, so diffs are more likely to work. Finally,
-remember that adding strings is real slow...
+Also include a corresponding Element._serialize. For performance,
+Element._serialize should return a *deque* of strings rather than string
+concatination. Also make sure that stuff is sorted alphabetically where
+appropriate so diffs work. 
+
+
+Could with be used to drop down a level of wrapper encapsulation?:
+
+a = Element('a')
+a.add(Element('b'))
+with a.b as b:
+    do stuff
 
 
 programmable heavy symbol generator
