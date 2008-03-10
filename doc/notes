@@ -35,6 +35,19 @@ either returns a converted object, (default, just update __version__) or raises
 Element.IncompatibleVersionError
 
 
+Make Id() enforce usage of valid python identifiers. Id.random() should be in
+the form of _1234abcd to enable that.
+
+
+Remove notion of referenced_id from ElementRefs. ElementRefs should either be
+initialized with an Id, or an Element. On load and save a master
+elementref_swizzle dict can be used to map actual refs to Ids as we find them.
+
+
+Element.connected - set of elements an element is connected too in a
+non-parent-child relationship. For instance, this can subsume the netlist.
+
+
 Could with be used to drop down a level of wrapper encapsulation?:
 
 a = Element('a')
