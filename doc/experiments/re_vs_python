@@ -1,0 +1,68 @@
+#!/usr/bin/python
+# vim: tabstop=4 expandtab shiftwidth=4 fileencoding=utf8
+# ### BOILERPLATE ###
+# Tuke - Electrical Design Automation toolset
+# Copyright (C) 2008 Peter Todd <pete@petertodd.org>
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# ### BOILERPLATE ###
+
+
+"""
+Comparison of performance in checking validity of Ids with re's or by hand.
+"""
+
+import timeit
+import re
+
+def check_re(str,n):
+    import re
+    match_re = re.compile('^[_A-Za-z][_A-Za-z0-9]*$')
+    r = True
+    for i in xrange(n):
+        r = r and match_re.match(str)
+    return r
+
+def check_py(str,n):
+    r = True
+    def c(s):
+        if s[0:1].isalpha() or s[0:1] == '_':
+            for c in s[1:]:
+                if not (c.isalnum() or c == '_'):
+                    return False
+            return True
+        return False
+    for i in xrange(n):
+        r = r and c(str)
+    return r
+
+def test(fn,n = 10000):
+    assert fn('qwerty',n)
+    assert fn('looooooooooooooooong',n)
+    assert fn('_qwerty',n)
+    assert fn('_',n)
+    assert fn('_123',n)
+    assert not fn('_12 3',n)
+    assert not fn('',n)
+    assert not fn('_%',n)
+    assert not fn('12',n)
+
+def time(code,setup,n=10):
+    t = timeit.Timer(code, setup)
+
+    print "'%s' took %fs" % (code,t.timeit(n))
+
+
+time("test(check_re)", "from __main__ import test,check_re")
+time("test(check_py)", "from __main__ import test,check_py")
