@@ -38,6 +38,8 @@ class element(object):
     Has some changed and unchanged vars and functions.
     """
 
+    is_element = True
+
     def unchanged_func(self):
         return 1
 
@@ -52,7 +54,7 @@ class element(object):
         return isinstance(self,cls)
 
 class proxy(object):
-    pass
+    is_proxy = True
 
 class getattribute_proxy(proxy):
     """__getattribute__ version of the proxy.
@@ -171,12 +173,46 @@ class getattr_dynsubclass_proxy(proxy):
         else:
             setattr(self._obj,n,v)
 
-def test(obj,wrapped=True,n=10000,method_isinstance=False):
+class getattr_ducktyped_proxy(proxy):
+    """__getattr__ version of the proxy, but duck-typed.
+
+    Use hasattr on is_proxy, is_element etc. 
+    """
+
+    def __init__(self,obj):
+       self._obj = obj
+
+    def changed_func(self):
+        return self._obj.changed_func() + 1
+
+    def __getattr__(self,n):
+        if n in ('_obj','is_proxy'):
+            return object.__getattribute__(self,'_obj')
+        elif n == 'changed_var':
+            return self._obj.changed_var + 1
+        else:
+            return object.__getattribute__(self._obj,n)
+
+    def __setattr__(self,n,v):
+        if n == '_obj':
+            object.__setattr__(self,n,v)
+        elif n == 'changed_var':
+            self._obj.changed_var = v - 1
+        else:
+            setattr(self._obj,n,v)
+
+
+def test(obj,wrapped=True,n=10000,method_isinstance=False,duck_typed=False):
     for i in range(10000):
         if method_isinstance:
             if not obj.isinstance(element):
                 raise Exception
             if not is_proxy(obj):
+                raise Exception
+        elif duck_typed:
+            if not hasattr(obj,'is_element'):
+                raise Exception
+            if not hasattr(obj,'is_proxy'): 
                 raise Exception
         else:
             if not isinstance(obj,element):
@@ -202,3 +238,4 @@ time("test(element(),wrapped=False)", "from __main__ import test,element")
 time("test(getattribute_proxy(element()))", "from __main__ import test,element,getattribute_proxy")
 time("test(getattr_proxy(element()),method_isinstance=True)", "from __main__ import test,element,getattr_proxy")
 time("test(getattr_dynsubclass_proxy(element()))", "from __main__ import test,element,getattr_dynsubclass_proxy")
+time("test(getattr_ducktyped_proxy(element()),duck_typed=True)", "from __main__ import test,element,getattr_ducktyped_proxy")
