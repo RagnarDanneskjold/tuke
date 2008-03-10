@@ -1,0 +1,241 @@
+#!/usr/bin/python
+# vim: tabstop=4 expandtab shiftwidth=4 fileencoding=utf8
+# ### BOILERPLATE ###
+# Tuke - Electrical Design Automation toolset
+# Copyright (C) 2008 Peter Todd <pete@petertodd.org>
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# ### BOILERPLATE ###
+
+
+"""
+Pure python object proxying methods.
+
+Element wrappers need to be able to pass some attribute accesses through
+unchanged, modify others, and also have isinstance() work correctly. This
+script has a few different ways of implementing that, and shows the performence
+differences and coding impact between them.
+
+"""
+
+import timeit
+
+
+class element(object):
+    """Basic unwrapped element.
+
+    Has some changed and unchanged vars and functions.
+    """
+
+    is_element = True
+
+    def unchanged_func(self):
+        return 1
+
+    def changed_func(self):
+        return 1
+
+    def __init__(self):
+        self.changed_var = 1
+        self.unchanged_var = 1
+
+    def isinstance(self,cls):
+        return isinstance(self,cls)
+
+class proxy(object):
+    is_proxy = True
+
+class getattribute_proxy(proxy):
+    """__getattribute__ version of the proxy.
+
+    Just uses __getattribute__ to intercept everything, pretty simple.
+
+    Unexpectedly isinstance works directly, in both the isinstance(proxy) and
+    isinstance(element) cases. isinstance must first do a low-level check of
+    the object, and if that fails, then actually call __getattribute__
+    """
+
+    def __init__(self,obj):
+       self._obj = obj
+
+    def __getattribute__(self_real,n):
+        self = lambda n: object.__getattribute__(self_real,n)
+
+        obj = self('_obj')
+
+        if n == '__class__':
+            return obj.__class__
+        elif n == '_obj':
+            return obj
+        elif n == 'changed_func':
+            class wrap:
+                def __init__(self,fn):
+                    self.fn = fn
+                def __call__(self):
+                    return self.fn() + 1
+            return wrap(obj.changed_func)
+        elif n == 'changed_var':
+            return obj.changed_var + 1
+        else:
+            return getattr(obj,n)
+
+    def __setattr__(self,n,v):
+        if n in ('__class__','_obj'):
+            object.__setattr__(self,n,v)
+        elif n == 'changed_var':
+            object.__getattribute__(self,'_obj').changed_var = v - 1
+        else:
+            setattr(object.__getattribute__(self,'_obj'),n,v)
+
+
+def is_proxy(obj):
+    """True is obj is an getattr_proxy"""
+    try:
+        obj._obj
+        return True
+    except AttributeError:
+        return False
+
+class getattr_proxy(proxy):
+    """__getattr__ version of the proxy.
+
+    __getattr__ is only called if the proxy object is missing an attribute,
+    then it checks _obj for it. isinstance() doesn't work however, as the proxy
+    always has a __class__, so a special method is needed. changed_func() is
+    pretty easy though, just create a getattr_proxy.changed_func(), which is
+    faster as it's called directly.
+    """
+
+    def __init__(self,obj):
+       self._obj = obj
+
+    def changed_func(self):
+        return self._obj.changed_func() + 1
+
+    def __getattr__(self,n):
+        if n == '_obj':
+            return object.__getattribute__(self,'_obj')
+        elif n == 'changed_var':
+            return self._obj.changed_var + 1
+        else:
+            return object.__getattribute__(self._obj,n)
+
+    def __setattr__(self,n,v):
+        if n == '_obj':
+            object.__setattr__(self,n,v)
+        elif n == 'changed_var':
+            self._obj.changed_var = v - 1
+        else:
+            setattr(self._obj,n,v)
+
+class getattr_dynsubclass_proxy(proxy):
+    """__getattr__ version of the proxy with dynamic subclassing.
+
+    Fixes the isinstance problem by dynamicly subclassing the wrapped objects
+    class.
+    """
+
+    def __init__(self,obj):
+        cls = type('getattr_dynsubclass_proxy',
+                   (proxy,obj.__class__),
+                   getattr_dynsubclass_proxy.__dict__.copy())
+        object.__setattr__(self,'__class__',cls)
+
+        self._obj = obj
+
+    def changed_func(self):
+        return self._obj.changed_func() + 1
+
+    def __getattr__(self,n):
+        if n == '_obj':
+            return object.__getattribute__(self,'_obj')
+        elif n == 'changed_var':
+            return self._obj.changed_var + 1
+        else:
+            return object.__getattribute__(self._obj,n)
+
+    def __setattr__(self,n,v):
+        if n == '_obj':
+            object.__setattr__(self,n,v)
+        elif n == 'changed_var':
+            self._obj.changed_var = v - 1
+        else:
+            setattr(self._obj,n,v)
+
+class getattr_ducktyped_proxy(proxy):
+    """__getattr__ version of the proxy, but duck-typed.
+
+    Use hasattr on is_proxy, is_element etc. 
+    """
+
+    def __init__(self,obj):
+       self._obj = obj
+
+    def changed_func(self):
+        return self._obj.changed_func() + 1
+
+    def __getattr__(self,n):
+        if n in ('_obj','is_proxy'):
+            return object.__getattribute__(self,'_obj')
+        elif n == 'changed_var':
+            return self._obj.changed_var + 1
+        else:
+            return object.__getattribute__(self._obj,n)
+
+    def __setattr__(self,n,v):
+        if n == '_obj':
+            object.__setattr__(self,n,v)
+        elif n == 'changed_var':
+            self._obj.changed_var = v - 1
+        else:
+            setattr(self._obj,n,v)
+
+
+def test(obj,wrapped=True,n=10000,method_isinstance=False,duck_typed=False):
+    for i in range(10000):
+        if method_isinstance:
+            if not obj.isinstance(element):
+                raise Exception
+            if not is_proxy(obj):
+                raise Exception
+        elif duck_typed:
+            if not hasattr(obj,'is_element'):
+                raise Exception
+            if not hasattr(obj,'is_proxy'): 
+                raise Exception
+        else:
+            if not isinstance(obj,element):
+                raise Exception
+            if not (isinstance(obj,proxy) == wrapped):
+                raise Exception
+        obj.unchanged_var += obj.unchanged_func()
+        obj.changed_var += obj.changed_func()
+
+    assert obj.unchanged_var == n + 1
+    if wrapped:
+        assert obj.changed_var == (n + 1) * 2
+    else:
+        assert obj.changed_var == n + 1
+
+def time(code,setup,n=10):
+    t = timeit.Timer(code, setup)
+
+    print "'%s' took %fs" % (code,t.timeit(n))
+
+
+time("test(element(),wrapped=False)", "from __main__ import test,element")
+time("test(getattribute_proxy(element()))", "from __main__ import test,element,getattribute_proxy")
+time("test(getattr_proxy(element()),method_isinstance=True)", "from __main__ import test,element,getattr_proxy")
+time("test(getattr_dynsubclass_proxy(element()))", "from __main__ import test,element,getattr_dynsubclass_proxy")
+time("test(getattr_ducktyped_proxy(element()),duck_typed=True)", "from __main__ import test,element,getattr_ducktyped_proxy")
