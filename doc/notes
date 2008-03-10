@@ -1,0 +1,147 @@
+http://www.liquidpcb.org
+
+http://docutils.sourceforge.net/docutils/statemachine.py
+-we should do things like this, Tuke is for developers!
+
+http://dirtsimple.org/2004/11/stream-of-consciousness-testing.html
+-also, links to the above and talks about testing
+
+cypthon <- "python" compiled to c
+
+some quick ideas:
+
+rewrite xml saver to simply output evalable python code:
+
+Tuke.element.resolve_element_refs(\
+Tuke.element.Element._load(id='foo',_subs=(\
+  Tuke.element.Element._load(id='bar',_subs=(\
+    Tuke.element.Element._load(id='bar'),))\
+  Tuke.element.Element._load(id='aar',_subs=(\
+    Tuke.element.Element._load(id='foo'),)))))
+
+Also include a corresponding Element._dump. For performance, Element._dump
+should return a *deque* of strings rather than string concatination. Also make
+sure that stuff is sorted alphabetically where appropriate so diffs work. 
+
+Implement __version__ magic:
+
+Tuke.element.Element._load(__version__=(major,minor)
+Tuke.element.Element.__version__
+
+The version is the version of the code that *created* the object. major is for
+incompatible changes, minor is for compatible.
+
+Also create a Element.from_older_version(self,obj) that checks __version__ and
+either returns a converted object, (default, just update __version__) or raises
+Element.IncompatibleVersionError
+
+
+Make Id() enforce usage of valid python identifiers. Id.random() should be in
+the form of _1234abcd to enable that.
+
+
+Remove notion of referenced_id from ElementRefs. ElementRefs should either be
+initialized with an Id, or an Element. On load and save a master
+elementref_swizzle dict can be used to map actual refs to Ids as we find them.
+
+
+Element.connected - set of elements an element is connected too in a
+non-parent-child relationship. For instance, this can subsume the netlist.
+
+
+Could with be used to drop down a level of wrapper encapsulation?:
+
+a = Element('a')
+a.add(Element('b'))
+with a.b as b:
+    do stuff
+
+
+programmable heavy symbol generator
+
+
+make embedded symbols/footprints be default, with uuid? sha1?
+
+note licencing of symbols/footprints for above usage
+
+
+think about usage of multi-slot parts, should be easy to assign slots to parent parts, as well as move them around
+
+
+pcb ui should allow parts to be temp placed off board
+
+tooltips
+
+
+remove concept of "Vcc solder" etc. replace with configurable Vcc/GND connected net colors
+
+
+need physical keepouts, electrical keepouts, top.solder.keepout? top.phys.keepout?
+
+IPC-7351 - the big spec for smd stuff
+
+
+
+Layer ideas:
+
+layer.type
+
+layer - Physically/Logically seperate. Differently named layers must not affect
+each other in any way. top is independent of bottom
+
+type - Sub types in the same physical space.
+
+
+*.drill - drill layer, present in all layers at once
+top.drill - drill through top layer only
+(top|middle).drill - drill through top and middle only
+
+
+Translate/Rotate/LayerSwap -> Transform
+
+pin connection syntax:
+
+link(p1,p2)
+
+cut(p1,p2)
+
+
+need to have a Bus Component, with named pins for various lines in the bus:
+
+i2c = Bus() # or even, i2c_Bus()
+
+self.link(i2c.scl,obj.scl)
+self.link(i2c.sda,obj.sda)
+
+can we extend link to link busses?
+
+self.link(i2c,obj.i2c)
+self.link(pwr,obj.pwr)
+
+What about having sub objects, in subs, be allowed to be a accessed via .obj
+where obj is the sub-objects Id? Then pin's and busses could be completely
+generalized, with the bus being a collection of pins.
+
+link could be setup so that only like stuff can be linked, with the link
+objects handling the link ability. Of course you can always link up the
+individual pins manually.
+
+To handle net attributes link should have an optional third arg, attrib, which
+normally is simply copied from first to second. (or maybe more restrictive to
+less) Or just error if net types are different. They could simply be
+implemented by sub-classing Pin
+
+
+Multi-part components like op-amps can be treated like busses:
+
+opamp.slota.in
+opamp.slota.out
+opamp.slotb.in
+
+Need to be able to exchange slots as well. Maybe a MultiSlot class, with a
+seperate Slot class, and play games with the connectivity, or heck, even just
+do delete/rename/recreate's when you want to exchage two slots.
+
+
+For debugging Elements should include a reference to what source code file
+instanciated them.
