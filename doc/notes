@@ -3,6 +3,10 @@ http://www.liquidpcb.org
 http://docutils.sourceforge.net/docutils/statemachine.py
 -we should do things like this, Tuke is for developers!
 
+http://dirtsimple.org/2004/11/stream-of-consciousness-testing.html
+-also, links to the above and talks about testing
+
+
 some quick ideas:
 
 rewrite xml saver to simply output evalable python code:
