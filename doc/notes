@@ -12,16 +12,27 @@ some quick ideas:
 rewrite xml saver to simply output evalable python code:
 
 Tuke.element.resolve_element_refs(\
-Tuke.element.Element._deserialize(id='foo',_subs=(\
-  Tuke.element.Element._deserialize(id='bar',_subs=(\
-    Tuke.element.Element._deserialize(id='bar'),))\
-  Tuke.element.Element._deserialize(id='aar',_subs=(\
-    Tuke.element.Element._deserialize(id='foo'),)))))
+Tuke.element.Element._load(id='foo',_subs=(\
+  Tuke.element.Element._load(id='bar',_subs=(\
+    Tuke.element.Element._load(id='bar'),))\
+  Tuke.element.Element._load(id='aar',_subs=(\
+    Tuke.element.Element._load(id='foo'),)))))
 
-Also include a corresponding Element._serialize. For performance,
-Element._serialize should return a *deque* of strings rather than string
-concatination. Also make sure that stuff is sorted alphabetically where
-appropriate so diffs work. 
+Also include a corresponding Element._dump. For performance, Element._dump
+should return a *deque* of strings rather than string concatination. Also make
+sure that stuff is sorted alphabetically where appropriate so diffs work. 
+
+Implement __version__ magic:
+
+Tuke.element.Element._load(__version__=(major,minor)
+Tuke.element.Element.__version__
+
+The version is the version of the code that *created* the object. major is for
+incompatible changes, minor is for compatible.
+
+Also create a Element.from_older_version(self,obj) that checks __version__ and
+either returns a converted object, (default, just update __version__) or raises
+Element.IncompatibleVersionError
 
 
 Could with be used to drop down a level of wrapper encapsulation?:
