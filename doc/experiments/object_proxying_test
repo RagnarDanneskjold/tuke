@@ -27,14 +27,6 @@ unchanged, modify others, and also have isinstance() work correctly. This
 script has a few different ways of implementing that, and shows the performence
 differences and coding impact between them.
 
-
-Note that there is currently a fatal flaw in the subclassing implementation. If
-the wrapped object has any functions with names not also in the wrapping
-clsases dict the method resolution order will fail to find the function in the
-wrapper, then try the wrapped objects class. This will succeed, and the
-function will be called with self set to the *wrapped* object, rather than the
-*unwrapped* object that it expects. Unfortunately __mro__ is readonly, perhaps
-a C extension can fix this problem.
 """
 
 import timeit

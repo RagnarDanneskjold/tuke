@@ -17,9 +17,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from Tuke import ReprableByArgsElement
+from Tuke import Element
 
-class Footprint(ReprableByArgsElement):
+class Footprint(Element):
     """Defines a Footprint.
   
     A footprint is the holder for the geometry data comprising a pcb footprint.
@@ -29,7 +29,5 @@ class Footprint(ReprableByArgsElement):
 
     Footprints always have an id of 'footprint'
     """
-    def __init__(self,kwargs,required=(),defaults={}):
-        assert not kwargs.has_key('id')
-        kwargs['id'] = 'footprint'
-        ReprableByArgsElement.__init__(self,kwargs,required,defaults)
+    def __init__(self):
+        Element.__init__(self,id='footprint')

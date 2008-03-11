@@ -37,6 +37,23 @@ class repr_helperTest(TestCase):
 
         self.assert_(repr(f) == 'Tuke.tests.repr_helper.foo(1,2,goo = \'green\')')
 
+    def testrepr_helper_class_name_override(self):
+        """repr_helper class name override"""
+
+        class foo:
+            def __init__(self,a,b,goo = 'green'):
+                self.a = a
+                self.b = b
+                self.goo = goo
+
+            @repr_helper
+            def __repr__(self):
+                return ((self.a,self.b),{'goo':self.goo,'_repr_helper_class_name_override':'bar'})
+
+        
+        f = foo(1,2)
+        self.assert_(repr(f) == 'Tuke.tests.repr_helper.bar(1,2,goo = \'green\')')
+
     def testnon_evalable_repr_helper(self):
         """non_evalable_repr_helper decorator"""
         class foo(object):

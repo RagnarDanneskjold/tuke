@@ -1,4 +1,4 @@
-#!/usr/bin/python2.5
+#!/usr/bin/python
 # vim: tabstop=4 expandtab shiftwidth=4 fileencoding=utf8
 # ### BOILERPLATE ###
 # Tuke - Electrical Design Automation toolset
@@ -32,7 +32,7 @@ stdout.
 
 import iam_tuke_example
 
-from Tuke import rndId
+from Tuke import rndId,save_element_to_file
 from Tuke.units import *
 from LedGrid import Led,LedGrid
 
@@ -44,4 +44,4 @@ if __name__ == "__main__":
 
     grid = LedGrid(rows,cols,spacing=0.5 * IN, id=rndId())
 
-    print grid.serialize(full=True),
+    save_element_to_file(grid,sys.stdout)

@@ -17,11 +17,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from Tuke import ReprableByArgsElement,SingleElement,Id
+from Tuke import SingleElement,Id
 
 from Tuke.geometry import Layer
 
-class Geometry(ReprableByArgsElement,SingleElement):
+class Geometry(SingleElement):
     """Base geometry class.
 
     Geometry elements define layout data such as polygons, lines and holes. All
@@ -33,8 +33,6 @@ class Geometry(ReprableByArgsElement,SingleElement):
     See the Polygon and Hole classes for more info.
     """
 
-    def __init__(self,kwargs,required=set(),defaults={}):
-        d = {'layer':'*',id:''}
-        d.update(defaults)
-        ReprableByArgsElement.__init__(self,kwargs,required,d) 
-        self.layer = Layer(self.layer)
+    def __init__(self,layer = '*',id = ''):
+        SingleElement.__init__(self,id = id)
+        self.layer = Layer(layer)

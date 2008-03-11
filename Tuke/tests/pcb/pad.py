@@ -24,7 +24,4 @@ class PcbFootprintPadTest(TestCase):
     def testPcbFootprintPad(self):
         """Basic tests"""
 
-        a = Pad(a=(0,0),b=(1,1),
-                thickness=0.5,
-                clearance=0.2,
-                mask=0.6)
+        a = Pad((0,0),(1,1),0.5,0.2,0.6)

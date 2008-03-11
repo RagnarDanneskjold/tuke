@@ -17,13 +17,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from Tuke import ReprableByArgsElement,Id
+from Tuke import Element,Id
 from Tuke.geometry import Polygon,V
 
-class Pad(ReprableByArgsElement):
+class Pad(Element):
     """Defines a pad"""
 
-    def __init__(self,**kwargs):
+    def __init__(self,a,b,thickness,clearance,mask,id=Id()):
         """Create a pad.
 
         a - First point of line segment
@@ -31,10 +31,17 @@ class Pad(ReprableByArgsElement):
         thickness - Width of metal surrounding line segment
         clearance - Separation of pad from other conductors
         mask - Width of solder mask relief
+
+        id - Id name
         """
 
-        ReprableByArgsElement.__init__(self,kwargs,
-                required=('a','b','thickness','clearance','mask'))
+        Element.__init__(self,id=id)
+
+        self.a = a
+        self.b = b
+        self.thickness = thickness
+        self.clearance = clearance
+        self.mask = mask
 
         self.add(self.from_ab(self.thickness,id='pad',layer='top.pad'))
         self.add(self.from_ab(self.thickness + (self.clearance * 2),id='clearance',layer='top.clearance'))
@@ -48,7 +55,7 @@ class Pad(ReprableByArgsElement):
         For makng pads, clearances etc.
         """
 
-        return Polygon(ext=(V(self.a[0] - thickness/2,self.a[1] - thickness/2),
+        return Polygon((V(self.a[0] - thickness/2,self.a[1] - thickness/2),
             V(self.b[0] + thickness/2,self.b[1] - thickness/2),
             V(self.b[0] + thickness/2,self.b[1] + thickness/2),
             V(self.a[0] - thickness/2,self.a[1] + thickness/2)),id=id,layer=layer)

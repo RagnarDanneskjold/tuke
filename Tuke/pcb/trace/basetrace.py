@@ -49,7 +49,7 @@ class BaseTrace(Element):
         def __str__(self):
             def t(elem):
                 # FIXME: breaks layering in a nasty way... stupid
-                # ElementWrappers
+                # subelement_wrappers
                 try:
                     return type(elem._obj)
                 except AttributeError:
@@ -74,7 +74,10 @@ class BaseTrace(Element):
 
         bad_endpoints = []
         for e in (a,b):
-            if not isinstance(e,self.valid_endpoint_types):
+            try:
+                if not e.isinstance(self.valid_endpoint_types):
+                    bad_endpoints.append(e)
+            except AttributeError:
                 bad_endpoints.append(e)
         if bad_endpoints:
             raise BaseTrace.InvalidEndpointTypeError(self.__class__,set(bad_endpoints))

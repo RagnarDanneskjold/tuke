@@ -61,5 +61,5 @@ class GeometryCircleTest(TestCase):
     def testGeometryCircle(self):
         """geometry.Circle()"""
 
-        a = Circle(dia=2,layer='foo')
-        a = Circle(dia=1,layer='foo')
+        a = Circle(2,layer='foo')
+        a = Circle(1,layer='foo')

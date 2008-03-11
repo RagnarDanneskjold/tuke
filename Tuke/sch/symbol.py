@@ -39,11 +39,14 @@ class Symbol(Component):
 
         Component.__init__(self,id=id)
 
-        assert isinstance(footprint,Footprint)
+        assert footprint.isinstance(Footprint)
         self.add(footprint)
 
         for p in pins:
-            if not isinstance(p,Pin):
+            try:
+                if not p.isinstance(Pin):
+                    raise AttributeError
+            except AttributeError: 
                 p = Pin(p)
             self.add(p)
 
@@ -58,4 +61,4 @@ class Symbol(Component):
         """
 
         for i,p in enumerate(pins):
-            self.link(p,Id('%s/%s/_%d' % (self.id,self.footprint.id,i)))
+            self.link(p,Id('%s/%s/%d' % (self.id,self.footprint.id,i)))

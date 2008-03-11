@@ -24,4 +24,4 @@ class GeometryHoleTest(TestCase):
     def testGeometryHole(self):
         """Basic tests"""
 
-        a = Hole(dia=1)
+        a = Hole(1)

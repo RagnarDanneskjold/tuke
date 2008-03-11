@@ -23,8 +23,4 @@ class PcbFootprintPinTest(TestCase):
     def testPcbFootprintPin(self):
         """Basic tests"""
 
-        a = Pin(dia=1,
-                thickness=1,
-                clearance=1,
-                mask=1,
-                id='_1')
+        a = Pin(1,1,1,1,id='_1')

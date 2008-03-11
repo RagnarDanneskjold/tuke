@@ -22,17 +22,26 @@ from Tuke.geometry import Geometry,Transformation
 class Polygon(Geometry):
     """A polygon"""
     
-    def __init__(self,**kwargs):
-        """Polygon
+    def __init__(self,*args,**kwargs):
+        """Polygon(external-coords,[internal-coords],layer='',id='')
 
-        ext - ((x,y),(x,y),...)
-        int - (((x,y),(x,y),...),
-               ((x,y),(x,y),...))
+        external_coords - ((x,y),(x,y),...)
+        internal_coords - (
+                           ((x,y),(x,y),...)
+                           ((x,y),(x,y),...))
         """
 
-        Geometry.__init__(self,kwargs,
-                required=('ext',),
-                defaults={'int':()})
+        Geometry.__init__(self,
+                layer=kwargs.setdefault('layer',''),
+                id=kwargs.setdefault('id',''))
+
+        assert(0 < len(args) < 3)
+
+        self.external_coords = args[0]
+        if len(args) == 2:
+            self.internal_coords = args[1]
+        else:
+            self.internal_coords = ()
 
     def render(self):
-        return (self.ext,self.int)
+        return (self.external_coords,self.internal_coords)

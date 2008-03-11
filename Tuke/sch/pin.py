@@ -17,13 +17,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from Tuke import ReprableByArgsElement,Id
+from Tuke import Element,Id
 
-class Pin(ReprableByArgsElement):
+class Pin(Element):
     """Defines a Pin of a Component"""
 
-    def __init__(self,*args,**kwargs):
-        """Create a pin."""
-        if len(args) == 1 and not kwargs:
-            kwargs['id'] = args[0]
-        ReprableByArgsElement.__init__(self,kwargs)
+    def __init__(self,name):
+        """Create a pin.
+
+        name - Pins name, must also be valid object attribute name.
+        """
+        Element.__init__(self,id=Id(name))
