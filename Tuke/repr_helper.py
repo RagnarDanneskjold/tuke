@@ -44,6 +44,29 @@ def repr_helper(fn):
             del kwargs['_repr_helper_class_name_override']
         except:
             class_name = self.__class__.__name__
+        module_name = self.__class__.__module__
+
+        # Try to find a shorter representation of the module name.
+        #
+        # Often you'll get stuff like Tuke.element.Element, where the Tuke
+        # __init__ code has a from element import Element line, find those
+        # cases.
+        t = module_name
+        while True:
+            t = t.split('.')[:-1]
+            t = '.'.join(t)
+
+            if not t:
+                break
+
+            m = __import__(t)
+
+            try:
+                if m.__dict__[class_name] is self.__class__:
+                    module_name = t
+                    break
+            except KeyError:
+                continue
 
         # positional arguments are easy, just repr each one
         args = [repr(a) for a in args] 
@@ -53,7 +76,6 @@ def repr_helper(fn):
 
         args_str = ','.join(args + kwargs)
 
-        return '%s.%s(%s)' % (self.__class__.__module__,class_name,
-                              args_str)
+        return '%s.%s(%s)' % (module_name,class_name,args_str)
 
     return f
