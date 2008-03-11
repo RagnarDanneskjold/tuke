@@ -19,6 +19,7 @@
 
 import Tuke
 from Tuke import Id,non_evalable_repr_helper
+from Tuke.repr_helper import shortest_class_name
 
 
 class Element(object):
@@ -49,7 +50,7 @@ class Element(object):
     def _save(self,doc,subs):
         """Actual save function, seperated out for Translate-type subclassing."""
 
-        r = doc.createElement(self.__module__ + '.' + self.__class__.__name__)
+        r = doc.createElement(shortest_class_name(self.__class__))
 
         # Save state.
         state = None
