@@ -32,7 +32,8 @@ class Element(object):
 
     That Id must have a single path component, IE, Id('foo/bar') is invalid.
 
-    They can have one or more sub-elements, which must have unique Ids.
+    They can have one or more sub-elements, which must have unique Ids. They
+    also have a parent, which may or may not be set.
     
     Try have a transform attribute, for geometry transformation data.
 
@@ -44,6 +45,8 @@ class Element(object):
     __version__ = (0,0)
 
     def __init__(self,id=None):
+        """Initialize an Element"""
+
         from Tuke.geometry import Transformation
 
         if not id:
@@ -54,6 +57,22 @@ class Element(object):
             raise ValueError, 'Invalid Element Id \'%s\': more than one path component' % str(self.id)
 
         self.transform = Transformation()
+
+
+        self._parent = None
+        self.parent_set_callback = []
+        self.parent_unset_callback = []
+
+    def _parent_setter(self,v):
+        if v is None:
+            for c in self.parent_unset_callback:
+                c(self)
+            self._parent = None
+        else:
+            self._parent = v
+            for c in self.parent_set_callback:
+                c(self)
+    parent = property(lambda self: self._parent,_parent_setter)
 
     # Some notes on the sub-elements implementation:
     #
@@ -135,6 +154,8 @@ class Element(object):
         obj = self._wrap_subelement(obj)
         setattr(self,n,obj)
 
+        obj.parent = self
+
         return obj
 
     def isinstance(self,cls):
@@ -150,6 +171,8 @@ class Element(object):
         r = doc.createElement(self.__module__ + '.' + self.__class__.__name__)
 
         for n,v in self.__dict__.iteritems():
+            if n in set(('parent','_parent','parent_set_callback','parent_unset_callback')):
+                continue
             if v.__class__  == subelement_wrapper: 
                 r.appendChild(v.save(doc))
             else:
@@ -438,6 +461,12 @@ def load_Element(dom):
     # "__class__ assignment: only for heap types"
     obj = _EmptyClass() 
     obj.__class__ = klass
+
+    # FIXME: ugly hack, will go away when we make non-xml switch to eval()able
+    # representations.
+    obj.parent_set_callback = []
+    obj.parent_unset_callback = []
+    obj._parent = None
 
     # Setup attributes
     for n,v in attr.iteritems():
