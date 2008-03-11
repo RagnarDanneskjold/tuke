@@ -18,7 +18,7 @@
 # ### BOILERPLATE ###
 
 import Tuke
-from Tuke import Id
+from Tuke import Id,non_evalable_repr_helper
 
 
 class Element(object):
@@ -85,6 +85,10 @@ class Element(object):
                 geo += [(self.id + i,l,s)]
 
         return geo
+
+    @non_evalable_repr_helper
+    def __repr__(self):
+        return {'id':self.id}
 
 def load_Element(dom):
     """Loads elements from a saved minidom"""

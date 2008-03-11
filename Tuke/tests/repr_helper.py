@@ -14,7 +14,7 @@ import shutil
 import common
 
 from unittest import TestCase
-from Tuke import repr_helper 
+from Tuke import repr_helper,non_evalable_repr_helper 
 
 class repr_helperTest(TestCase):
     """Perform tests of repr_helper"""
@@ -53,3 +53,31 @@ class repr_helperTest(TestCase):
         
         f = foo(1,2)
         self.assert_(repr(f) == 'Tuke.tests.repr_helper.bar(1,2,goo = \'green\')')
+
+    def testnon_evalable_repr_helper(self):
+        """non_evalable_repr_helper decorator"""
+        class foo(object):
+            def __init__(self,kw):
+                self.kw = kw
+            @non_evalable_repr_helper
+            def __repr__(self):
+                return self.kw 
+
+        # not gonna bother actually checking this, bah, pattern matching
+        repr(foo({'frob':1}))
+        repr(foo({'frob':1,'gob':'2'}))
+
+    def testnon_evalable_repr_helper_nested_classes(self):
+        """non_evalable_repr_helper with nested classes"""
+        class foo(object):
+            def __init__(self,kw):
+                self.kw = kw
+            @non_evalable_repr_helper
+            def __repr__(self):
+                return self.kw
+
+        class bar(foo):
+            pass
+
+        repr(bar({'frob':1}))
+        repr(bar({'frob':1,'gob':'2'}))
