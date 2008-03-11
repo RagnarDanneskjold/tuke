@@ -19,6 +19,7 @@
 
 import Tuke
 from Tuke import Id,rndId,Netlist,repr_helper,non_evalable_repr_helper
+from repr_helper import shortest_class_name
 from xml.dom.minidom import Document,parse
 
 class Element(object):
@@ -171,7 +172,7 @@ class Element(object):
 
     def save(self,doc):
         """Returns an XML minidom object representing the Element"""
-        r = doc.createElement(self.__module__ + '.' + self.__class__.__name__)
+        r = doc.createElement(shortest_class_name(self.__class__))
 
         for n,v in self.__dict__.iteritems():
             if n in set(('parent','_parent','parent_set_callback','parent_unset_callback')):
