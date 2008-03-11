@@ -1,0 +1,62 @@
+#!/usr/bin/python
+# vim: tabstop=4 expandtab shiftwidth=4 fileencoding=utf8
+# ### BOILERPLATE ###
+# Tuke - Electrical Design Automation toolset
+# Copyright (C) 2008 Peter Todd <pete@petertodd.org>
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# ### BOILERPLATE ###
+
+
+"""
+Class hiarchy depth and isinstance performance. 
+
+"""
+
+import timeit
+
+
+class a(object):
+    pass
+
+class b(a):
+    pass
+class c(b):
+    pass
+class d(c):
+    pass
+
+class z(object):
+    pass
+class y(z):
+    pass
+class x(y):
+    pass
+
+class m(d,x):
+    pass
+
+def test(obj,n=100000):
+    for i in range(100000):
+        assert isinstance(obj,a)
+
+def time(code,setup,n=10):
+    t = timeit.Timer(code, setup)
+
+    print "'%s' took %fs" % (code,t.timeit(n))
+
+
+time("test(a())", "from __main__ import test,a")   # baseline
+time("test(d())", "from __main__ import test,a,d") # single chain
+time("test(m())", "from __main__ import test,a,m") # multiple inheritence
