@@ -29,6 +29,28 @@ class ElementTest(TestCase):
 
         self.assertRaises(ValueError,lambda:Element('foo/bar'))
 
+    def testElementParent(self):
+        """Element.parent"""
+
+        def T(got,expected = True):
+            self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
+
+        a = Element('a')
+        b = Element('b')
+
+        T(b.parent,None)
+        T(b.parent_set_callback,[])
+        T(b.parent_unset_callback,[])
+
+        called = [] 
+        def c(self):
+            called.append(self)
+        b.parent_set_callback.append(c)
+
+        a.add(b)
+        T(b.parent,a)
+        T(called,[b])
+
     def testElementAddReturnsWrapped(self):
         """Element.add(obj) returns wrapped obj"""
 
