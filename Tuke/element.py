@@ -246,6 +246,13 @@ class Element(object):
     class VersionError(ValueError):
         pass
 
+    def __enter__(self):
+        """Context manager support"""
+        return self
+    def __exit__(self,exc_type,exc_value,traceback):
+        # reraise
+        return False
+
     @classmethod 
     def from_older_version(cls,other):
         if not cls == other.__class__:

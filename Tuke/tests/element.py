@@ -8,6 +8,8 @@
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
 # PURPOSE.
 
+from __future__ import with_statement
+
 import os
 import shutil
 
@@ -203,6 +205,16 @@ class ElementTest(TestCase):
           set((Id('base/chip/pad/pad'),)))
         T(set([elem.id for elem in e.iterlayout(layer_mask='sch.*')]),
           set((Id('base/chip/sym'),)))
+
+    def testElement_with(self):
+        """with Element()"""
+
+        a = Element('a')
+        b = Element('b')
+        a.add(b)
+
+        with a.b as b2:
+            self.assert_(b is b2)
 
     def testElementIdAttr(self):
         """Auto-magical attribute lookup from sub-element Id's"""

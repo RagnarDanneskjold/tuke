@@ -114,6 +114,9 @@ class subelement_wrapper(object):
         else:
             return r
 
+    def __enter__(self):
+        return self._obj
+
     @non_evalable_repr_helper
     def __repr__(self):
         return {'id':str(self._base.id + self._obj.id)}
