@@ -106,25 +106,26 @@ class Element(object):
         return n
 
     def __getitem__(self,id):
-        """Get sub-element by Id
+        """Get element by Id
 
-        An alternative to the foo.bar lookups.
+        Id can refer to subelements, or, if the Element has a parent, super
+        elements. '../' refers to the parent for instance.
         """
         id = Id(id)
 
-        if not len(id):
-            raise KeyError, "Id('') is an invalid key"
+        if not id:
+            return self
 
         r = None
         try:
-            r = self.__dict__[self._element_id_to_dict_key(id[0])]
-
-            if len(id) > 1:
-                r = subelement_wrapper(self,r[id[1:]])
+            if id[0] == '..':
+                return self.parent[id[1:]]
+            else:
+                r = self.__dict__[self._element_id_to_dict_key(id[0])][id[1:]]
         except KeyError:
             # Everything wrapped in a KeyError catch, so that inner KeyErrors
             # will give error messages relative to the outermost element.
-            raise KeyError, "No sub-elements found matching '%s' in '%s'" % (str(id),str(self.id))
+            raise KeyError, "'%s' not found in '%s'" % (str(id),str(self.id))
 
         return r
 
@@ -403,7 +404,11 @@ class subelement_wrapper(object):
             yield subelement_wrapper(self._base,l)
 
     def __getitem__(self,key):
-        return self._obj[key]
+        r = self._obj[key]
+        if r == self._obj:
+            return self
+        else:
+            return r
 
     @non_evalable_repr_helper
     def __repr__(self):

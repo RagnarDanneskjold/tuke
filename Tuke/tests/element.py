@@ -141,7 +141,7 @@ class ElementTest(TestCase):
             self.assertRaises(ex,lambda: elem[key])
 
         a = Element('a')
-        R(a,Id(),KeyError)
+        T(a,'',a)
         R(a,'foo',KeyError)
         R(a,Id('foo'),KeyError)
 
@@ -156,6 +156,9 @@ class ElementTest(TestCase):
         T(a,'b',b)
         T(a,'b/d',d)
 
+        T(b,'..',a)
+        T(b,'../b',b)
+        T(b,'../d',d)
 
         e = Element('e')
         e2 = a.add(e)
