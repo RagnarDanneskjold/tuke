@@ -23,4 +23,4 @@ from id import Id,rndId
 from netlist import Netlist
 from elementref import ElementRef
 from element import Element,ElementRef,SingleElement,load_Element,save_element_to_file,load_element_from_file
-from subelement_wrapper import subelement_wrapper
+from elementwrapper import subelement_wrapper
