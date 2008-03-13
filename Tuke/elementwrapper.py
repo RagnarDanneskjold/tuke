@@ -51,7 +51,31 @@ class subelement_wrapper(object):
         try:
             return subelement_wrapper_cache[cache_key]
         except KeyError:
-            self = super(subelement_wrapper,cls).__new__(cls)
+            # Deep magic here... We want isinstance(self,Element) to work, so
+            # dynamicly create a new type, with two base classes,
+            # subelement_wrapper and the object's class, and use that to create
+            # the new object.
+
+            class _Empty(object):
+                pass
+
+            new_cls = None
+            if isinstance(obj,subelement_wrapper):
+                # First case, obj already wrapped, so we can simply reuse the
+                # created type, and in any case, making a subelement_wrapper
+                # with a subelement_wrapper as one of the bases doesn't work.
+                new_cls = obj.__class__
+            else:
+                # Second case, create a new type. We want subelement_wrapper to
+                # be first in the resolution order, the fact that one of the
+                # base classes is obj.__
+                cls_dict = subelement_wrapper.__dict__.copy() 
+                new_cls = type('subelement_wrapper',
+                           (subelement_wrapper,obj.__class__),
+                           {})
+
+            self = _Empty() 
+            object.__setattr__(self,'__class__',new_cls)
 
             assert(isinstance(base,Element))
             assert(isinstance(obj,(Element,subelement_wrapper)))
@@ -60,6 +84,9 @@ class subelement_wrapper(object):
 
             subelement_wrapper_cache[cache_key] = self
             return self
+
+    def __init__(self,base,obj):
+        pass
 
     def isinstance(self,cls):
         return self._obj.isinstance(cls)
@@ -85,8 +112,9 @@ class subelement_wrapper(object):
 
     def __getattr__(self,n):
         r = getattr(self._obj,n)
-        if r.__class__ == subelement_wrapper: 
+        if isinstance(r,subelement_wrapper): 
             r = subelement_wrapper(self._base,r)
+        print '__getattr__(%s,%s) -> %s' % (self,n,r)
         return r
 
     def __setattr__(self,n,v):
@@ -112,6 +140,7 @@ class subelement_wrapper(object):
         if r == self._obj:
             return self
         else:
+            r = subelement_wrapper(self._base,r)
             return r
 
     def __enter__(self):

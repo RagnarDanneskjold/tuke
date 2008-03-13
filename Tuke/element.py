@@ -147,9 +147,8 @@ class Element(object):
         """
         from Tuke import subelement_wrapper
 
-        if obj.__class__ == subelement_wrapper:
+        if isinstance(obj,subelement_wrapper):
             raise TypeError, 'Can only add unwrapped Elements, IE, foo.add(foo.bar) is invalid.'
-
         if not isinstance(obj,Element):
             raise TypeError, "Can only add Elements to Elements, not %s" % type(obj)
 
@@ -182,7 +181,7 @@ class Element(object):
         for n,v in self.__dict__.iteritems():
             if n in set(('parent','_parent','parent_set_callback','parent_unset_callback')):
                 continue
-            if v.__class__  == subelement_wrapper: 
+            if isinstance(v,subelement_wrapper): 
                 r.appendChild(v.save(doc))
             else:
                 r.setAttribute(n,repr(v))
