@@ -64,7 +64,7 @@ class Dil(Footprint):
                     clearance=self.clearance,
                     mask=self.mask,
                     square=square,
-                    id=str(i + 1))
+                    id='_' + str(i + 1))
 
 
             x = None
