@@ -88,10 +88,10 @@ class Element(object):
 
     def __iter__(self):
         """Iterate through sub-elements."""
-        from Tuke import subelement_wrapper
+        from Tuke import ElementWrapper
 
         for i in self.__dict__.itervalues():
-            if isinstance(i,subelement_wrapper):
+            if isinstance(i,ElementWrapper):
                 yield i
 
     def _element_id_to_dict_key(self,id):
@@ -100,11 +100,11 @@ class Element(object):
         This is the key under which the Element of the given id will be stored
         under.
         """
-        from Tuke import subelement_wrapper
+        from Tuke import ElementWrapper
         assert len(id) <= 1
 
         n = str(id)
-        if hasattr(self,n) and not isinstance(getattr(self,n),subelement_wrapper):
+        if hasattr(self,n) and not isinstance(getattr(self,n),ElementWrapper):
             n = '_attr_collided_' + n
         return n
 
@@ -145,9 +145,9 @@ class Element(object):
 
         Raises Element.IdCollisionError on id collission.
         """
-        from Tuke import subelement_wrapper
+        from Tuke import ElementWrapper
 
-        if isinstance(obj,subelement_wrapper):
+        if isinstance(obj,ElementWrapper):
             raise TypeError, 'Can only add unwrapped Elements, IE, foo.add(foo.bar) is invalid.'
         if not isinstance(obj,Element):
             raise TypeError, "Can only add Elements to Elements, not %s" % type(obj)
@@ -164,24 +164,16 @@ class Element(object):
 
         return obj
 
-    def isinstance(self,cls):
-        """Return isinstance(self,cls)
-
-        Due to the behind the scenes element wrapping this must be used instead
-        of isinstance.
-        """
-        return isinstance(self,cls)
-
     def save(self,doc):
         """Returns an XML minidom object representing the Element"""
-        from Tuke import subelement_wrapper
+        from Tuke import ElementWrapper
 
         r = doc.createElement(shortest_class_name(self.__class__))
 
         for n,v in self.__dict__.iteritems():
             if n in set(('parent','_parent','parent_set_callback','parent_unset_callback')):
                 continue
-            if isinstance(v,subelement_wrapper): 
+            if isinstance(v,ElementWrapper): 
                 r.appendChild(v.save(doc))
             else:
                 r.setAttribute(n,repr(v))
@@ -194,9 +186,9 @@ class Element(object):
         Used so that a callee sees a consistant view of id and transform in
         sub-elements. For instance foo.bar.id == 'foo/bar'
         """
-        from Tuke import subelement_wrapper
+        from Tuke import ElementWrapper
 
-        return subelement_wrapper(self,obj)
+        return ElementWrapper(self,obj)
 
     def iterlayout(self,layer_mask = None):
         """Iterate through layout.
@@ -214,7 +206,7 @@ class Element(object):
 
         for s in self:
             from Tuke.geometry import Geometry
-            if s.isinstance(Geometry):
+            if isinstance(s,Geometry):
                 if s.layer in layer_mask:
                     yield s
             else:

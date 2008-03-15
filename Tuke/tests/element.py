@@ -17,7 +17,7 @@ import common
 
 from unittest import TestCase
 import Tuke
-from Tuke import load_Element,Element,ElementRef,Id,rndId
+from Tuke import load_Element,Element,ElementWrapper,ElementRef,Id,rndId
 
 from Tuke.geometry import Geometry,V,Transformation,Translation,translate,centerof
 
@@ -105,11 +105,8 @@ class ElementTest(TestCase):
         def T(elem,id_set):
             ids = set() 
             for e in elem:
-                try:
-                    e.isinstance(Element)
+                if isinstance(e,Element):
                     ids.add(e.id)
-                except AttributeError:
-                    pass
             id_set = set([Id(i) for i in id_set])
             self.assert_(ids == id_set,'got: %s expected: %s' % (ids,id_set))
 
@@ -122,15 +119,18 @@ class ElementTest(TestCase):
         T(a,set(('a/_1','a/_2','a/_3')))
 
     def testElement_isinstance(self):
-        """Element.isinstance()"""
+        """Element isinstance()"""
 
         def T(x):
             self.assert_(x)
 
         a = Element('a')
-        T(a.isinstance(Element))
+        T(isinstance(a,Element))
+        T(not isinstance(a,ElementWrapper))
+
         a.add(Element('b'))
-        T(a.b.isinstance(Element))
+        T(isinstance(a.b,Element))
+        T(isinstance(a.b,ElementWrapper))
 
     def testElement__getitem__(self):
         """Element[] lookups"""

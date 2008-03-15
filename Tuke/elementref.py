@@ -55,8 +55,8 @@ class ElementRef(object):
 
     def set_target(self,target):
         """Set target object."""
-        from Tuke import subelement_wrapper
-        assert isinstance(target,(Tuke.Element,Tuke.subelement_wrapper,type(None)))
+        from Tuke import ElementWrapper
+        assert isinstance(target,(Tuke.Element,Tuke.ElementWrapper,type(None)))
 
         object.__setattr__(self,'_ref_target',target)
 

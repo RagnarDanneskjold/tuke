@@ -44,10 +44,7 @@ class Component(Element):
         Element.__init__(self,id=id)
 
         for p in pins:
-            try:
-                if not p.isinstance(Pin):
-                    raise AttributeError
-            except AttributeError:
+            if not isinstance(p,Pin):
                 p = Pin(p)
             self.add(p)
 
@@ -66,11 +63,9 @@ class Component(Element):
             except TypeError:
                 # Second case, an actual Pin objects, just return the id, minus
                 # self.id
-                try:
-                    if not i.isinstance(Pin):
-                        raise AttributeError
+                if isinstance(i,Pin):
                     return i.id[len(self.id):]
-                except AttributeError:
+                else:
                     raise TypeError, 'link() got %s instead of Pin' % repr(i)
 
         a = deref(a)

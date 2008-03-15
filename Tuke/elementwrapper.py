@@ -19,28 +19,38 @@
 
 from Tuke import Element,non_evalable_repr_helper
 
-# Cache of subelement_wrappers, stored with (id(base),id(obj)) as keys.
+# Cache of ElementWrappers, stored with (id(base),id(obj)) as keys.
 #
 # Possible bug... Could potentially return a value, if base and object are both
 # deleted and others end up at the same address, seems unlikely though.
 import weakref
-subelement_wrapper_cache = weakref.WeakValueDictionary()
+ElementWrapper_cache = weakref.WeakValueDictionary()
 
-class subelement_wrapper(object):
+class ElementWrapper(object):
     """Class to wrap a sub-Element's id and transform attrs.
     
     This is the magic that allows foo.bar.id to be 'foo/bar', even though
     seperately foo.id == 'foo' and bar.id == 'bar'
 
     """
+
+    # Since isinstance(e,Element) must work ElementWrappers are implemented
+    # using __getattribute__ Except for __class__ accesses the logic is quite
+    # simple, if the name is in ElementWrapper.__dict__, return self.name,
+    # otherwise, self._obj.name Therefore the following names must be declared
+    # in the class context.
+    _obj = None
+    _base = None
+    _wrapped_class = None
+
     def __new__(cls,base,obj):
-        """Create a new subelement_wrapper
+        """Create a new ElementWrapper
 
         base - base element
         obj - wrapped element
 
         A subtle point is that for any given (id(base),id(obj)) only one
-        subelement_wrapper object will be created, subsequent calls will return
+        ElementWrapper object will be created, subsequent calls will return
         the same object. This is required not just for performence reasons, but
         to maintain the following invarient:
             
@@ -49,50 +59,33 @@ class subelement_wrapper(object):
 
         cache_key = (id(base),id(obj))
         try:
-            return subelement_wrapper_cache[cache_key]
+            return ElementWrapper_cache[cache_key]
         except KeyError:
-            # Deep magic here... We want isinstance(self,Element) to work, so
-            # dynamicly create a new type, with two base classes,
-            # subelement_wrapper and the object's class, and use that to create
-            # the new object.
-
-            class _Empty(object):
-                pass
-
-            new_cls = None
-            if isinstance(obj,subelement_wrapper):
-                # First case, obj already wrapped, so we can simply reuse the
-                # created type, and in any case, making a subelement_wrapper
-                # with a subelement_wrapper as one of the bases doesn't work.
-                new_cls = obj.__class__
-            else:
-                # Second case, create a new type. We want subelement_wrapper to
-                # be first in the resolution order, the fact that one of the
-                # base classes is obj.__
-                cls_dict = subelement_wrapper.__dict__.copy() 
-                new_cls = type('subelement_wrapper',
-                           (subelement_wrapper,obj.__class__),
-                           {})
-
-            self = _Empty() 
-            object.__setattr__(self,'__class__',new_cls)
+            self = object.__new__(cls)
 
             assert(isinstance(base,Element))
-            assert(isinstance(obj,(Element,subelement_wrapper)))
-            object.__setattr__(self,'_base',base)
-            object.__setattr__(self,'_obj',obj)
+            assert(isinstance(obj,(Element,ElementWrapper)))
+            self._base = base
+            self._obj = obj 
 
-            subelement_wrapper_cache[cache_key] = self
+            # Create a subclass of the wrapped objects class, so
+            # isinstance(e,ElementWrapper) works.
+            if isinstance(obj,ElementWrapper):
+                self._wrapped_class = obj.__class__
+            else:
+                self._wrapped_class = \
+                        type('ElementWrapper',
+                             (ElementWrapper,obj.__class__),
+                             {})
+
+            ElementWrapper_cache[cache_key] = self
             return self
-
-    def __init__(self,base,obj):
-        pass
 
     def isinstance(self,cls):
         return self._obj.isinstance(cls)
 
     def add(self,obj):
-        return subelement_wrapper(self._base,
+        return ElementWrapper(self._base,
                 self._obj.add(obj))
 
     def _wrapper_get_id(self):
@@ -110,37 +103,37 @@ class subelement_wrapper(object):
 
     transform = property(_wrapper_get_transform,_wrapper_set_transform)
 
-    def __getattr__(self,n):
-        r = getattr(self._obj,n)
-        if isinstance(r,subelement_wrapper): 
-            r = subelement_wrapper(self._base,r)
-        print '__getattr__(%s,%s) -> %s' % (self,n,r)
-        return r
+    def __getattribute__(self,n):
+        if n == '__class__':
+            return self._wrapped_class
+        elif n in ElementWrapper.__dict__:
+            return object.__getattribute__(self,n)
+        else:
+            r = getattr(self._obj,n)
+            if isinstance(r,ElementWrapper): 
+                r = ElementWrapper(self._base,r)
+            return r
 
     def __setattr__(self,n,v):
-        # Ugh, this is really ugly.
-        #
-        # For __getattr__ the transform property is called as you would expect,
-        # but __setattr__ bypasses this, so we have to handle it manually.
-        if n != 'transform':
-            setattr(self._obj,n,v)
+        if n in ElementWrapper.__dict__:
+            object.__setattr__(self,n,v)
         else:
-            self._wrapper_set_transform(v) 
+            setattr(self._obj,n,v)
 
     def __iter__(self):
         for v in self._obj:
-            yield subelement_wrapper(self._base,v)
+            yield ElementWrapper(self._base,v)
 
     def iterlayout(self,*args,**kwargs):
         for l in self._obj.iterlayout(*args,**kwargs):
-            yield subelement_wrapper(self._base,l)
+            yield ElementWrapper(self._base,l)
 
     def __getitem__(self,key):
         r = self._obj[key]
         if r == self._obj:
             return self
         else:
-            r = subelement_wrapper(self._base,r)
+            r = ElementWrapper(self._base,r)
             return r
 
     def __enter__(self):
