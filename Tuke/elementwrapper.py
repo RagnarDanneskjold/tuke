@@ -81,9 +81,6 @@ class ElementWrapper(object):
             ElementWrapper_cache[cache_key] = self
             return self
 
-    def isinstance(self,cls):
-        return self._obj.isinstance(cls)
-
     def add(self,obj):
         return ElementWrapper(self._base,
                 self._obj.add(obj))
