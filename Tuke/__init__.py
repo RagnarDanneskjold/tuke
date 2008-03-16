@@ -22,4 +22,4 @@ from repr_helper import repr_helper,non_evalable_repr_helper
 from id import Id,rndId
 from netlist import Netlist
 from element import Element,SingleElement,load_Element,save_element_to_file,load_element_from_file
-from elementref import ElementRef
+from elementref import ElementRef,ElementRefContainer

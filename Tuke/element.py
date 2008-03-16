@@ -90,8 +90,8 @@ class Element(object):
         """Iterate through sub-elements."""
 
         for i in self.__dict__.itervalues():
-            if isinstance(i,Element):
-                yield Tuke.ElementRef(self,self.id + i.id)
+            if isinstance(i,Tuke.ElementRefContainer):
+                yield i 
 
     def _element_id_to_dict_key(self,id):
         """Returns the dict key that Element id should be stored under.
@@ -102,7 +102,8 @@ class Element(object):
         assert len(id) <= 1
 
         n = str(id)
-        if hasattr(self,n) and not isinstance(getattr(self,n),Element):
+        if hasattr(self,n) \
+           and not isinstance(getattr(self,n),Tuke.ElementRefContainer):
             n = '_attr_collided_' + n
         return n
 
@@ -114,7 +115,10 @@ class Element(object):
         """
         id = Id(id)
 
-        return Tuke.ElementRef(self,id)
+        if id[0] == '..':
+            return Tuke.ElementRef(self,id)
+        else:
+            return self.__dict__[self._element_id_to_dict_key(id[0])]
 
     class IdCollisionError(IndexError):
         pass
@@ -134,14 +138,17 @@ class Element(object):
         if not isinstance(obj,Element):
             raise TypeError, "Can only add Elements to Elements, not %s" % type(obj)
 
+        if obj.parent:
+            raise ValueError, "'%s' already has parent '%s'" % (obj,obj.parent)
+
         n = self._element_id_to_dict_key(obj.id)
 
         if hasattr(self,n):
             raise self.IdCollisionError,"'%s' already exists" % str(obj.id)
 
-        setattr(self,n,obj)
-
         obj.parent = self
+        obj = Tuke.ElementRefContainer(self,obj)
+        setattr(self,n,obj)
 
         return obj
 

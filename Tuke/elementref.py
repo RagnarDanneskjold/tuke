@@ -17,7 +17,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-
 from Tuke import Element,Id,non_evalable_repr_helper
 
 # Cache of ElementRefs.
@@ -77,10 +76,7 @@ class ElementRef(object):
     # referenced.name Therefore the following names must be declared in the
     # class context.
     _base = None
-
-    # Id is a nifty special case. The reference *is* the Id, from the contexts
-    # perspective, no wrapping needed.
-    id = None
+    _id = None
 
     def __new__(cls,base,id):
         """Create a new ElementRef
@@ -106,7 +102,7 @@ class ElementRef(object):
 
             assert(isinstance(base,Element))
             self._base = base
-            self.id = id
+            self._id = id
 
             try: 
                 ElementRef_cache[base][id] = self
@@ -119,7 +115,7 @@ class ElementRef(object):
 
     def _deref(self):
         """Return referenced Element object."""
-        id = self.id
+        id = self._id
         r = self._base
         try:
             while id:
@@ -127,21 +123,27 @@ class ElementRef(object):
                     r = r.parent
                 else:
                     r = r.__dict__[r._element_id_to_dict_key(id[0])]
+                    if isinstance(r,ElementRefContainer):
+                        r = object.__getattribute__(r,'_elem')
                 id = id[1:]
             return r
         except KeyError:
             raise ElementRefError, \
-                "'%s' not found in '%s'" % (str(self._base.id),str(self.id))
+                "'%s' not found in '%s'" % (str(self._id),str(self._base.id))
         except AttributeError:
             raise ElementRefError, \
                 "'%s' not found in '%s', ran out of parents at '%s'" %\
-                (str(self._base.id),str(self.id),
-                        str(self.id[0:\
-                            len(self.id) - len(id)]))
+                (str(self._base.id),str(self._id),
+                        str(self._id[0:\
+                            len(self._id) - len(id)]))
 
     def add(self,obj):
         return ElementRef(self._base,
-                self.id + self._deref().add(obj).id)
+                self._id + self._deref().add(obj)._id)
+
+    def _wrapper_get_id(self):
+        return self._base.id + self._id
+    id = property(_wrapper_get_id)
 
     def _wrapper_get_transform(self):
         return self._base.transform * self._obj.transform
@@ -154,6 +156,15 @@ class ElementRef(object):
 
     transform = property(_wrapper_get_transform,_wrapper_set_transform)
 
+    def _wrap_returned(self,r):
+        """Wrap an arbitrary object that is to be returned from one of the
+        wrapped Element's instancemethods."""
+
+        if isinstance(r,ElementRef):
+            return ElementRef(self._base,self._id + r._id)
+        else:
+            return r
+
     def __getattribute__(self,n):
         if n == '__class__':
             return type('ElementRef',
@@ -163,7 +174,7 @@ class ElementRef(object):
             return object.__getattribute__(self,n)
         else:
             r = getattr(self._deref(),n)
-            return r
+            return self._wrap_returned(r)
 
     def __setattr__(self,n,v):
         if n in ElementRef.__dict__:
@@ -171,9 +182,32 @@ class ElementRef(object):
         else:
             setattr(self._deref(),n,v)
 
+    def __getitem__(self,k):
+        #import pdb; pdb.set_trace()
+        return self._wrap_returned(self._deref().__getitem__(k))
+
+    def __iter__(self):
+        for i in iter(self._deref()):
+            yield self._wrap_returned(i) 
+
     def __enter__(self):
         return self._deref()
 
     @non_evalable_repr_helper
     def __repr__(self):
-        return {'id':self.id}
+        return {'id':str(self._base.id + self._id)}
+
+class ElementRefContainer(ElementRef):
+    """An ElementRef where the 'ref' is also the container for the Element
+    
+    Used to store sub-Elements of Elements.
+    """
+    def __new__(cls,base,elem):
+        self = super(ElementRefContainer,cls).__new__(cls,base,elem.id)
+
+        object.__setattr__(self,'_elem',elem)
+
+        return self
+
+    def _deref(self):
+        return object.__getattribute__(self,'_elem')
