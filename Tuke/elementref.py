@@ -162,6 +162,19 @@ class ElementRef(object):
 
         if isinstance(r,ElementRef):
             return ElementRef(self._base,self._id + r._id)
+        elif isinstance(r,(types.GeneratorType)):
+            # Generator objects, for instance iterlayout() will use this. The
+            # above test is a bit limited though, iter((1,2,3)) is *not* a
+            # GeneratorType for instance.
+            class GeneratorWrapper(object):
+                def __init__(self,ref,r):
+                    self.ref = ref
+                    self.r = r
+                def __iter__(self):
+                    return self
+                def next(self):
+                    return self.ref._wrap_returned(self.r.next())
+            return GeneratorWrapper(self,r)
         elif isinstance(r,types.MethodType):
             # Bound methods have their arguments and returned value wrapped.
             # This is done by returning a callable object wrapping the method.
