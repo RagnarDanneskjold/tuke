@@ -40,14 +40,13 @@ def arc_points(a,b,r,segments):
 class Circle(Geometry):
     """A circle with a specified diameter."""
 
-    def __init__(self,dia,layer=None,id=''):
-        Geometry.__init__(self,layer=layer,id=id)
+    def __init__(self,**kwargs):
+        Geometry.__init__(self,kwargs,
+                required=('dia',))
 
-        if not dia > 0:
+        self.dia = float(self.dia)
+        if not self.dia > 0:
             raise ValueError, 'Diameter must be greater than zero: %d' % dia
-
-        self.dia = float(dia)
-
 
     def render(self):
         v = arc_points(0,2*pi,self.dia / 2,32)

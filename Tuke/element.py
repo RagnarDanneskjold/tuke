@@ -238,8 +238,33 @@ class Element(object):
 
     @non_evalable_repr_helper
     def __repr__(self):
-        return {'id':str(self.id)}
+        kwargs,subs = self._serialize()
+        return kwargs
 
+    def _serialize(self,a_kwargs = {},a_subs = None):
+        """Return the kwargs and subs required to represent the Element
+        
+        Subclasses should define this function, have have it call their base
+        classes _serialize(), adding additional args, kwargs, and subs to the
+        list as needed.
+
+        a_subs is special, if it's None, all sub-Elements are included,
+        otherwise if it's set to a list, only a defined set, perhaps even [],
+        of sub-Elements is included.
+
+        Returns (args,kwargs,subs)
+        
+        """
+
+        kwargs = {'id':str(self.id)}
+        kwargs.update(a_kwargs)
+
+        return (kwargs,a_subs)
+
+    def serialize(self):
+        """Serialize the Element and it's sub-Elements."""
+
+        return r
 
 def load_Element(dom):
     """Loads elements from a saved minidom"""
@@ -312,14 +337,64 @@ def load_Element(dom):
 
     return obj
 
-class _EmptyClass(object):
-    pass
+class ReprableByArgsElement(Element):
+    """Base class for Elements representable by their arguments."""
+
+    def __init__(self,kwargs,required=(),defaults={}):
+        """Initialize from kwargs
+
+        All key/value pairs in kwargs will be adde to self.__dict__ Default
+        arguments can be provided in defaults
+        
+        If a key is present in required, but not in kwargs, a TypeError will be
+        raised. If a key is present in kwargs, but not in required or defaults,
+        a TypeError will be raised.
+        """
+
+        Element.__init__(self,id=kwargs.get('id',''))
+
+        self._kwargs_keys = kwargs.keys()
+
+        d = {'id':''}
+        d.update(defaults)
+        defaults = d
+
+        kw = defaults.copy()
+        kw.update(kwargs)
+        try:
+            del kw['id']
+        except KeyError:
+            pass
+
+        required = set(required)
+        valid = required | set(defaults.keys())
+
+        if set(kwargs.keys()) & required != required:
+            raise TypeError, 'Missing required arguments %s' % str(required.difference(set(kwargs.keys())))
+
+        extra = set(kwargs.keys()).difference(valid)
+        if extra:
+            raise TypeError, 'Extra arguments %s' % str(extra)
+
+        self.__dict__.update(kw)
+
+    def _serialize(self,a_kwargs = {},a_subs = None):
+        kwargs = {}
+        for k in self._kwargs_keys:
+            kwargs[k] = self.__dict__[k]
+
+        kwargs.update(a_kwargs)
+        return Element._serialize(self,kwargs,a_subs)
+
 
 class SingleElement(Element):
     """Base class for elements without subelements."""
     add = None
-    def __init__(self,id=Id()):
-        Element.__init__(self,id=id)
+
+
+class _EmptyClass(object):
+    pass
+
 
 def save_element_to_file(elem,f):
     """Save element to file object f"""

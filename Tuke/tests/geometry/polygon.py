@@ -24,4 +24,4 @@ class GeometryPolygonTest(TestCase):
     def testGeometryPolygon(self):
         """Basic tests"""
 
-        a = Polygon(((0,0),(1,1),(1,0)),layer='front.solder')
+        a = Polygon(ext=((0,0),(1,1),(1,0)),layer='front.solder')

@@ -178,8 +178,8 @@ class ElementTest(TestCase):
 
         e.add(Element(id = 'chip'))
         e.chip.add(Element(id = 'pad'))
-        e.chip.add(Geometry(layer = 'sch.lines',id = 'sym'))
-        e.chip.pad.add(Geometry(layer = 'top.copper',id = 'pad'))
+        e.chip.add(Geometry({'layer':'sch.lines','id':'sym'}))
+        e.chip.pad.add(Geometry({'layer':'top.copper','id':'pad'}))
 
         # Check returned objects and Id auto-mangling
         T(set([elem.id for elem in e.iterlayout()]),

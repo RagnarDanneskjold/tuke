@@ -84,7 +84,11 @@ class Footprint(Tuke.pcb.footprint.Footprint):
 
                     pin_number = Id('_' + pin_number[1:-1]) # remove quotes
 
-                    p = Pin(dia,thickness,clearance,mask,id=pin_number)
+                    p = Pin(dia=dia,
+                            thickness=thickness,
+                            clearance=clearance,
+                            mask=mask,
+                            id=pin_number)
                     translate(p,V(x,y))
 
                     self.add(p)
@@ -107,5 +111,9 @@ class Footprint(Tuke.pcb.footprint.Footprint):
 
                     pad_number = Id('_' + pad_number[1:-1]) # remove quotes
 
-                    p = Pad((x1,y1),(x2,y2),thickness,clearance,mask,id=pad_number)
+                    p = Pad(a=(x1,y1),b=(x2,y2),
+                            thickness=thickness,
+                            clearance=clearance,
+                            mask=mask,
+                            id=pad_number)
                     self.add(p)

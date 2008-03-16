@@ -63,10 +63,10 @@ class GeometryLineTest(TestCase):
     def testLine(self):
         """geometry.Line"""
 
-        p = Line(V(-1,2),V(3,4),0.234,layer='foo')
+        p = Line(a=V(-1,2),b=V(3,4),thickness=0.234,layer='foo')
         self.assert_(p.render())
 
     def testThinLine(self):
         """geometry.ThinLine"""
-        p = ThinLine(V(-10,2.5),V(34,4.3),2.2,layer='foo')
+        p = ThinLine(a=V(-10,2.5),b=V(34,4.3),thickness=2.2,layer='foo')
         self.assert_(p.render())
