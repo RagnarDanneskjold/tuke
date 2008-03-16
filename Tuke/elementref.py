@@ -29,7 +29,7 @@ import weakref
 ElementRef_cache = weakref.WeakKeyDictionary()
 
 class ElementRefError(KeyError):
-    """Could not dereference ElementRef"""
+    """Referenced Element not found"""
     pass
 
 class ElementRef(object):
@@ -77,10 +77,9 @@ class ElementRef(object):
     # referenced.name Therefore the following names must be declared in the
     # class context.
     _base = None
-    _wrapped_class = None
 
     # Id is a nifty special case. The reference *is* the Id, from the contexts
-    # perspective.
+    # perspective, no wrapping needed.
     id = None
 
     def __new__(cls,base,id):
@@ -98,25 +97,16 @@ class ElementRef(object):
         c2 is a.b.c
         """
 
+        id = Id(id)
+
         try:
             return ElementRef_cache[base][id]
         except KeyError:
             self = object.__new__(cls)
 
             assert(isinstance(base,Element))
-            assert(isinstance(obj,(Element,ElementRef)))
             self._base = base
-            self._obj = obj 
-
-            # Create a subclass of the wrapped objects class, so
-            # isinstance(e,ElementRef) works.
-            if isinstance(obj,ElementRef):
-                self._wrapped_class = obj.__class__
-            else:
-                self._wrapped_class = \
-                        type('ElementRef',
-                             (ElementRef,obj.__class__),
-                             {})
+            self.id = id
 
             try: 
                 ElementRef_cache[base][id] = self
@@ -147,7 +137,7 @@ class ElementRef(object):
                 "'%s' not found in '%s', ran out of parents at '%s'" %\
                 (str(self._base.id),str(self.id),
                         str(self.id[0:\
-                            len(self.id) - len(id)))
+                            len(self.id) - len(id)]))
 
     def add(self,obj):
         return ElementRef(self._base,
@@ -166,7 +156,9 @@ class ElementRef(object):
 
     def __getattribute__(self,n):
         if n == '__class__':
-            return self._wrapped_class
+            return type('ElementRef',
+                        (ElementRef,self._deref().__class__),
+                        {})
         elif n in ElementRef.__dict__:
             return object.__getattribute__(self,n)
         else:

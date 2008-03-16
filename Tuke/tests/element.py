@@ -17,7 +17,7 @@ import common
 
 from unittest import TestCase
 import Tuke
-from Tuke import load_Element,Element,ElementWrapper,ElementRef,Id,rndId
+from Tuke import load_Element,Element,ElementRef,Id,rndId
 
 from Tuke.geometry import Geometry,V,Transformation,Translation,translate,centerof
 

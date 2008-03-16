@@ -18,7 +18,7 @@
 # ### BOILERPLATE ###
 
 import Tuke
-from Tuke import Id,rndId,Netlist,repr_helper,non_evalable_repr_helper,ElementRef
+from Tuke import Id,rndId,Netlist,repr_helper,non_evalable_repr_helper
 from repr_helper import shortest_class_name
 from xml.dom.minidom import Document,parse
 
@@ -88,11 +88,10 @@ class Element(object):
 
     def __iter__(self):
         """Iterate through sub-elements."""
-        from Tuke import ElementWrapper
 
         for i in self.__dict__.itervalues():
-            if isinstance(i,ElementWrapper):
-                yield i
+            if isinstance(i,Element):
+                yield Tuke.ElementRef(self,self.id + i.id)
 
     def _element_id_to_dict_key(self,id):
         """Returns the dict key that Element id should be stored under.
@@ -100,11 +99,10 @@ class Element(object):
         This is the key under which the Element of the given id will be stored
         under.
         """
-        from Tuke import ElementWrapper
         assert len(id) <= 1
 
         n = str(id)
-        if hasattr(self,n) and not isinstance(getattr(self,n),ElementWrapper):
+        if hasattr(self,n) and not isinstance(getattr(self,n),Element):
             n = '_attr_collided_' + n
         return n
 
@@ -116,22 +114,7 @@ class Element(object):
         """
         id = Id(id)
 
-        if not id:
-            return self
-
-        r = None
-        try:
-            if id[0] == '..':
-                from Tuke import ElementWrapper
-                return ElementWrapper(self,self.parent)
-            else:
-                r = self.__dict__[self._element_id_to_dict_key(id[0])][id[1:]]
-        except KeyError:
-            # Everything wrapped in a KeyError catch, so that inner KeyErrors
-            # will give error messages relative to the outermost element.
-            raise KeyError, "'%s' not found in '%s'" % (str(id),str(self.id))
-
-        return r
+        return Tuke.ElementRef(self,id)
 
     class IdCollisionError(IndexError):
         pass
@@ -146,10 +129,8 @@ class Element(object):
 
         Raises Element.IdCollisionError on id collission.
         """
-        from Tuke import ElementWrapper
-
-        if isinstance(obj,ElementWrapper):
-            raise TypeError, 'Can only add unwrapped Elements, IE, foo.add(foo.bar) is invalid.'
+        if isinstance(obj,Tuke.ElementRef):
+            raise TypeError, 'Can only add bare Elements, IE, foo.add(foo.bar) is invalid.'
         if not isinstance(obj,Element):
             raise TypeError, "Can only add Elements to Elements, not %s" % type(obj)
 
@@ -158,7 +139,6 @@ class Element(object):
         if hasattr(self,n):
             raise self.IdCollisionError,"'%s' already exists" % str(obj.id)
 
-        obj = self._wrap_subelement(obj)
         setattr(self,n,obj)
 
         obj.parent = self
@@ -167,29 +147,17 @@ class Element(object):
 
     def save(self,doc):
         """Returns an XML minidom object representing the Element"""
-        from Tuke import ElementWrapper
-
         r = doc.createElement(shortest_class_name(self.__class__))
 
         for n,v in self.__dict__.iteritems():
             if n in set(('parent','_parent','parent_set_callback','parent_unset_callback')):
                 continue
-            if isinstance(v,ElementWrapper): 
+            if isinstance(v,Element): 
                 r.appendChild(v.save(doc))
             else:
                 r.setAttribute(n,repr(v))
 
         return r
-
-    def _wrap_subelement(self,obj):
-        """Wrap a subelement's id and transform attrs.
-
-        Used so that a callee sees a consistant view of id and transform in
-        sub-elements. For instance foo.bar.id == 'foo/bar'
-        """
-        from Tuke import ElementWrapper
-
-        return ElementWrapper(self,obj)
 
     def iterlayout(self,layer_mask = None):
         """Iterate through layout.
