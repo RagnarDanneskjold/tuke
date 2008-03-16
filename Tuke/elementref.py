@@ -137,10 +137,6 @@ class ElementRef(object):
                         str(self._id[0:\
                             len(self._id) - len(id)]))
 
-    def add(self,obj):
-        return ElementRef(self._base,
-                self._id + self._deref().add(obj)._id)
-
     def _wrapper_get_id(self):
         return self._base.id + self._id
     id = property(_wrapper_get_id)
@@ -160,8 +156,23 @@ class ElementRef(object):
         """Wrap an arbitrary object that is to be returned from one of the
         wrapped Element's instancemethods."""
 
+        import types
+
         if isinstance(r,ElementRef):
             return ElementRef(self._base,self._id + r._id)
+        elif isinstance(r,types.MethodType):
+            # Bound methods have their arguments and returned value wrapped.
+            # This is done by returning a callable object wrapping the method.
+            class MethodWrapper(object):
+                def __init__(self,ref,fn):
+                    self.ref = ref
+                    self.fn = fn
+                def __call__(self,*args,**kwargs):
+                    # FIXME: still need to wrap args
+                    r = self.fn(*args,**kwargs)
+                    r = self.ref._wrap_returned(r)
+                    return r
+            return MethodWrapper(self,r)
         else:
             return r
 
