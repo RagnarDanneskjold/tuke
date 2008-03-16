@@ -39,7 +39,7 @@ class Led(Symbol):
     def __init__(self,id):
         Symbol.__init__(self,
                 pins = (Pin('anode'),Pin('cathode')),
-                footprint = Dil(2),
+                footprint = Dil(n=2),
                 id = id)
 
 class LedGrid(Component):
