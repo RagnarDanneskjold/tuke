@@ -236,30 +236,23 @@ class Element(object):
         else:
             return other
 
-    @non_evalable_repr_helper
+    @repr_helper
     def __repr__(self):
-        kwargs,subs = self._serialize()
-        return kwargs
+        kwargs = self._serialize()
+        return ((),kwargs)
 
-    def _serialize(self,a_kwargs = {},a_subs = None):
-        """Return the kwargs and subs required to represent the Element
+    def _serialize(self,a_kwargs = {}):
+        """Return the kwargs required to represent the Element
         
         Subclasses should define this function, have have it call their base
-        classes _serialize(), adding additional args, kwargs, and subs to the
-        list as needed.
+        classes _serialize(), adding additional kwargs to the dict as needed.
 
-        a_subs is special, if it's None, all sub-Elements are included,
-        otherwise if it's set to a list, only a defined set, perhaps even [],
-        of sub-Elements is included.
-
-        Returns (args,kwargs,subs)
-        
         """
 
-        kwargs = {'id':str(self.id)}
+        kwargs = {'id':self.id}
         kwargs.update(a_kwargs)
 
-        return (kwargs,a_subs)
+        return kwargs 
 
     def serialize(self):
         """Serialize the Element and it's sub-Elements."""
@@ -378,13 +371,13 @@ class ReprableByArgsElement(Element):
 
         self.__dict__.update(kw)
 
-    def _serialize(self,a_kwargs = {},a_subs = None):
+    def _serialize(self,a_kwargs = {}):
         kwargs = {}
         for k in self._kwargs_keys:
             kwargs[k] = self.__dict__[k]
 
         kwargs.update(a_kwargs)
-        return Element._serialize(self,kwargs,a_subs)
+        return Element._serialize(self,kwargs)
 
 
 class SingleElement(Element):
