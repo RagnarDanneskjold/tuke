@@ -17,10 +17,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
+from __future__ import with_statement
+
+from collections import deque
+
 import Tuke
 from Tuke import Id,rndId,Netlist,repr_helper,non_evalable_repr_helper
 from repr_helper import shortest_class_name
-from xml.dom.minidom import Document,parse
 
 class Element(object):
     """Base element class.
@@ -159,20 +162,6 @@ class Element(object):
 
         return obj
 
-    def save(self,doc):
-        """Returns an XML minidom object representing the Element"""
-        r = doc.createElement(shortest_class_name(self.__class__))
-
-        for n,v in self.__dict__.iteritems():
-            if n in set(('parent','_parent','parent_set_callback','parent_unset_callback')):
-                continue
-            if isinstance(v,Element): 
-                r.appendChild(v.save(doc))
-            else:
-                r.setAttribute(n,repr(v))
-
-        return r
-
     def iterlayout(self,layer_mask = None):
         """Iterate through layout.
 
@@ -238,14 +227,14 @@ class Element(object):
 
     @repr_helper
     def __repr__(self):
-        kwargs = self._serialize()
+        kwargs = self._get_kwargs()
         return ((),kwargs)
 
-    def _serialize(self,a_kwargs = {}):
+    def _get_kwargs(self,a_kwargs = {}):
         """Return the kwargs required to represent the Element
         
         Subclasses should define this function, have have it call their base
-        classes _serialize(), adding additional kwargs to the dict as needed.
+        classes _get_kwargs(), adding additional kwargs to the dict as needed.
 
         """
 
@@ -254,81 +243,41 @@ class Element(object):
 
         return kwargs 
 
-    def serialize(self):
+    def _serialize(self,r,indent,root=False,full=False):
+        r.append('%s%s = %s; ' % (indent,self.id,repr(self)))
+        if not root:
+            r.append('_.add(%s)\n' % (self.id))
+        else:
+            r.append('__root = %s\n' % (self.id))
+
+        if not isinstance(self,ReprableByArgsElement) or full:
+            subs = []
+            for e in self: 
+                if isinstance(e,Tuke.ElementRefContainer):
+                    subs.append(e)
+            subs.sort(key=lambda e: e.id)
+
+            if subs:
+                r.append('%swith %s as _:\n' % (indent,self.id))
+                for e in subs:
+                    with e as e:
+                        e._serialize(r,indent + '    ')
+
+    def serialize(self,full=False):
         """Serialize the Element and it's sub-Elements."""
 
-        return r
+        r = deque()
 
-def load_Element(dom):
-    """Loads elements from a saved minidom"""
+        r.append("""\
+from __future__ import with_statement
+import Tuke
 
+""")
 
-    # Since the xml is saved as a tree, and elements depend on their
-    # subelements, the load operation must be done in a depth-first recursive
-    # manner.
+        self._serialize(r,'',root=True,full=full)
 
-    subs = []
-    for sub in dom.childNodes:
-        s = load_Element(sub)
-        if s:
-            subs.append(s)
+        return ''.join(r)
 
-    # An actual dom from the disk will include a number of node types we don't
-    # need, like text nodes and comment nodes, ignore everything but element
-    # nodes.
-    if dom.nodeType != dom.ELEMENT_NODE:
-        if dom.nodeType == dom.DOCUMENT_NODE:
-            # Ooops, special case here. The dom is wrapped by a
-            # "document_node", which has children that we need to return.
-            assert len(subs) == 1
-            return subs[0]
-        return None 
-    
-    # De-repr() the element attributes to generate a dict.
-    attr = {}
-    for n,v in dom.attributes.items():
-        v = eval(v)
-        attr[n] = v
-
-
-    # Create an instance of the class referred to by the tagName
-    import sys
-
-    # First split up the module part of tagName from the trailing class part.
-    module = dom.tagName.split('.')
-    name = module[-1]
-    module = reduce(lambda a,b: a + '.' + b,module[0:-1])
-
-    # Load the required module and get the correct class object.
-    __import__(module)
-
-    mod = sys.modules[module]
-    
-    klass = getattr(mod,name)
-   
-    # Create a new object of the correct class.
-    #
-    # Not really sure why obj = object() doesn't work, gives an odd error:
-    # "__class__ assignment: only for heap types"
-    obj = _EmptyClass() 
-    obj.__class__ = klass
-
-    # FIXME: ugly hack, will go away when we make non-xml switch to eval()able
-    # representations.
-    obj.parent_set_callback = []
-    obj.parent_unset_callback = []
-    obj._parent = None
-
-    # Setup attributes
-    for n,v in attr.iteritems():
-        setattr(obj,n,v)
-
-    # Finally load the add sub-elements, this must be done second, as add()
-    # depends on the attributes id and transform
-    for s in subs:
-        obj.add(s)
-
-    return obj
 
 class ReprableByArgsElement(Element):
     """Base class for Elements representable by their arguments."""
@@ -371,35 +320,15 @@ class ReprableByArgsElement(Element):
 
         self.__dict__.update(kw)
 
-    def _serialize(self,a_kwargs = {}):
+    def _get_kwargs(self,a_kwargs = {}):
         kwargs = {}
         for k in self._kwargs_keys:
             kwargs[k] = self.__dict__[k]
 
         kwargs.update(a_kwargs)
-        return Element._serialize(self,kwargs)
+        return Element._get_kwargs(self,kwargs)
 
 
 class SingleElement(Element):
     """Base class for elements without subelements."""
     add = None
-
-
-class _EmptyClass(object):
-    pass
-
-
-def save_element_to_file(elem,f):
-    """Save element to file object f"""
-
-    doc = Document()
-
-    f.write(elem.save(doc).toprettyxml(indent="  "))
-
-def load_element_from_file(f):
-    """Load the element represented by file object f"""
-
-    doc = parse(f)
-
-    e = load_Element(doc)
-    return e

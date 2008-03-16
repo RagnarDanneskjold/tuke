@@ -17,7 +17,7 @@ import common
 
 from unittest import TestCase
 import Tuke
-from Tuke import load_Element,Element,ElementRef,Id,rndId
+from Tuke import Element,ElementRef,Id,rndId
 
 from Tuke.geometry import Geometry,V,Transformation,Translation,translate,centerof
 
@@ -275,8 +275,8 @@ class ElementTest(TestCase):
         R((0,'sdf'))
         R([0,'sdf'])
 
-    def testElementSave(self):
-        """Element.save()"""
+    def testElementSerialize(self):
+        """Element.serialize()"""
 
         doc = Document()
 
@@ -296,15 +296,9 @@ class ElementTest(TestCase):
 
         from Tuke.geda import Footprint
         common.load_dataset('geda_footprints')
-        f1 = Footprint(common.tmpd + '/plcc4-rgb-led',Id('plcc4'))
-        f2 = Footprint(common.tmpd + '/supercap_20mm',Id('supercap'))
-        a.add(f1)
-        a.add(f2)
-
-        dom = a.save(doc)
-
-        print a.save(doc).toprettyxml(indent="  ")
-
-        doc = Document()
-        print load_Element(dom).save(doc).toprettyxml(indent="  ")
-        
+        f1 = Footprint(file=common.tmpd + '/plcc4-rgb-led')
+        f2 = Footprint(file=common.tmpd + '/supercap_20mm')
+      
+        print f1.serialize(full=True)
+        print f2.serialize(full=True)
+        # FIXME: more needed here...

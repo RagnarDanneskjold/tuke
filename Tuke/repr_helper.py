@@ -72,7 +72,7 @@ def repr_helper(fn):
         args = [repr(a) for a in args] 
 
         # keyword arguments get transformed into name = value syntax
-        kwargs = ['%s = %s' % (n,repr(v)) for (n,v) in kwargs.iteritems()]
+        kwargs = ['%s = %s' % (n,repr(v)) for (n,v) in sorted(kwargs.iteritems())]
 
         args_str = ','.join(args + kwargs)
 
@@ -106,6 +106,6 @@ def non_evalable_repr_helper(fn):
             return rpr
         else:
             return rpr[:-1] + ', ' \
-                   + ', '.join(['%s=%s' % (n,repr(v)) for n,v in kw.iteritems()]) \
+                   + ', '.join(['%s=%s' % (n,repr(v)) for n,v in sorted(kw.iteritems())]) \
                    + '>'
     return f
