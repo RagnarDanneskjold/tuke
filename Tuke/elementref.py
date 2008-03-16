@@ -146,13 +146,13 @@ class ElementRef(object):
     id = property(_wrapper_get_id)
 
     def _wrapper_get_transform(self):
-        return self._base.transform * self._obj.transform
+        return self._base.transform * self._deref().transform
     def _wrapper_set_transform(self,value):
         # The code setting transform will be dealing with the transform
         # relative to the wrapper, however _obj.transform needs to be stored
         # relative to _obj. So apply the inverse of the base transformation
         # before storing the value to undo.
-        self._obj.transform = self._base.transform.I * value
+        self._deref().transform = self._base.transform.I * value
 
     transform = property(_wrapper_get_transform,_wrapper_set_transform)
 
@@ -183,6 +183,7 @@ class ElementRef(object):
             setattr(self._deref(),n,v)
 
     def __getitem__(self,k):
+        #import pdb; pdb.set_trace()
         return self._wrap_returned(self._deref().__getitem__(k))
 
     def __iter__(self):

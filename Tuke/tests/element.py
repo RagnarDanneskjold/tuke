@@ -126,11 +126,11 @@ class ElementTest(TestCase):
 
         a = Element('a')
         T(isinstance(a,Element))
-        T(not isinstance(a,ElementWrapper))
+        T(not isinstance(a,ElementRef))
 
         a.add(Element('b'))
         T(isinstance(a.b,Element))
-        T(isinstance(a.b,ElementWrapper))
+        T(isinstance(a.b,ElementRef))
 
     def testElement__getitem__(self):
         """Element[] lookups"""
@@ -239,28 +239,6 @@ class ElementTest(TestCase):
         self.assert_(a.foo.foo is foo.foo)
         a.foo.bar = 'bar'
         self.assert_(a.foo.bar is foo.bar)
-
-    def testElementRef(self):
-        """ElementRef"""
-
-        def T(got,expected = True):
-            self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
-
-        a = Element('a')
-        b = a.add(Element('b'))
-
-        ref_b_orig = ElementRef('b',None)
-
-        for ref_b in (ref_b_orig,eval(repr(ref_b_orig))):
-            T(isinstance(ref_b,ElementRef))
-            self.assertRaises(ElementRef.NotResolvedError,lambda:ref_b.id)
-            ref_b.set_target(b)
-
-            T(ref_b.id,'a/b')
-            b.foo = 'foo'
-            T(ref_b.foo == 'foo')
-            ref_b.bar = 'bar'
-            T(b.bar == 'bar')
 
     def testElementVersionChecking(self):
         """Element __version__ checking"""
