@@ -113,20 +113,20 @@ class ElementRef(object):
 
             return self
 
-    def _deref(self):
-        """Return referenced Element object."""
+    def _get_ref_stack(self):
+        """Return the stack of referenced elements, from base to ref"""
         id = self._id
-        r = self._base
+        r = [self._base]
         try:
             while id:
                 if id[0] == '..':
-                    r = r.parent
+                    r.append(r[-1].parent)
                 else:
-                    r = r.__dict__[r._element_id_to_dict_key(id[0])]
-                    if isinstance(r,ElementRefContainer):
-                        r = object.__getattribute__(r,'_elem')
+                    r.append(r[-1].__dict__[r[-1]._element_id_to_dict_key(id[0])])
+                    if isinstance(r[-1],ElementRefContainer):
+                        r[-1] = object.__getattribute__(r[-1],'_elem')
                 id = id[1:]
-            if r is None:
+            if r[-1] is None:
                 raise KeyError
             return r
         except KeyError:
@@ -139,18 +139,30 @@ class ElementRef(object):
                         str(self._id[0:\
                             len(self._id) - len(id)]))
 
+    def _deref(self):
+        """Return referenced Element object."""
+        return self._get_ref_stack()[-1]
+
     def _wrapper_get_id(self):
         return self._base.id + self._id
     id = property(_wrapper_get_id)
 
     def _wrapper_get_transform(self):
-        return self._base.transform * self._deref().transform
+        st = self._get_ref_stack()
+        r = st[0].transform
+        for e in st[1:]:
+            r = r * e.transform
+        return r 
     def _wrapper_set_transform(self,value):
         # The code setting transform will be dealing with the transform
         # relative to the wrapper, however _obj.transform needs to be stored
         # relative to _obj. So apply the inverse of the base transformation
         # before storing the value to undo.
-        self._deref().transform = self._base.transform.I * value
+        st = self._get_ref_stack()
+        r = st[0].transform
+        for e in st[1:-1]:
+            r = r * e.transform
+        self._deref().transform = r.I * value
 
     transform = property(_wrapper_get_transform,_wrapper_set_transform)
 
