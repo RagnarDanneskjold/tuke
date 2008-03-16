@@ -115,10 +115,17 @@ class Element(object):
         """
         id = Id(id)
 
-        if id[0] == '..':
-            return Tuke.ElementRef(self,id)
+        r = None
+        if not id:
+            return self
+        elif id[0] == '..' or len(id) > 1:
+            r = Tuke.ElementRef(self,id)
         else:
-            return self.__dict__[self._element_id_to_dict_key(id[0])]
+            r = self.__dict__[self._element_id_to_dict_key(id[0])]
+
+        # Element[] should raise a KeyError immediately if the element doesn't exist, so force a dereference
+        r._deref()
+        return r
 
     class IdCollisionError(IndexError):
         pass

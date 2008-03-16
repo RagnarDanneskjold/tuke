@@ -126,6 +126,8 @@ class ElementRef(object):
                     if isinstance(r,ElementRefContainer):
                         r = object.__getattribute__(r,'_elem')
                 id = id[1:]
+            if r is None:
+                raise KeyError
             return r
         except KeyError:
             raise ElementRefError, \
