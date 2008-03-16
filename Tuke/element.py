@@ -122,7 +122,8 @@ class Element(object):
         r = None
         try:
             if id[0] == '..':
-                return self.parent[id[1:]]
+                from Tuke import ElementWrapper
+                return ElementWrapper(self,self.parent)
             else:
                 r = self.__dict__[self._element_id_to_dict_key(id[0])][id[1:]]
         except KeyError:
