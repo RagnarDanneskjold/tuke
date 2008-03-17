@@ -26,5 +26,5 @@ class GedaFootprintTest(TestCase):
 
         common.load_dataset('geda_footprints')
 
-        f = Footprint(common.tmpd + '/plcc4-rgb-led',Id('plcc4'))
-        f = Footprint(common.tmpd + '/supercap_20mm',Id('supercap'))
+        f = Footprint(file=common.tmpd + '/plcc4-rgb-led')
+        f = Footprint(file=common.tmpd + '/supercap_20mm')

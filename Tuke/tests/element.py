@@ -8,6 +8,8 @@
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
 # PURPOSE.
 
+from __future__ import with_statement
+
 import os
 import shutil
 
@@ -15,7 +17,7 @@ import common
 
 from unittest import TestCase
 import Tuke
-from Tuke import load_Element,Element,ElementRef,Id,rndId
+from Tuke import Element,ElementRef,Id,rndId
 
 from Tuke.geometry import Geometry,V,Transformation,Translation,translate,centerof
 
@@ -63,7 +65,6 @@ class ElementTest(TestCase):
         T(a.b is r)
 
         r = a.b.add(Element('c'))
-        print r,a.b.c
         T(a.b.c is r)
 
     def testElementAddCollisions(self):
@@ -104,11 +105,8 @@ class ElementTest(TestCase):
         def T(elem,id_set):
             ids = set() 
             for e in elem:
-                try:
-                    e.isinstance(Element)
+                if isinstance(e,Element):
                     ids.add(e.id)
-                except AttributeError:
-                    pass
             id_set = set([Id(i) for i in id_set])
             self.assert_(ids == id_set,'got: %s expected: %s' % (ids,id_set))
 
@@ -121,15 +119,18 @@ class ElementTest(TestCase):
         T(a,set(('a/_1','a/_2','a/_3')))
 
     def testElement_isinstance(self):
-        """Element.isinstance()"""
+        """Element isinstance()"""
 
         def T(x):
             self.assert_(x)
 
         a = Element('a')
-        T(a.isinstance(Element))
+        T(isinstance(a,Element))
+        T(not isinstance(a,ElementRef))
+
         a.add(Element('b'))
-        T(a.b.isinstance(Element))
+        T(isinstance(a.b,Element))
+        T(isinstance(a.b,ElementRef))
 
     def testElement__getitem__(self):
         """Element[] lookups"""
@@ -141,7 +142,7 @@ class ElementTest(TestCase):
             self.assertRaises(ex,lambda: elem[key])
 
         a = Element('a')
-        R(a,Id(),KeyError)
+        T(a,'',a)
         R(a,'foo',KeyError)
         R(a,Id('foo'),KeyError)
 
@@ -156,6 +157,9 @@ class ElementTest(TestCase):
         T(a,'b',b)
         T(a,'b/d',d)
 
+        #T(b,'..',a)
+        #T(b,'../b',b)
+        #T(b,'../d',d)
 
         e = Element('e')
         e2 = a.add(e)
@@ -174,8 +178,8 @@ class ElementTest(TestCase):
 
         e.add(Element(id = 'chip'))
         e.chip.add(Element(id = 'pad'))
-        e.chip.add(Geometry(layer = 'sch.lines',id = 'sym'))
-        e.chip.pad.add(Geometry(layer = 'top.copper',id = 'pad'))
+        e.chip.add(Geometry({'layer':'sch.lines','id':'sym'}))
+        e.chip.pad.add(Geometry({'layer':'top.copper','id':'pad'}))
 
         # Check returned objects and Id auto-mangling
         T(set([elem.id for elem in e.iterlayout()]),
@@ -201,6 +205,16 @@ class ElementTest(TestCase):
         T(set([elem.id for elem in e.iterlayout(layer_mask='sch.*')]),
           set((Id('base/chip/sym'),)))
 
+    def testElement_with(self):
+        """with Element()"""
+
+        a = Element('a')
+        b = Element('b')
+        a.add(b)
+
+        with a.b as b2:
+            self.assert_(b is b2)
+
     def testElementIdAttr(self):
         """Auto-magical attribute lookup from sub-element Id's"""
 
@@ -225,28 +239,6 @@ class ElementTest(TestCase):
         self.assert_(a.foo.foo is foo.foo)
         a.foo.bar = 'bar'
         self.assert_(a.foo.bar is foo.bar)
-
-    def testElementRef(self):
-        """ElementRef"""
-
-        def T(got,expected = True):
-            self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
-
-        a = Element('a')
-        b = a.add(Element('b'))
-
-        ref_b_orig = ElementRef('b',None)
-
-        for ref_b in (ref_b_orig,eval(repr(ref_b_orig))):
-            T(isinstance(ref_b,ElementRef))
-            self.assertRaises(ElementRef.NotResolvedError,lambda:ref_b.id)
-            ref_b.set_target(b)
-
-            T(ref_b.id,'a/b')
-            b.foo = 'foo'
-            T(ref_b.foo == 'foo')
-            ref_b.bar = 'bar'
-            T(b.bar == 'bar')
 
     def testElementVersionChecking(self):
         """Element __version__ checking"""
@@ -283,8 +275,8 @@ class ElementTest(TestCase):
         R((0,'sdf'))
         R([0,'sdf'])
 
-    def testElementSave(self):
-        """Element.save()"""
+    def testElementSerialize(self):
+        """Element.serialize()"""
 
         doc = Document()
 
@@ -304,15 +296,9 @@ class ElementTest(TestCase):
 
         from Tuke.geda import Footprint
         common.load_dataset('geda_footprints')
-        f1 = Footprint(common.tmpd + '/plcc4-rgb-led',Id('plcc4'))
-        f2 = Footprint(common.tmpd + '/supercap_20mm',Id('supercap'))
-        a.add(f1)
-        a.add(f2)
-
-        dom = a.save(doc)
-
-        print a.save(doc).toprettyxml(indent="  ")
-
-        doc = Document()
-        print load_Element(dom).save(doc).toprettyxml(indent="  ")
-        
+        f1 = Footprint(file=common.tmpd + '/plcc4-rgb-led')
+        f2 = Footprint(file=common.tmpd + '/supercap_20mm')
+      
+        print f1.serialize(full=True)
+        print f2.serialize(full=True)
+        # FIXME: more needed here...

@@ -17,13 +17,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from Tuke import Element,Id
+from Tuke import ReprableByArgsElement,Id
 from Tuke.geometry import Circle,Hole,Polygon,V
 
-class Pin(Element):
+class Pin(ReprableByArgsElement):
     """Defines a pin"""
 
-    def __init__(self,dia,thickness,clearance,mask,square=False,id=Id()):
+    def __init__(self,**kwargs): #dia,thickness,clearance,mask,square=False,id=Id()):
         """Create a pin
 
         dia - diameter of the hole
@@ -32,22 +32,20 @@ class Pin(Element):
         mask - diameter of the mask, independent of other values
         square - square flag
         """
-        Element.__init__(self,id = id)
+        ReprableByArgsElement.__init__(self,kwargs,
+                required=('dia','thickness','clearance','mask'),
+                defaults={'square':False})
 
-        self.dia = dia
-        self.thickness = thickness
-        self.clearance = clearance
-        self.mask = mask
-        self.square = square
+        self.square = bool(self.square)
 
         def gen_pad_shape(dia,id,layer=None):
             if self.square:
                 r = dia / 2
-                return Polygon((V(-r,-r),V(r,-r),V(r,r),V(-r,r)),id=id,layer=layer)
+                return Polygon(ext=(V(-r,-r),V(r,-r),V(r,r),V(-r,r)),id=id,layer=layer)
             else:
-                return Circle(dia,id=id,layer=layer)
+                return Circle(dia=dia,id=id,layer=layer)
 
-        self.add(Hole(self.dia,id=Id()))
+        self.add(Hole(dia=self.dia,id=Id()))
 
         self.add(gen_pad_shape(self.dia + (self.thickness * 2),id='pad',layer='top.pad'))
         self.add(gen_pad_shape(self.mask,id='mask',layer='top.mask'))

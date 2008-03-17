@@ -44,15 +44,12 @@ def make_line_vertexes(a,b,thickness,segments):
 class Line(Geometry):
     """A line with a specified thickness."""
 
-    def __init__(self,a,b,thickness,layer='',id=''):
-        Geometry.__init__(self,layer=layer,id=id)
+    def __init__(self,**kwargs):
+        Geometry.__init__(self,kwargs,
+                required=('a','b','thickness'))
 
-        if not thickness > 0:
+        if not self.thickness > 0:
             raise ValueError, 'Thickness must be greater than zero: %d' % thickness
-
-        self.a = a
-        self.b = b
-        self.thickness = thickness
 
     def render(self):
         v = make_line_vertexes(self.a,self.b,self.thickness,16)

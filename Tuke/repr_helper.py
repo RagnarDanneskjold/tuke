@@ -17,6 +17,40 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
+def shortest_class_name(cls):
+    """Returns the shortest class name for cls"""
+
+    class_name = cls.__name__
+    module_name = cls.__module__
+
+    # Try to find a shorter representation of the module name.
+    #
+    # Often you'll get stuff like Tuke.element.Element, where the Tuke
+    # __init__ code has a from element import Element line, find those
+    # cases.
+    t = module_name
+    while True:
+        t = t.split('.')[:-1]
+        t = '.'.join(t)
+
+        if not t:
+            break
+
+
+        # The from_list has to be set to something, or __import__ will only
+        # return the top level module, IE, Tuke when asked for Tuke.geometry
+        m = __import__(t,{},{},[class_name])
+
+        try:
+            if m.__dict__[class_name] is cls:
+                module_name = t
+                break
+        except KeyError:
+            continue
+
+    return module_name + '.' + class_name 
+
+
 def repr_helper(fn):
     """Decorator to make writin __repr__ functions easier.
 
@@ -24,10 +58,6 @@ def repr_helper(fn):
     to eval() is relatively involved, with subtle issues like what is the full
     name of the class. This decorator allows the __repr__ function to simply
     return a (args,kwargs) tuple instead, the decorator will handle the rest.
-
-    As a special case, if the repr function needs to change the class name, set
-    '_repr_helper_class_name_override' This is useful if there are alternate,
-    more legible, ways of creating the object.
     """
 
     def f(self):
@@ -38,23 +68,15 @@ def repr_helper(fn):
         if not kwargs:
             kwargs = {}
 
-        class_name = None
-        try:
-            class_name = kwargs['_repr_helper_class_name_override']
-            del kwargs['_repr_helper_class_name_override']
-        except:
-            class_name = self.__class__.__name__
-
         # positional arguments are easy, just repr each one
         args = [repr(a) for a in args] 
 
         # keyword arguments get transformed into name = value syntax
-        kwargs = ['%s = %s' % (n,repr(v)) for (n,v) in kwargs.iteritems()]
+        kwargs = ['%s = %s' % (n,repr(v)) for (n,v) in sorted(kwargs.iteritems())]
 
         args_str = ','.join(args + kwargs)
 
-        return '%s.%s(%s)' % (self.__class__.__module__,class_name,
-                              args_str)
+        return '%s(%s)' % (shortest_class_name(self.__class__),args_str)
 
     return f
 
@@ -84,6 +106,6 @@ def non_evalable_repr_helper(fn):
             return rpr
         else:
             return rpr[:-1] + ', ' \
-                   + ', '.join(['%s=%s' % (n,repr(v)) for n,v in kw.iteritems()]) \
+                   + ', '.join(['%s=%s' % (n,repr(v)) for n,v in sorted(kw.iteritems())]) \
                    + '>'
     return f
