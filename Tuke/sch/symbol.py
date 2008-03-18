@@ -17,7 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from Tuke import Netlist,Element,Id
+from Tuke import Element,Id
 
 from Tuke.sch import Component,Pin
 from Tuke.pcb import Footprint

@@ -15,7 +15,7 @@ import Tuke.tests.common
 
 from unittest import TestCase
 
-from Tuke import Id,Netlist,SingleElement
+from Tuke import Id,SingleElement
 from Tuke.sch import Component,Pin
 
 class SchComponentTest(TestCase):

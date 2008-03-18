@@ -22,8 +22,6 @@ from __future__ import with_statement
 from collections import deque
 
 import Tuke
-from Tuke import Id,rndId,Netlist,repr_helper,non_evalable_repr_helper
-from repr_helper import shortest_class_name
 
 class Element(object):
     """Base element class.
@@ -54,14 +52,15 @@ class Element(object):
         from Tuke.geometry import Transformation
 
         if not id:
-            id = Id.random()
-        self.id = Id(id)
+            id = Tuke.Id.random()
+        self.id = Tuke.Id(id)
 
         if len(self.id) > 1:
             raise ValueError, 'Invalid Element Id \'%s\': more than one path component' % str(self.id)
 
         self.transform = Transformation()
 
+        self.connects = Tuke.Connects(base=self)
 
         self._parent = None
         self.parent_set_callback = []
@@ -114,7 +113,7 @@ class Element(object):
         Id can refer to subelements, or, if the Element has a parent, super
         elements. '../' refers to the parent for instance.
         """
-        id = Id(id)
+        id = Tuke.Id(id)
 
         r = None
         if not id:
@@ -223,7 +222,7 @@ class Element(object):
         else:
             return other
 
-    @repr_helper
+    @Tuke.repr_helper
     def __repr__(self):
         kwargs = self._get_kwargs()
         return ((),kwargs)
