@@ -35,6 +35,12 @@ class ElementRefError(KeyError):
     """
     def __init__(self,msg,partial_stack):
         self.msg = msg
+
+        # Under some circumstances with ../ references a None can be added to
+        # the end of the stack, remove it.
+        if partial_stack[-1] is None:
+            partial_stack.pop()
+
         self.partial_stack = partial_stack
 
     def __str__(self):
@@ -135,10 +141,10 @@ class ElementRef(object):
                     if isinstance(r[-1],ElementRefContainer):
                         r[-1] = object.__getattribute__(r[-1],'_elem')
                 id = id[1:]
+            # If id == '..' while will run out of id to check and r will have a
+            # None added to it due to the None parent, but this won't actually
+            # get checked by anything except the following.
             if r[-1] is None:
-                # If id == '..' while will run out of id to check, but r will
-                # have a None added to it due to the None parent.
-                r = r[:-1] # Fixup for partial_stack reporting
                 raise KeyError
             return r
         except KeyError:

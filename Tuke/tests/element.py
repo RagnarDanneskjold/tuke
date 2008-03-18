@@ -153,10 +153,14 @@ class ElementTest(TestCase):
         R(a,'foo',[])
         R(a,Id('foo'),[])
         R(a,'..',[a])
+        R(a,'../b',[a])
+        R(a,'../..',[a])
 
         b = a.add(Element('b'))
         T(a,'b',b)
-        R(a,'b/b',[a,a.b._deref()])
+        with b as b2:
+            R(a,'b/b',[a,b2])
+            R(b2,'../c',[b2,a])
 
         c = a.add(Element('c'))
         T(a,'c',c)
