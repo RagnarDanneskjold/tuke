@@ -55,6 +55,7 @@ class ConnectsTest(TestCase):
             self.assertRaises(ex,fn)
 
 
+        # Basics
         a = Element('a')
         a.add(Element('b'))
 
@@ -64,6 +65,31 @@ class ConnectsTest(TestCase):
         T(a.connects.to(a.b))
         T(a.b.connects.to('..'))
 
+
+        # Parent change
+        c = Element('c')
+        c.connects.add('..')
+        c.connects.add('../b')
+
+        T(c.connects.to('..'))
+        T(c.connects.to('../b'))
+        a.add(c)
+        T(c.connects.to('..'))
+        T(c.connects.to('../b'))
+
+        T(a.connects.to(a.c))
+        T(a.b.connects.to('../c'))
+
+        # More complex parent changing
+        a = Element('a')
+        b = Element('b')
+        c = Element('c')
+
+        c.connects.add('../../')
+
+        b.add(c)
+        a.add(b)
+        T(a.connects.to('b/c'))
 
     def testElementRemoveNotImplemented(self):
         """Element.remove() not yet implemented"""

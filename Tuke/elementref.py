@@ -93,6 +93,13 @@ class ElementRef(object):
     _base = None
     _id = None
 
+    # See Connects code for all the gory details. In short, since there is one,
+    # and only one, ElementRef object for each base/ref combo each explicit
+    # connection maps to one ElementRef object. This key is then used to help
+    # implement the *implicit* connectivity map, and is defined here for the
+    # above __getattribute__ magic reasons.
+    _implicit_connectivity_key = None
+
     def __new__(cls,base,id):
         """Create a new ElementRef
 

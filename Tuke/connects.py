@@ -23,8 +23,8 @@ Connectivity between elements refers to the connections between elements that
 don't fall under the standard parent/child graph. This is used to store the
 netlist information and to make traces possible.
 
-Connectivity comes in two types, explicit and implied. An explicit connection
-is one that is stored in a Connects object in an Element. The implied
+Connectivity comes in two types, explicit and implicit. An explicit connection
+is one that is stored in a Connects object in an Element. The implicit
 connection is the reverse of that explicit connection. An explicit connection
 may be left dangling if there is no actual Element at the location that it's
 ElementRef is pointing to. Implicit connections simply don't exist until the
@@ -38,15 +38,29 @@ for implicit connections.
 import Tuke
 import weakref
 
-# Implicit connections will be the most interesting feature to implement.
-# Elements are always relative, you can always take an Element, maybe even some
-# really big complex schematic/pcb etc, and add it as a subelement of another
-# element. To deal with that, the parent change hooks are used so that changes
-# to the Element graph can be detected and the associated implicit connections
-# updated.
+# Implicit connections are the most interesting feature to implement.  Elements
+# are always relative. For example a Component might have an explicit
+# connection to '../vcc' If that Component is moved from one parent to another,
+# those explicit connections now map to different Elements. This means that the
+# implicit connection cache has to get updated.  To deal with that, the parent
+# change hooks are used so that changes to the Element graph can be detected
+# and the associated implicit connections updated.
 #
-# 
-_global_connections = weakref.WeakKeyDictionary()
+# The global connections cache is implemented as a WeakKeyDict of WeakKeyDicts,
+# in the form:
+#
+# _implicitly_connected[a.connects][b.connects] = b
+#
+# Where a in an Element and b is a Element. The above would state that a is
+# implicitly connected to b, and therefore b is the ElementRef who's
+# dereferenced Element is *explicitly* connected to a. _i_c[a.c][b.c._i_c_k]
+# evaluates to the actual Element that a is implicitly connected too.
+#
+# The key is the usage of WeakKeyDicts. Consider what happens if a goes away.
+# It gets garbage collected, and suddenly that second level WeakKeyDict gets
+# deleted as well, automaticly getting rid off all those implicit connections.
+# If b is deleted, the result is similar.
+_implicitly_connected = weakref.WeakKeyDictionary()
 
 class Connects(set):
     """Per-Element connectivity info.
@@ -71,7 +85,7 @@ class Connects(set):
         assert isinstance(base,Tuke.Element)
         self.base = base 
 
-        _global_connections[self] = weakref.WeakKeyDictionary() 
+        _implicitly_connected[self] = weakref.WeakKeyDictionary() 
 
         for i in iterable:
             self.add(self._make_ref(i))
@@ -89,19 +103,19 @@ class Connects(set):
         super(self.__class__,self).add(ref)
 
         if self._base is not None:
-            self._set_global_connectivity(ref)
+            self._set_implicit_connectivity(ref)
 
     def to(self,other):
         """True if self is connected to other, explicity or implicitly."""
 
         ref = self._make_ref(other)
 
-        if other in self:
+        if ref in self:
             return True
         else:
             try:
-                return self in _global_connections[ref.connects]
-            except KeyError:
+                return _implicitly_connected[ref.connects][self]
+            except (Tuke.ElementRefError, KeyError):
                 return False
 
     def __contains__(self,other):
@@ -113,12 +127,45 @@ class Connects(set):
     # Private stuff below:
 
     def __hash__(self):
+        # Sets, which we are a subclass of, are not hashable, however we depend
+        # on using Connects objects as keys in WeakKeyDicts.
         return id(self)
 
-    def _set_global_connectivity(self,ref):
-        """Set global connectivity between self and what ref points to."""
+    def _set_implicit_connectivity(self,ref):
+        """Set implicit connectivity between self and what ref points to."""
         if ref._base is not None:
-            _global_connections[self][ref.connects] = True 
+
+            change_report_stack = None
+            try:
+                _implicitly_connected[self][ref.connects] = True
+                change_report_stack = ref._get_ref_stack()
+            except Tuke.ElementRefError,err:
+                # Looks like ref isn't fully accessible, however, we should
+                # still use the partially dereferenced stack to figure out what
+                # parent changes we should trigger a reset of connectivity on,
+                # as any of them could have their parent set, and then have
+                # connectivity restored.
+                change_report_stack = err.partial_stack
+
+
+        # The implicit_reference_updater object gets put into many Elements
+        # callback list, but only gets called by one Element. The key, no pun
+        # intended, is that the callbacks are WeakKeyDicts, and by removing the
+        # one reference to the object in ref, the garbage collector will take
+        # care of the rest.
+        class implicit_reference_updater(object):
+            def __init__(self,connects,ref):
+                self.connects = connects
+                self.ref = ref
+                self.enabled = True
+            def __call__(self,*args,**kwargs):
+                if self.enabled: # in case that gc isn't fast enough
+                    self.enabled = False
+                    self.connects._set_implicit_connectivity(self.ref)
+        ref._implicit_connectivity_key = implicit_reference_updater(self,ref)
+        for e in change_report_stack:
+            e.parent_change_callbacks[ref._implicit_connectivity_key] = \
+                    ref._implicit_connectivity_key 
 
     def _make_ref(self,ref):
         # This is actually kinda clever. We're storing ElementRefs, and one
@@ -149,5 +196,5 @@ class Connects(set):
 
     @Tuke.repr_helper
     def __repr__(self):
-        return (([r.id[1:] for r in self],),
+        return (([r.id for r in self],),
                 {})
