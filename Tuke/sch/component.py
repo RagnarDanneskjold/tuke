@@ -47,28 +47,3 @@ class Component(Element):
             if not isinstance(p,Pin):
                 p = Pin(p)
             self.add(p)
-
-    def link(self,a,b):
-        """Connect pin a to pin b
-        
-        Both a and b must either be a pin on self, or a child of self.
-        """
-
-        def deref(i):
-            try:
-                # First case, valid Id's get passed on unchanged, so you can
-                # state obj.link(self.Vcc,Id('../Vcc'))
-                i = Id(i)
-                return i
-            except TypeError:
-                # Second case, an actual Pin objects, just return the id, minus
-                # self.id
-                if isinstance(i,Pin):
-                    return i.id[len(self.id):]
-                else:
-                    raise TypeError, 'link() got %s instead of Pin' % repr(i)
-
-        a = deref(a)
-        b = deref(b)
-
-        self.netlist[a].add(b)

@@ -61,7 +61,7 @@ class LedGrid(Component):
                 if not prev:
                     top_leds.append(l)
                 else:
-                    self.link(prev.cathode,l.anode)
+                    l.connects.add(Id('../') + prev.id + 'cathode')
 
                 prev = l
 
@@ -69,6 +69,6 @@ class LedGrid(Component):
 
         # Link common anodes and cathodes
         for t in top_leds:
-            self.link(self.anode,t.anode)
+            t.anode.connects.add('../../anode')
         for b in bottom_leds:
-            self.link(self.cathode,b.cathode)
+            t.cathode.connects.add('../../cathode')

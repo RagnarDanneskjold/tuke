@@ -40,32 +40,3 @@ class SchComponentTest(TestCase):
         bar = root.add(bar)
 
         moo = bar.add(moo)
-
-        root.link(root.a,foo.a)
-        root.link(root.b,foo.b)
-        root.link(root.c,foo.c)
-
-        root.link(root.a,root.bar.c)
-        root.link(root.b,root.bar.b)
-        root.link(root.c,root.bar.a)
-
-        root.link(root.a,root.bar.moo.a)
-
-        T(root.netlist,
-            Netlist(
-                (Id('a'),Id('foo/a'), Id('bar/c'), Id('bar/moo/a')),
-                (Id('b'), Id('foo/b'), Id('bar/b')),
-                (Id('c'), Id('foo/c'), Id('bar/a')),
-                id=Id('.')))
-
-    def testComponentLinksNonePins(self):
-        """obj.link(None,None) fails"""
-
-        root = Component(pins=(Pin('a'),'b','c'))
-        root2 = Component(pins=(Pin('a'),'b','c'))
-
-        self.assertRaises(TypeError,
-                lambda x: x.link(x.a,None),root)
-
-        self.assertRaises(TypeError,
-                lambda x: x.link(x.a,root2),root)

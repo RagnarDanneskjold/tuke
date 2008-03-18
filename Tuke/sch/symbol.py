@@ -58,4 +58,4 @@ class Symbol(Component):
         """
 
         for i,p in enumerate(pins):
-            self.link(p,Id('%s/%s/_%d' % (self.id,self.footprint.id,i)))
+            p.connects.add(Id('%s/%s/_%d' % (self.id,self.footprint.id,i)))

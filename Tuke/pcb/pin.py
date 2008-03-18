@@ -51,4 +51,4 @@ class Pin(ReprableByArgsElement):
         self.add(gen_pad_shape(self.mask,id='mask',layer='top.mask'))
         self.add(gen_pad_shape(self.mask + (self.clearance * 2),id='clearance',layer='top.clearance'))
 
-        self.netlist.link('pad')
+        self.connects.add('pad')

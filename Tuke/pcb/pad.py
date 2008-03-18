@@ -40,7 +40,7 @@ class Pad(ReprableByArgsElement):
         self.add(self.from_ab(self.thickness + (self.clearance * 2),id='clearance',layer='top.clearance'))
         self.add(self.from_ab(self.mask,id='mask',layer='top.mask'))
 
-        self.netlist.link('pad')
+        self.connects.add('pad')
 
     def from_ab(self,thickness,id,layer=None):
         """Returns a box generated from a,b with a given thickness.
