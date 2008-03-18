@@ -41,13 +41,13 @@ class ElementTest(TestCase):
         b = Element('b')
 
         T(b.parent,None)
-        T(b.parent_set_callback,[])
-        T(b.parent_unset_callback,[])
+        T(b.parent_change_callbacks.items(),[])
 
         called = [] 
-        def c(self):
-            called.append(self)
-        b.parent_set_callback.append(c)
+        def c(elem):
+            called.append(elem)
+            T(elem.parent_change_callbacks.items(),[])
+        b.parent_change_callbacks[b] = c
 
         a.add(b)
         T(b.parent,a)
