@@ -17,11 +17,9 @@ import common
 
 from unittest import TestCase
 import Tuke
-from Tuke import Element,ElementRef,ElementRefError,Id,rndId
+from Tuke import Element,srElement,ElementRef,ElementRefError,Id,rndId
 
 from Tuke.geometry import Geometry,V,Transformation,Translation,translate,centerof
-
-from xml.dom.minidom import Document
 
 class ElementTest(TestCase):
     """Perform tests of the element module"""
@@ -29,7 +27,7 @@ class ElementTest(TestCase):
     def testElementIdChecks(self):
         """Element id validity checks"""
 
-        self.assertRaises(ValueError,lambda:Element('foo/bar'))
+        self.assertRaises(ValueError,lambda:srElement('foo/bar'))
 
     def testElementParent(self):
         """Element.parent"""
@@ -37,8 +35,8 @@ class ElementTest(TestCase):
         def T(got,expected = True):
             self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
 
-        a = Element('a')
-        b = Element('b')
+        a = srElement('a')
+        b = srElement('b')
 
         T(b.parent,None)
         T(b.parent_change_callbacks.items(),[])
@@ -59,12 +57,12 @@ class ElementTest(TestCase):
         def T(got,expected = True):
             self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
 
-        a = Element('a')
+        a = srElement('a')
 
-        r = a.add(Element('b'))
+        r = a.add(srElement('b'))
         T(a.b is r)
 
-        r = a.b.add(Element('c'))
+        r = a.b.add(srElement('c'))
         T(a.b.c is r)
 
     def testElementAddCollisions(self):
@@ -74,14 +72,14 @@ class ElementTest(TestCase):
             self.assert_(expected == got,'got: %s expected: %s' % (got,expected))
 
         # Collide with an element 
-        a = Element('a')
-        b1 = a.add(Element('b'))
-        self.assertRaises(Element.IdCollisionError,lambda:a.add(Element('b')))
+        a = srElement('a')
+        b1 = a.add(srElement('b'))
+        self.assertRaises(Element.IdCollisionError,lambda:a.add(srElement('b')))
 
         # collide with attr
-        a = Element('a')
+        a = srElement('a')
         a.b = 10
-        b1 = a.add(Element('b'))
+        b1 = a.add(srElement('b'))
         T(a.b,10)
         T(a['b'],b1)
 
@@ -89,7 +87,7 @@ class ElementTest(TestCase):
         """Element.add(obj) checks that obj is valid"""
 
         def T(ex,obj):
-            self.assertRaises(ex,lambda:Element().add(obj))
+            self.assertRaises(ex,lambda:srElement().add(obj))
 
         # Basic wrongness
         T(TypeError,None)
@@ -97,7 +95,7 @@ class ElementTest(TestCase):
         T(TypeError,2)
 
         # Check for wrapped subelements
-        T(TypeError,Element().add(Element()))
+        T(TypeError,srElement().add(srElement()))
 
     def testElementInteration(self):
         """Element interation"""
@@ -110,11 +108,11 @@ class ElementTest(TestCase):
             id_set = set([Id(i) for i in id_set])
             self.assert_(ids == id_set,'got: %s expected: %s' % (ids,id_set))
 
-        a = Element('a')
+        a = srElement('a')
         T(a,set())
 
         for i in range(1,4):
-            a.add(Element('_' + str(i)))
+            a.add(srElement('_' + str(i)))
 
         T(a,set(('a/_1','a/_2','a/_3')))
 
@@ -124,11 +122,11 @@ class ElementTest(TestCase):
         def T(x):
             self.assert_(x)
 
-        a = Element('a')
+        a = srElement('a')
         T(isinstance(a,Element))
         T(not isinstance(a,ElementRef))
 
-        a.add(Element('b'))
+        a.add(srElement('b'))
         T(isinstance(a.b,Element))
         T(isinstance(a.b,ElementRef))
 
@@ -148,7 +146,7 @@ class ElementTest(TestCase):
                 if partial_stack:
                     self.assert_(False)
 
-        a = Element('a')
+        a = srElement('a')
         T(a,'',a)
         R(a,'foo',[])
         R(a,Id('foo'),[])
@@ -156,16 +154,16 @@ class ElementTest(TestCase):
         R(a,'../b',[a])
         R(a,'../..',[a])
 
-        b = a.add(Element('b'))
+        b = a.add(srElement('b'))
         T(a,'b',b)
         with b as b2:
             R(a,'b/b',[a,b2])
             R(b2,'../c',[b2,a])
 
-        c = a.add(Element('c'))
+        c = a.add(srElement('c'))
         T(a,'c',c)
 
-        d = a.b.add(Element('d'))
+        d = a.b.add(srElement('d'))
         T(a,'b',b)
         T(a,'b/d',d)
 
@@ -173,7 +171,7 @@ class ElementTest(TestCase):
         #T(b,'../b',b)
         #T(b,'../d',d)
 
-        e = Element('e')
+        e = srElement('e')
         e2 = a.add(e)
         a['e'].foo = 'foo'
         self.assert_(e2.foo is e.foo)
@@ -186,10 +184,10 @@ class ElementTest(TestCase):
         def T(got,expected = True):
             self.assert_(expected == got,'expected: %s  got: %s' % (expected,got))
 
-        e = Element(id='base')
+        e = srElement(id='base')
 
-        e.add(Element(id = 'chip'))
-        e.chip.add(Element(id = 'pad'))
+        e.add(srElement(id = 'chip'))
+        e.chip.add(srElement(id = 'pad'))
         e.chip.add(Geometry({'layer':'sch.lines','id':'sym'}))
         e.chip.pad.add(Geometry({'layer':'top.copper','id':'pad'}))
 
@@ -220,8 +218,8 @@ class ElementTest(TestCase):
     def testElement_with(self):
         """with Element()"""
 
-        a = Element('a')
-        b = Element('b')
+        a = srElement('a')
+        b = srElement('b')
         a.add(b)
 
         with a.b as b2:
@@ -230,12 +228,12 @@ class ElementTest(TestCase):
     def testElementIdAttr(self):
         """Auto-magical attribute lookup from sub-element Id's"""
 
-        a = Element(id='a')
+        a = srElement(id='a')
         translate(a,V(1,1))
 
-        foo = Element(id='foo')
+        foo = srElement(id='foo')
         translate(foo,V(2,1))
-        bar = Element(id='bar')
+        bar = srElement(id='bar')
         translate(bar,V(1,2))
 
         a.add(foo)
@@ -254,7 +252,7 @@ class ElementTest(TestCase):
 
     def testElementVersionChecking(self):
         """Element __version__ checking"""
-        class elem(Element):
+        class elem(srElement):
             __version__ = (1,2)
 
         def T(ver):
@@ -268,9 +266,9 @@ class ElementTest(TestCase):
             self.assertRaises(elem.VersionError,lambda: elem.from_older_version(a))
 
         def R(ver):
-            a = Element()
+            a = srElement()
             a.__version__ = ver
-            self.assertRaises(ValueError,lambda: Element.from_older_version(a))
+            self.assertRaises(ValueError,lambda: srElement.from_older_version(a))
 
         T((1,2))
         T((1,1))
@@ -290,9 +288,7 @@ class ElementTest(TestCase):
     def testElementSerialize(self):
         """Element.serialize()"""
 
-        doc = Document()
-
-        a = Element()
+        a = srElement()
 
         from Tuke.geometry import Circle,Hole,Line
         from Tuke.pcb import Pin,Pad

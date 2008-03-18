@@ -47,21 +47,54 @@ class Element(object):
 
     __version__ = (0,0)
 
-    def __init__(self,id=None):
-        """Initialize an Element"""
+    def __init__(self,kwargs,required=(),defaults={}):
+        """Initialize from kwargs
 
-        from Tuke.geometry import Transformation
+        All key/value pairs in kwargs will be adde to self.__dict__ Default
+        arguments can be provided in defaults
+        
+        If a key is present in required, but not in kwargs, a TypeError will be
+        raised. If a key is present in kwargs, but not in required or defaults,
+        a TypeError will be raised.
+        """
+        
+        self._kwargs_keys = set(kwargs.keys()) | set(('id','transform','connects'))
 
-        if not id:
-            id = Tuke.Id.random()
-        self.id = Tuke.Id(id)
+        d = {'id':None,'transform':None,'connects':None}
+        d.update(defaults)
+        defaults = d
+
+        required = set(required)
+        valid = required | set(defaults.keys())
+
+
+        kw = defaults
+        kw.update(kwargs)
+
+        if set(kwargs.keys()) & required != required:
+            raise TypeError, 'Missing required arguments %s' % str(required.difference(set(kwargs.keys())))
+
+        extra = set(kwargs.keys()).difference(valid)
+        if extra:
+            raise TypeError, 'Extra arguments %s' % str(extra)
+
+        self.__dict__.update(kw)
+
+
+        if not self.id:
+            self.id = Tuke.Id.random()
+        else:
+            self.id = Tuke.Id(self.id)
 
         if len(self.id) > 1:
             raise ValueError, 'Invalid Element Id \'%s\': more than one path component' % str(self.id)
 
-        self.transform = Transformation()
+        if self.transform is None:
+            self.transform = Tuke.geometry.Transformation()
 
-        self.connects = Tuke.Connects(base=self)
+        if self.connects is None:
+            self.connects = Tuke.Connects()
+        self.connects.base = self
 
         self._parent = None
         self.parent_change_callbacks = weakref.WeakKeyDictionary()
@@ -233,7 +266,7 @@ class Element(object):
     @classmethod 
     def from_older_version(cls,other):
         if not cls == other.__class__:
-            raise TypeError, 'Got %s, expected %s in from_older_version()' % (cls,other.__clss__)
+            raise TypeError, 'Got %s, expected %s in from_older_version()' % (cls,other.__class__)
         elif not cls._basic_version_check(cls.__version__,other.__version__):
             raise cls.VersionError, '%s is an incompatible version of %s, need %s' % (other.__version__,cls,cls.__version__)
         else:
@@ -245,16 +278,12 @@ class Element(object):
         return ((),kwargs)
 
     def _get_kwargs(self,a_kwargs = {}):
-        """Return the kwargs required to represent the Element
-        
-        Subclasses should define this function, have have it call their base
-        classes _get_kwargs(), adding additional kwargs to the dict as needed.
+        """Return the kwargs required to represent the Element"""
+        kwargs = {}
+        for k in self._kwargs_keys:
+            kwargs[k] = self.__dict__[k]
 
-        """
-
-        kwargs = {'id':self.id}
         kwargs.update(a_kwargs)
-
         return kwargs 
 
     def _serialize(self,r,indent,root=False,full=False):
@@ -307,40 +336,25 @@ class ReprableByArgsElement(Element):
         a TypeError will be raised.
         """
 
-        Element.__init__(self,id=kwargs.get('id',''))
+        Element.__init__(self,kwargs,required,defaults)
 
-        self._kwargs_keys = kwargs.keys()
+class srElement(ReprableByArgsElement):
+    def __init__(self,*args,**kwargs):
+        """Simple reprable Element
 
-        d = {'id':''}
-        d.update(defaults)
-        defaults = d
+        This is simply to save on typing for stuff like test code where you
+        want to quickly create a ReprableByArgsElement but don't want to mess
+        around with the kwargs, required, default stuff.
+        """
 
-        kw = defaults.copy()
-        kw.update(kwargs)
-        try:
-            del kw['id']
-        except KeyError:
-            pass
+        required = ()
+        defaults = kwargs
 
-        required = set(required)
-        valid = required | set(defaults.keys())
+        assert len(args) <= 1
+        if len(args) == 1:
+            defaults['id'] = args[0]
 
-        if set(kwargs.keys()) & required != required:
-            raise TypeError, 'Missing required arguments %s' % str(required.difference(set(kwargs.keys())))
-
-        extra = set(kwargs.keys()).difference(valid)
-        if extra:
-            raise TypeError, 'Extra arguments %s' % str(extra)
-
-        self.__dict__.update(kw)
-
-    def _get_kwargs(self,a_kwargs = {}):
-        kwargs = {}
-        for k in self._kwargs_keys:
-            kwargs[k] = self.__dict__[k]
-
-        kwargs.update(a_kwargs)
-        return Element._get_kwargs(self,kwargs)
+        ReprableByArgsElement.__init__(self,defaults,defaults=defaults)
 
 
 class SingleElement(Element):

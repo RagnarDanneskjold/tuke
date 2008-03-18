@@ -15,7 +15,7 @@ import common
 
 from unittest import TestCase
 import Tuke
-from Tuke import Element,Id,rndId,Connects
+from Tuke import Element,srElement,Id,rndId,Connects
 
 class ConnectsTest(TestCase):
     """Perform tests of the Connects module"""
@@ -27,14 +27,14 @@ class ConnectsTest(TestCase):
         def R(ex,fn):
             self.assertRaises(ex,fn)
 
-        a = Element('a')
+        a = srElement('a')
         T(a.connects,set())
 
-        b = Element('b')
+        b = srElement('b')
         R(TypeError,lambda: a.connects.add(b))
 
         a.add(b)
-        a.add(Element('c'))
+        a.add(srElement('c'))
 
         a.connects.add(a.b)
 
@@ -55,8 +55,8 @@ class ConnectsTest(TestCase):
 
 
         # Basics
-        a = Element('a')
-        a.add(Element('b'))
+        a = srElement('a')
+        a.add(srElement('b'))
 
         T(not a.b.connects.to('..'))
         a.connects.add(a.b)
@@ -66,7 +66,7 @@ class ConnectsTest(TestCase):
 
 
         # Parent change
-        c = Element('c')
+        c = srElement('c')
         c.connects.add('..')
         c.connects.add('../b')
 
@@ -80,9 +80,9 @@ class ConnectsTest(TestCase):
         T(a.b.connects.to('../c'))
 
         # More complex parent changing
-        a = Element('a')
-        b = Element('b')
-        c = Element('c')
+        a = srElement('a')
+        b = srElement('b')
+        c = srElement('c')
 
         c.connects.add('../../')
 
@@ -95,14 +95,14 @@ class ConnectsTest(TestCase):
         def T(got,expected = True):
             self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
 
-        a = Element('a')
-        a.add(Element('b'))
-        a.b.add(Element('c'))
+        a = srElement('a')
+        a.add(srElement('b'))
+        a.b.add(srElement('c'))
         a.connects.add('..')
         a.connects.add(a.b)
         a.connects.add(a.b.c)
 
-        a2 = Element('a')
+        a2 = srElement('a')
         a2.connects = eval(repr(a.connects))
         a2.connects.base = a2
         T(repr(a2.connects),repr(a.connects))
@@ -112,5 +112,5 @@ class ConnectsTest(TestCase):
 
         # This is a real test, if this fails, we need to make sure that
         # Connects handles the case where a Element parent is removed.
-        a = Element('a')
+        a = srElement('a')
         self.assert_(not hasattr(a,'remove'))
