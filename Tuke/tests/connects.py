@@ -46,7 +46,6 @@ class ConnectsTest(TestCase):
 
         R(TypeError,lambda: b in a.connects)
 
-
     def testConnectsImplicit(self):
         """Implicit connections"""
         def T(got,expected = True):
@@ -90,6 +89,23 @@ class ConnectsTest(TestCase):
         b.add(c)
         a.add(b)
         T(a.connects.to('b/c'))
+
+    def testConnectsReprEvalRepr(self):
+        """repr(eval(repr(Connects))) round trip"""
+        def T(got,expected = True):
+            self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
+
+        a = Element('a')
+        a.add(Element('b'))
+        a.b.add(Element('c'))
+        a.connects.add('..')
+        a.connects.add(a.b)
+        a.connects.add(a.b.c)
+
+        a2 = Element('a')
+        a2.connects = eval(repr(a.connects))
+        a2.connects.base = a2
+        T(repr(a2.connects),repr(a.connects))
 
     def testElementRemoveNotImplemented(self):
         """Element.remove() not yet implemented"""

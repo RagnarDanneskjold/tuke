@@ -82,14 +82,15 @@ class Connects(set):
         """
         self = set.__new__(cls) 
 
-        assert isinstance(base,Tuke.Element)
-        self.base = base 
+        assert isinstance(base,(Tuke.Element,type(None)))
 
         _implicitly_connected[self] = weakref.WeakKeyDictionary() 
 
         for i in iterable:
-            self.add(self._make_ref(i))
+            super(cls,self).add(i)
 
+        if base is not None:
+            self.base = base
         return self
 
 
@@ -102,8 +103,7 @@ class Connects(set):
         ref = self._make_ref(ref)
         super(self.__class__,self).add(ref)
 
-        if self._base is not None:
-            self._set_implicit_connectivity(ref)
+        self._set_implicit_connectivity(ref)
 
     def to(self,other):
         """True if self is connected to other, explicity or implicitly."""
@@ -189,12 +189,17 @@ class Connects(set):
         return self._base
     def _set_base(self,v):
         self._base = v
-        for e in self:
-            e._base = v
-            self._set_global_connectivity(e)
+        old = tuple(self)
+        self.clear()
+        for e in old:
+            self.add(e)
     base = property(_get_base,_set_base)
 
     @Tuke.repr_helper
     def __repr__(self):
-        return (([r.id for r in self],),
+        # That _id is a bit of a hack. Normally ElementRef.id is base.id +
+        # ref._id, but what we need is just the ref part, so we can create new
+        # ones.
+        ids = tuple([r._id for r in self])
+        return ((sorted(ids),),
                 {})
