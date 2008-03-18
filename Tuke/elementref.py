@@ -258,7 +258,7 @@ class ElementRef(object):
 
     @non_evalable_repr_helper
     def __repr__(self):
-        return {'id':str(self._base.id + self._id)}
+        return {'id':str(self._id),'base':str(self._base.id)}
 
 class ElementRefContainer(ElementRef):
     """An ElementRef where the 'ref' is also the container for the Element
