@@ -44,6 +44,9 @@ import weakref
 # element. To deal with that, the parent change hooks are used so that changes
 # to the Element graph can be detected and the associated implicit connections
 # updated.
+#
+# 
+_global_connections = weakref.WeakKeyDictionary()
 
 class Connects(set):
     """Per-Element connectivity info.
@@ -68,10 +71,54 @@ class Connects(set):
         assert isinstance(base,Tuke.Element)
         self.base = base 
 
+        _global_connections[self] = weakref.WeakKeyDictionary() 
+
         for i in iterable:
             self.add(self._make_ref(i))
 
         return self
+
+
+    def add(self,ref):
+        """Add an explicit connection.
+
+        ref - Element or Id
+        """
+
+        ref = self._make_ref(ref)
+        super(self.__class__,self).add(ref)
+
+        if self._base is not None:
+            self._set_global_connectivity(ref)
+
+    def to(self,other):
+        """True if self is connected to other, explicity or implicitly."""
+
+        ref = self._make_ref(other)
+
+        if other in self:
+            return True
+        else:
+            try:
+                return self in _global_connections[ref.connects]
+            except KeyError:
+                return False
+
+    def __contains__(self,other):
+        """True if there is an explicit connection from self to other"""
+        ref = self._make_ref(other)
+        return super(self.__class__,self).__contains__(ref)
+
+
+    # Private stuff below:
+
+    def __hash__(self):
+        return id(self)
+
+    def _set_global_connectivity(self,ref):
+        """Set global connectivity between self and what ref points to."""
+        if ref._base is not None:
+            _global_connections[self][ref.connects] = True 
 
     def _make_ref(self,ref):
         # This is actually kinda clever. We're storing ElementRefs, and one
@@ -91,26 +138,13 @@ class Connects(set):
                 raise TypeError, "Expected an Id, string, or ElementRef, not %s" % type(ref)
         
 
-    def add(self,ref):
-        """Add an explicit connection.
-
-        ref - Element or Id
-        """
-
-        ref = self._make_ref(ref)
-        super(self.__class__,self).add(ref)
-
-    def __contains__(self,other):
-        """True if there is an explicit connection from self to other"""
-        ref = self._make_ref(other)
-        return super(self.__class__,self).__contains__(ref)
-
     def _get_base(self):
         return self._base
     def _set_base(self,v):
         self._base = v
         for e in self:
             e._base = v
+            self._set_global_connectivity(e)
     base = property(_get_base,_set_base)
 
     @Tuke.repr_helper

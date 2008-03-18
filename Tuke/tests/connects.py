@@ -20,8 +20,8 @@ from Tuke import Element,Id,rndId,Connects
 class ConnectsTest(TestCase):
     """Perform tests of the Connects module"""
 
-    def testConnects(self):
-        """Connects class"""
+    def testConnectsExplicit(self):
+        """Explicit connections"""
         def T(got,expected = True):
             self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
         def R(ex,fn):
@@ -45,3 +45,30 @@ class ConnectsTest(TestCase):
         T(not (a.c in a.connects))
 
         R(TypeError,lambda: b in a.connects)
+
+
+    def testConnectsImplicit(self):
+        """Implicit connections"""
+        def T(got,expected = True):
+            self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
+        def R(ex,fn):
+            self.assertRaises(ex,fn)
+
+
+        a = Element('a')
+        a.add(Element('b'))
+
+        T(not a.b.connects.to('..'))
+        a.connects.add(a.b)
+
+        T(a.connects.to(a.b))
+        T(a.b.connects.to('..'))
+
+
+    def testElementRemoveNotImplemented(self):
+        """Element.remove() not yet implemented"""
+
+        # This is a real test, if this fails, we need to make sure that
+        # Connects handles the case where a Element parent is removed.
+        a = Element('a')
+        self.assert_(not hasattr(a,'remove'))
