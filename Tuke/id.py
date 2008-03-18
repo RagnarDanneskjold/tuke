@@ -86,26 +86,17 @@ class Id(object):
     def relto(self,base):
         """Returns self relative to base.
 
-        By that we mean assuming self and base are starting from the same point
-        in the tree, from the perspective of base, where is self?
-
-        Id('a').relto('a') == '.'
-        Id('a').relto('b') == '../b'
-        Id('a/b/c').relto('a') == 'b/c'
-        Id('../b/c').relto('a') == '../../b/c'
+        Id('a/b/c').relto('a') == '../b/c'
         """
+
         base = Id(base)
 
-        # Discard common prefixes
-        i = 0
-        while i < len(self) and i < len(base) and self[i] == base[i]:
-            i += 1
+        if len(base) > len(self) or \
+           self[:len(base)] != base:
+               raise ValueError, "'%s' is not relative to '%s'" % (self,base)
 
-        # Whatever is left in base must be turned into ../'s
-        r = Id('../' * (len(base) - i))
+        return Id('/'.join(map(lambda ignored: '..',range(len(base))) + list(self._id[len(base._id):])))
 
-        # And add on the uncommon part of what we're looking for
-        return r + self[i:]
         
 
     def __add__(self,b):
