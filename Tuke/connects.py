@@ -36,6 +36,7 @@ for implicit connections.
 """
 
 import Tuke
+import weakref
 
 # Implicit connections will be the most interesting feature to implement.
 # Elements are always relative, you can always take an Element, maybe even some
@@ -68,7 +69,7 @@ class Connects(set):
         self.base = base 
 
         for i in iterable:
-            self.add(Tuke.ElementRef(base,Tuke.Id(i)))
+            self.add(self._make_ref(i))
 
         return self
 
