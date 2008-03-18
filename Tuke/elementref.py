@@ -28,8 +28,17 @@ import weakref
 ElementRef_cache = weakref.WeakKeyDictionary()
 
 class ElementRefError(KeyError):
-    """Referenced Element not found"""
-    pass
+    """Referenced Element not found
+    
+    The stack of partially dereferenced Elements is available in partial_stack,
+    starting from base and ending at the last Element found.
+    """
+    def __init__(self,msg,partial_stack):
+        self.msg = msg
+        self.partial_stack = partial_stack
+
+    def __str__(self):
+        return self.msg
 
 class ElementRef(object):
     """Reference an Element from a given context.
@@ -127,17 +136,20 @@ class ElementRef(object):
                         r[-1] = object.__getattribute__(r[-1],'_elem')
                 id = id[1:]
             if r[-1] is None:
+                # If id == '..' while will run out of id to check, but r will
+                # have a None added to it due to the None parent.
+                r = r[:-1] # Fixup for partial_stack reporting
                 raise KeyError
             return r
         except KeyError:
             raise ElementRefError, \
-                "'%s' not found in '%s'" % (str(self._id),str(self._base.id))
+                ("'%s' not found in '%s'" % (str(self._id),str(self._base.id)), r)
         except AttributeError:
             raise ElementRefError, \
-                "'%s' not found in '%s', ran out of parents at '%s'" %\
+                ("'%s' not found in '%s', ran out of parents at '%s'" %\
                 (str(self._base.id),str(self._id),
                         str(self._id[0:\
-                            len(self._id) - len(id)]))
+                            len(self._id) - len(id)])), r)
 
     def _deref(self):
         """Return referenced Element object."""

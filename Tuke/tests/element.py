@@ -17,7 +17,7 @@ import common
 
 from unittest import TestCase
 import Tuke
-from Tuke import Element,ElementRef,Id,rndId
+from Tuke import Element,ElementRef,ElementRefError,Id,rndId
 
 from Tuke.geometry import Geometry,V,Transformation,Translation,translate,centerof
 
@@ -138,17 +138,25 @@ class ElementTest(TestCase):
             got = elem[key]
             self.assert_(expected == got,'got: %s expected: %s' % (got,expected))
 
-        def R(elem,key,ex):
-            self.assertRaises(ex,lambda: elem[key])
+        def R(elem,key,partial_stack):
+            err = None
+            try:
+                elem[key]
+            except ElementRefError, err:
+                self.assert_(err.partial_stack == partial_stack)
+            except KeyError:
+                if partial_stack:
+                    self.assert_(False)
 
         a = Element('a')
         T(a,'',a)
-        R(a,'foo',KeyError)
-        R(a,Id('foo'),KeyError)
+        R(a,'foo',[])
+        R(a,Id('foo'),[])
+        R(a,'..',[a])
 
         b = a.add(Element('b'))
         T(a,'b',b)
-        R(a,'b/b',KeyError)
+        R(a,'b/b',[a,a.b._deref()])
 
         c = a.add(Element('c'))
         T(a,'c',c)

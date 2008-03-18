@@ -21,5 +21,5 @@ from repr_helper import repr_helper,non_evalable_repr_helper
 
 from id import Id,rndId
 from element import Element,ReprableByArgsElement,SingleElement
-from elementref import ElementRef,ElementRefContainer
+from elementref import ElementRef,ElementRefError,ElementRefContainer
 from connects import Connects
