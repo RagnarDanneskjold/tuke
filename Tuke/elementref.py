@@ -19,6 +19,8 @@
 
 from Tuke import Element,Id,non_evalable_repr_helper
 
+from Tuke.geometry import V
+
 # Cache of ElementRefs.
 #
 # A WeakKeyDict, where the keys are the base Element objects, and the values
@@ -207,6 +209,8 @@ class ElementRef(object):
                 return ElementRef(self._base,self._id + r._id)
             else:
                 return r
+        elif isinstance(r,V):
+            return self._wrapper_get_transform()(r)
         elif isinstance(r,(types.GeneratorType)):
             # Generator objects, for instance iterlayout() will use this. The
             # above test is a bit limited though, iter((1,2,3)) is *not* a

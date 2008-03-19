@@ -37,18 +37,32 @@ class ElementRefTest(TestCase):
                 return Id(id)
             def r_ref(self,base,id):
                 return ElementRef(base(),Id(id))
+            def r_v(self,v):
+                return v()
 
         a = Element(id='a')
         a.add(foo(id='b'))
 
+        # Ids
         T(a.b.r_id('..'),Id())
         T(a.b.r_id('bar'),Id('b/bar'))
         T(a.b.r_id('../../'),Id('..'))
         T(a.b.r_id('../b/'),Id('b'))
 
+        # Ref's with common bases
         T(a.b.r_ref(H(a.b._deref()),'..'),a['.'])
         T(a.b.r_ref(H(a.b._deref()),'.'),a.b)
 
+        # Aliens
         z = Element(id='z')
         T(a.b.r_ref(H(z),'.'),
                 ElementRef(z,'.'))
+
+        # Geometry
+        def T(got,expected = True):
+            self.assert_((expected == got).all(),
+                    'got: %s  expected: %s' % (got,expected))
+        T(a.b.r_v(H(V(1,2))),V(1,2))
+        with a.b as b:
+            translate(b,V(-2,3))
+        T(a.b.r_v(H(V(1,2))),V(-1,5))
