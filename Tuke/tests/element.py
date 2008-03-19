@@ -114,7 +114,7 @@ class ElementTest(TestCase):
         for i in range(1,4):
             a.add(Element(id='_' + str(i)))
 
-        T(a,set(('a/_1','a/_2','a/_3')))
+        T(a,set(('_1','_2','_3')))
 
     def testElement_isinstance(self):
         """Element isinstance()"""
@@ -193,7 +193,7 @@ class ElementTest(TestCase):
 
         # Check returned objects and Id auto-mangling
         T(set([elem.id for elem in e.iterlayout()]),
-          set((Id('base/chip/pad/pad'), Id('base/chip/sym'))))
+          set((Id('chip/pad/pad'), Id('chip/sym'))))
 
         # Check that transforms are working
         translate(e.chip,V(1,1))
@@ -203,17 +203,17 @@ class ElementTest(TestCase):
 
         translate(e.chip.pad,V(2,3))
 
-        r = {Id('base/chip/sym'):Translation(V(1.0, 1.0)),
-             Id('base/chip/pad/pad'):Translation(V(3.0, 4.0))}
+        r = {Id('chip/sym'):Translation(V(1.0, 1.0)),
+             Id('chip/pad/pad'):Translation(V(3.0, 4.0))}
 
         for elem in e.iterlayout():
             T(repr(r[elem.id]), repr(elem.transform))
 
         # Check layer filtering works
         T(set([elem.id for elem in e.iterlayout(layer_mask='top.*')]),
-          set((Id('base/chip/pad/pad'),)))
+          set((Id('chip/pad/pad'),)))
         T(set([elem.id for elem in e.iterlayout(layer_mask='sch.*')]),
-          set((Id('base/chip/sym'),)))
+          set((Id('chip/sym'),)))
 
     def testElement_with(self):
         """with Element()"""
@@ -239,9 +239,9 @@ class ElementTest(TestCase):
         a.add(foo)
         a.add(bar)
 
-        self.assert_(a.foo.id == 'a/foo')
+        self.assert_(a.foo.id == 'foo')
         self.assert_(repr(centerof(a.foo)) == repr(V(3,2)))
-        self.assert_(a.bar.id == 'a/bar')
+        self.assert_(a.bar.id == 'bar')
         self.assert_(repr(centerof(a.bar)) == repr(V(2,3)))
         self.assertRaises(AttributeError,lambda: a.foobar)
 

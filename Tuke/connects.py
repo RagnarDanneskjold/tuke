@@ -197,9 +197,6 @@ class Connects(set):
 
     @Tuke.repr_helper
     def __repr__(self):
-        # That _id is a bit of a hack. Normally ElementRef.id is base.id +
-        # ref._id, but what we need is just the ref part, so we can create new
-        # ones.
-        ids = tuple([r._id for r in self])
+        ids = tuple([r.id for r in self])
         return ((sorted(ids),),
                 {})

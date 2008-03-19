@@ -93,7 +93,10 @@ class ElementRef(object):
     # referenced.name Therefore the following names must be declared in the
     # class context.
     _base = None
-    _id = None
+
+    # Id is a neat exception. It doesn't need wrapping, because, it's the bit
+    # of information that defines what wrapping needs to be done.
+    id = None
 
     # See Connects code for all the gory details. In short, since there is one,
     # and only one, ElementRef object for each base/ref combo each explicit
@@ -126,7 +129,7 @@ class ElementRef(object):
 
             assert(isinstance(base,Element))
             self._base = base
-            self._id = id
+            self.id = id
 
             try: 
                 ElementRef_cache[base][id] = self
@@ -139,7 +142,7 @@ class ElementRef(object):
 
     def _get_ref_stack(self):
         """Return the stack of referenced elements, from base to ref"""
-        id = self._id
+        id = self.id
         r = [self._base]
         try:
             while id:
@@ -158,21 +161,17 @@ class ElementRef(object):
             return r
         except KeyError:
             raise ElementRefError, \
-                ("'%s' not found in '%s'" % (str(self._id),str(self._base.id)), r)
+                ("'%s' not found in '%s'" % (str(self.id),str(self._base.id)), r)
         except AttributeError:
             raise ElementRefError, \
                 ("'%s' not found in '%s', ran out of parents at '%s'" %\
-                (str(self._base.id),str(self._id),
-                        str(self._id[0:\
-                            len(self._id) - len(id)])), r)
+                (str(self._base.id),str(self.id),
+                        str(self.id[0:\
+                            len(self.id) - len(id)])), r)
 
     def _deref(self):
         """Return referenced Element object."""
         return self._get_ref_stack()[-1]
-
-    def _wrapper_get_id(self):
-        return self._base.id + self._id
-    id = property(_wrapper_get_id)
 
     def _wrapper_get_transform(self):
         st = self._get_ref_stack()
@@ -203,10 +202,10 @@ class ElementRef(object):
         import types
 
         if isinstance(r,Id):
-            return self._id + r 
+            return self.id + r 
         elif isinstance(r,ElementRef):
             if r._base is self._deref():
-                return ElementRef(self._base,self._id + r._id)
+                return ElementRef(self._base,self.id + r.id)
             else:
                 return r
         elif isinstance(r,V):
@@ -270,7 +269,7 @@ class ElementRef(object):
 
     @non_evalable_repr_helper
     def __repr__(self):
-        return {'id':str(self._id),'base':str(self._base.id)}
+        return {'id':str(self.id),'base':str(self._base.id)}
 
 class ElementRefContainer(ElementRef):
     """An ElementRef where the 'ref' is also the container for the Element
