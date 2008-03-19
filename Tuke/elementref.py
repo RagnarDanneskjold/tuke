@@ -19,7 +19,7 @@
 
 from Tuke import Element,Id,non_evalable_repr_helper
 
-from Tuke.geometry import V
+from Tuke.geometry import V,Transformation
 
 # Cache of ElementRefs.
 #
@@ -141,7 +141,7 @@ class ElementRef(object):
             return self
 
     def _get_ref_stack(self):
-        """Return the stack of referenced elements, from base to ref"""
+        """Get the stack of referenced elements, from base to ref"""
         id = self.id
         r = [self._base]
         try:
@@ -207,8 +207,18 @@ class ElementRef(object):
                 return ElementRef(self._base,self.id + r.id)
             else:
                 return r
+        elif isinstance(r,Transformation):
+            st = self._get_ref_stack()
+            t = st[0].transform
+            for e in st[1:-1]:
+                t = t * e.transform
+            return t * r
         elif isinstance(r,V):
-            return self._wrapper_get_transform()(r)
+            st = self._get_ref_stack()
+            t = st[0].transform
+            for e in st[1:]:
+                t = t * e.transform
+            return t(r)
         elif isinstance(r,(types.GeneratorType)):
             # Generator objects, for instance iterlayout() will use this. The
             # above test is a bit limited though, iter((1,2,3)) is *not* a
