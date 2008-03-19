@@ -24,7 +24,6 @@ class ElementRefTest(TestCase):
     def testElementRef_wrap_data_in_out(self):
         """ElementRef data in/out wrapping"""
 
-
         # This tests both wrapping bound functions, and plain attributes at the
         # same time, in both directions at the same time. Two test vectors are
         # provided, the data in the outer context, and the inner version.  The
@@ -116,3 +115,18 @@ class ElementRefTest(TestCase):
 
         T(a.b,V(1,2),V(4,-2))
         T(a.b,Translation(V(1,2)),Rotation(pi / 2) * Translation(V(1,2)))
+
+    def testElementRef__getitem__(self):
+        """ElementRef[] wrapping"""
+        def T(got,expected = True):
+            self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
+
+        a = Element(id='a')
+        a.add(Element(id='b'))
+        a.b.add(Element(id='c'))
+       
+        T(a[a.b.id],a.b)
+        T(a[a.b.c.id],a.b.c)
+
+        T(a.b[a.b.c.id],a.b.c)
+        T(a.b.c[a['.'].id],a['.'])

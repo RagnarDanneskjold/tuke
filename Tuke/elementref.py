@@ -280,7 +280,9 @@ class ElementRef(object):
             setattr(self._deref(),n,self._unwrap_data_in(v))
 
     def __getitem__(self,k):
-        return self._wrap_data_out(self._deref().__getitem__(k))
+        return self._wrap_data_out(
+                self._deref().__getitem__(
+                    self._unwrap_data_in(k)))
 
     def __iter__(self):
         for i in iter(self._deref()):
