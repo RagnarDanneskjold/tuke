@@ -192,9 +192,8 @@ class ElementRef(object):
 
     transform = property(_wrapper_get_transform,_wrapper_set_transform)
 
-    def _wrap_returned(self,r):
-        """Wrap an arbitrary object that is to be returned from one of the
-        wrapped Element's instancemethods.
+    def _wrap_data_out(self,r):
+        """Wrap outgoing data.
         
         This translates the context from self._deref() to self._base
         """
@@ -221,7 +220,7 @@ class ElementRef(object):
                 def __iter__(self):
                     return self
                 def next(self):
-                    return self.ref._wrap_returned(self.r.next())
+                    return self.ref._wrap_data_out(self.r.next())
             return GeneratorWrapper(self,r)
         elif isinstance(r,types.MethodType):
             # Bound methods have their arguments and returned value wrapped.
@@ -233,7 +232,7 @@ class ElementRef(object):
                 def __call__(self,*args,**kwargs):
                     # FIXME: still need to wrap args
                     r = self.fn(*args,**kwargs)
-                    r = self.ref._wrap_returned(r)
+                    r = self.ref._wrap_data_out(r)
                     return r
             return MethodWrapper(self,r)
         else:
@@ -248,7 +247,7 @@ class ElementRef(object):
             return object.__getattribute__(self,n)
         else:
             r = getattr(self._deref(),n)
-            return self._wrap_returned(r)
+            return self._wrap_data_out(r)
 
     def __setattr__(self,n,v):
         if n in ElementRef.__dict__:
@@ -258,11 +257,11 @@ class ElementRef(object):
 
     def __getitem__(self,k):
         #import pdb; pdb.set_trace()
-        return self._wrap_returned(self._deref().__getitem__(k))
+        return self._wrap_data_out(self._deref().__getitem__(k))
 
     def __iter__(self):
         for i in iter(self._deref()):
-            yield self._wrap_returned(i) 
+            yield self._wrap_data_out(i) 
 
     def __enter__(self):
         return self._deref()
