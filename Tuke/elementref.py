@@ -173,31 +173,41 @@ class ElementRef(object):
         """Return referenced Element object."""
         return self._get_ref_stack()[-1]
 
-    def _wrapper_get_transform(self):
-        st = self._get_ref_stack()
-        r = st[0].transform
-        for e in st[1:]:
-            r = r * e.transform
-        return r 
-    def _wrapper_set_transform(self,value):
-        # The code setting transform will be dealing with the transform
-        # relative to the wrapper, however _obj.transform needs to be stored
-        # relative to _obj. So apply the inverse of the base transformation
-        # before storing the value to undo.
-        st = self._get_ref_stack()
-        r = st[0].transform
-        for e in st[1:-1]:
-            r = r * e.transform
-        self._deref().transform = r.I * value
+    def _unwrap_data_in(self,v):
+        """Unwrap incoming data.
 
-    transform = property(_wrapper_get_transform,_wrapper_set_transform)
+        This translates the context from self._base to self._deref()
+        """
+
+        if isinstance(v,Id):
+            return v.relto(self.id)
+        elif isinstance(v,ElementRef):
+            if self._base is v._base:
+                return ElementRef(self._deref(),v.id.relto(self.id))
+            else:
+                return v
+        elif isinstance(v,Transformation):
+            st = self._get_ref_stack()
+            t = st[0].transform
+            for e in st[1:-1]:
+                t = t * e.transform
+            return t.I * v
+        elif isinstance(v,V):
+            st = self._get_ref_stack()
+            t = st[0].transform
+            for e in st[1:]:
+                t = t * e.transform
+            return t.I(v)
+        elif isinstance(v,(tuple,list)):
+            return type(v)([self._wrap_data_in(i) for i in v])
+        else:
+            return v
 
     def _wrap_data_out(self,r):
         """Wrap outgoing data.
         
         This translates the context from self._deref() to self._base
         """
-
         import types
 
         if isinstance(r,Id):
@@ -219,6 +229,8 @@ class ElementRef(object):
             for e in st[1:]:
                 t = t * e.transform
             return t(r)
+        elif isinstance(r,(tuple,list)):
+            return type(r)([self._wrap_data_out(i) for i in r])
         elif isinstance(r,(types.GeneratorType)):
             # Generator objects, for instance iterlayout() will use this. The
             # above test is a bit limited though, iter((1,2,3)) is *not* a
@@ -240,7 +252,9 @@ class ElementRef(object):
                     self.ref = ref
                     self.fn = fn
                 def __call__(self,*args,**kwargs):
-                    # FIXME: still need to wrap args
+                    args = [self.ref._unwrap_data_in(i) for i in args]
+                    for k in kwargs.keys():
+                        kwargs[k] = self.ref._unwrap_data_in(kwargs[k])
                     r = self.fn(*args,**kwargs)
                     r = self.ref._wrap_data_out(r)
                     return r
@@ -263,7 +277,7 @@ class ElementRef(object):
         if n in ElementRef.__dict__:
             object.__setattr__(self,n,v)
         else:
-            setattr(self._deref(),n,v)
+            setattr(self._deref(),n,self._unwrap_data_in(v))
 
     def __getitem__(self,k):
         return self._wrap_data_out(self._deref().__getitem__(k))
