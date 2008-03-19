@@ -19,11 +19,12 @@ from Tuke.geometry import Geometry,V,Transformation,Translation,translate,center
 class ElementRefTest(TestCase):
     """Perform tests of the elementref module"""
 
-    def testElementRef_wrap_returned(self):
-        """ElementRef function return value wrapping"""
+    def testElementRef_wrap_data_out(self):
+        """ElementRef data out wrapping"""
 
-        def T(got,expected = True):
-            self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
+
+        # This tests both wrapping bound functions, and plain attributes at the
+        # same time.
 
         class H:
             # Hide data from the bit manglers
@@ -32,37 +33,50 @@ class ElementRefTest(TestCase):
             def __call__(self):
                 return self.hidden
 
+        def T(elem, # element
+              data_in, # data in
+              expected = True): # data expected out
+            got_fn = elem.fn(H(data_in)) 
+            got_attr = elem.attr 
+            self.assert_(expected == got_fn,
+                    'got_fn: %s  expected: %s' % (got_fn,expected))
+            self.assert_(expected == got_attr,
+                    'got_attr: %s  expected: %s' % (got_attr,expected))
+
+
         class foo(Element):
-            def r_id(self,id):
-                return Id(id)
-            def r_ref(self,base,id):
-                return ElementRef(base(),Id(id))
-            def r_v(self,v):
-                return v()
+            def fn(self,v):
+                self.attr = v()
+                return self.attr 
 
         a = Element(id='a')
         a.add(foo(id='b'))
 
         # Ids
-        T(a.b.r_id('..'),Id())
-        T(a.b.r_id('bar'),Id('b/bar'))
-        T(a.b.r_id('../../'),Id('..'))
-        T(a.b.r_id('../b/'),Id('b'))
+        T(a.b,Id('..'),Id())
+        T(a.b,Id('bar'),Id('b/bar'))
+        T(a.b,Id('../../'),Id('..'))
+        T(a.b,Id('../b/'),Id('b'))
 
         # Ref's with common bases
-        T(a.b.r_ref(H(a.b._deref()),'..'),a['.'])
-        T(a.b.r_ref(H(a.b._deref()),'.'),a.b)
+        T(a.b,ElementRef(a.b._deref(),'..'),a['.'])
+        T(a.b,ElementRef(a.b._deref(),'.'),a.b)
 
         # Aliens
         z = Element(id='z')
-        T(a.b.r_ref(H(z),'.'),
-                ElementRef(z,'.'))
+        T(a.b,ElementRef(z,'.'),ElementRef(z,'.'))
 
         # Geometry
-        def T(got,expected = True):
-            self.assert_((expected == got).all(),
-                    'got: %s  expected: %s' % (got,expected))
-        T(a.b.r_v(H(V(1,2))),V(1,2))
+        def T(elem, # element
+              data_in, # data in
+              expected = True): # data expected out
+            got_fn = elem.fn(H(data_in)) 
+            got_attr = elem.attr 
+            self.assert_((expected == got_fn).all(),
+                    'got_fn: %s  expected: %s' % (got_fn,expected))
+            self.assert_((expected == got_attr).all(),
+                    'got_attr: %s  expected: %s' % (got_attr,expected))
+        T(a.b,V(1,2),V(1,2))
         with a.b as b:
             translate(b,V(-2,3))
-        T(a.b.r_v(H(V(1,2))),V(-1,5))
+        T(a.b,V(1,2),V(-1,5))
