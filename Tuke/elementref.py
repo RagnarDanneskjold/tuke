@@ -266,7 +266,6 @@ class ElementRef(object):
             setattr(self._deref(),n,v)
 
     def __getitem__(self,k):
-        #import pdb; pdb.set_trace()
         return self._wrap_data_out(self._deref().__getitem__(k))
 
     def __iter__(self):
