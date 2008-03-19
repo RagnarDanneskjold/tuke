@@ -7,39 +7,12 @@ http://docutils.sourceforge.net/docutils/statemachine.py
 http://dirtsimple.org/2004/11/stream-of-consciousness-testing.html
 -also, links to the above and talks about testing
 
+http://opensource.franz.com/preamble.html
+-licensing issues with lisp and the lgpl
+
 cypthon <- "python" compiled to c
 
 some quick ideas:
-
-rewrite xml saver to simply output evalable python code:
-
-Tuke.element.resolve_element_refs(\
-Tuke.element.Element._load(id='foo',_subs=(\
-  Tuke.element.Element._load(id='bar',_subs=(\
-    Tuke.element.Element._load(id='bar'),))\
-  Tuke.element.Element._load(id='aar',_subs=(\
-    Tuke.element.Element._load(id='foo'),)))))
-
-Also include a corresponding Element._dump. For performance, Element._dump
-should return a *deque* of strings rather than string concatination. Also make
-sure that stuff is sorted alphabetically where appropriate so diffs work.
-
-
-Remove notion of referenced_id from ElementRefs. ElementRefs should either be
-initialized with an Id, or an Element. On load and save a master
-elementref_swizzle dict can be used to map actual refs to Ids as we find them.
-
-
-Element.connected - set of elements an element is connected too in a
-non-parent-child relationship. For instance, this can subsume the netlist.
-
-
-Could with be used to drop down a level of wrapper encapsulation?:
-
-a = Element('a')
-a.add(Element('b'))
-with a.b as b:
-    do stuff
 
 
 programmable heavy symbol generator
