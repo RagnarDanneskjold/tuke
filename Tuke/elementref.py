@@ -29,6 +29,126 @@ from Tuke.geometry import V,Transformation
 import weakref
 ElementRef_cache = weakref.WeakKeyDictionary()
 
+class ObjectWrapper(object):
+    """Wrap objects in an ElementRef context.
+
+    Such a wrapped object has all accesses to it translated to and front the
+    outer context. This is the base class that ElementRef and others depend on.
+
+    This class isn't usable on it's own though. It needs self._deref() and
+    self._get_ref_stack to be defined and working. As an ElementRef base class,
+    this is automatically true. If you want to make a ObjectWrapper for a
+    generic object, use the generic() class method.
+
+    """
+
+    def _unwrap_data_in(self,v):
+        """Unwrap incoming data.
+
+        This translates the context from self._base to self._deref()
+        """
+
+        if isinstance(v,Id):
+            return v.relto(self.id)
+        elif isinstance(v,ElementRef):
+            if self._base is v._base:
+                return ElementRef(self._deref(),v.id.relto(self.id))
+            else:
+                return v
+        elif isinstance(v,Transformation):
+            st = self._get_ref_stack()
+            t = st[0].transform
+            for e in st[1:-1]:
+                t = t * e.transform
+            return t.I * v
+        elif isinstance(v,V):
+            st = self._get_ref_stack()
+            t = st[0].transform
+            for e in st[1:]:
+                t = t * e.transform
+            return t.I(v)
+        elif isinstance(v,(tuple,list)):
+            return type(v)([self._wrap_data_in(i) for i in v])
+        else:
+            return v
+
+    def _wrap_data_out(self,r):
+        """Wrap outgoing data.
+        
+        This translates the context from self._deref() to self._base
+        """
+        import types
+
+        if isinstance(r,Id):
+            return self.id + r 
+        elif isinstance(r,ElementRef):
+            if r._base is self._deref():
+                return ElementRef(self._base,self.id + r.id)
+            else:
+                return r
+        elif isinstance(r,Transformation):
+            st = self._get_ref_stack()
+            t = st[0].transform
+            for e in st[1:-1]:
+                t = t * e.transform
+            return t * r
+        elif isinstance(r,V):
+            st = self._get_ref_stack()
+            t = st[0].transform
+            for e in st[1:]:
+                t = t * e.transform
+            return t(r)
+        elif isinstance(r,(tuple,list)):
+            return type(r)([self._wrap_data_out(i) for i in r])
+        elif isinstance(r,(types.GeneratorType)):
+            # Generator objects, for instance iterlayout() will use this. The
+            # above test is a bit limited though, iter((1,2,3)) is *not* a
+            # GeneratorType for instance.
+            class GeneratorWrapper(object):
+                def __init__(self,ref,r):
+                    self.ref = ref
+                    self.r = r
+                def __iter__(self):
+                    return self
+                def next(self):
+                    return self.ref._wrap_data_out(self.r.next())
+            return GeneratorWrapper(self,r)
+        elif isinstance(r,types.MethodType):
+            # Bound methods have their arguments and returned value wrapped.
+            # This is done by returning a callable object wrapping the method.
+            class MethodWrapper(object):
+                def __init__(self,ref,fn):
+                    self.ref = ref
+                    self.fn = fn
+                def __call__(self,*args,**kwargs):
+                    args = [self.ref._unwrap_data_in(i) for i in args]
+                    for k in kwargs.keys():
+                        kwargs[k] = self.ref._unwrap_data_in(kwargs[k])
+                    r = self.fn(*args,**kwargs)
+                    r = self.ref._wrap_data_out(r)
+                    return r
+            return MethodWrapper(self,r)
+        else:
+            return r
+
+    def __getattribute__(self_real,n):
+        self = lambda n: object.__getattribute__(self_real,n)
+        return self('_wrap_data_out')\
+                (getattr(self('_deref')(),n))
+
+    def __setattr__(self,n,v):
+        setattr(self._deref(),n,self._unwrap_data_in(v))
+
+    def __getitem__(self,k):
+        return self._wrap_data_out(
+                self._deref().__getitem__(
+                    self._unwrap_data_in(k)))
+
+    def __iter__(self):
+        for i in iter(self._deref()):
+            yield self._wrap_data_out(i) 
+
+
 class ElementRefError(KeyError):
     """Referenced Element not found
     
@@ -48,7 +168,7 @@ class ElementRefError(KeyError):
     def __str__(self):
         return self.msg
 
-class ElementRef(object):
+class ElementRef(ObjectWrapper):
     """Reference an Element from a given context.
 
     Why from a given context? Well, the context is what determines what the
@@ -173,120 +293,22 @@ class ElementRef(object):
         """Return referenced Element object."""
         return self._get_ref_stack()[-1]
 
-    def _unwrap_data_in(self,v):
-        """Unwrap incoming data.
-
-        This translates the context from self._base to self._deref()
-        """
-
-        if isinstance(v,Id):
-            return v.relto(self.id)
-        elif isinstance(v,ElementRef):
-            if self._base is v._base:
-                return ElementRef(self._deref(),v.id.relto(self.id))
-            else:
-                return v
-        elif isinstance(v,Transformation):
-            st = self._get_ref_stack()
-            t = st[0].transform
-            for e in st[1:-1]:
-                t = t * e.transform
-            return t.I * v
-        elif isinstance(v,V):
-            st = self._get_ref_stack()
-            t = st[0].transform
-            for e in st[1:]:
-                t = t * e.transform
-            return t.I(v)
-        elif isinstance(v,(tuple,list)):
-            return type(v)([self._wrap_data_in(i) for i in v])
-        else:
-            return v
-
-    def _wrap_data_out(self,r):
-        """Wrap outgoing data.
-        
-        This translates the context from self._deref() to self._base
-        """
-        import types
-
-        if isinstance(r,Id):
-            return self.id + r 
-        elif isinstance(r,ElementRef):
-            if r._base is self._deref():
-                return ElementRef(self._base,self.id + r.id)
-            else:
-                return r
-        elif isinstance(r,Transformation):
-            st = self._get_ref_stack()
-            t = st[0].transform
-            for e in st[1:-1]:
-                t = t * e.transform
-            return t * r
-        elif isinstance(r,V):
-            st = self._get_ref_stack()
-            t = st[0].transform
-            for e in st[1:]:
-                t = t * e.transform
-            return t(r)
-        elif isinstance(r,(tuple,list)):
-            return type(r)([self._wrap_data_out(i) for i in r])
-        elif isinstance(r,(types.GeneratorType)):
-            # Generator objects, for instance iterlayout() will use this. The
-            # above test is a bit limited though, iter((1,2,3)) is *not* a
-            # GeneratorType for instance.
-            class GeneratorWrapper(object):
-                def __init__(self,ref,r):
-                    self.ref = ref
-                    self.r = r
-                def __iter__(self):
-                    return self
-                def next(self):
-                    return self.ref._wrap_data_out(self.r.next())
-            return GeneratorWrapper(self,r)
-        elif isinstance(r,types.MethodType):
-            # Bound methods have their arguments and returned value wrapped.
-            # This is done by returning a callable object wrapping the method.
-            class MethodWrapper(object):
-                def __init__(self,ref,fn):
-                    self.ref = ref
-                    self.fn = fn
-                def __call__(self,*args,**kwargs):
-                    args = [self.ref._unwrap_data_in(i) for i in args]
-                    for k in kwargs.keys():
-                        kwargs[k] = self.ref._unwrap_data_in(kwargs[k])
-                    r = self.fn(*args,**kwargs)
-                    r = self.ref._wrap_data_out(r)
-                    return r
-            return MethodWrapper(self,r)
-        else:
-            return r
 
     def __getattribute__(self,n):
         if n == '__class__':
             return type('ElementRef',
                         (ElementRef,self._deref().__class__),
                         {})
-        elif n in ElementRef.__dict__:
+        elif n in ElementRef.__dict__ or n in ObjectWrapper.__dict__:
             return object.__getattribute__(self,n)
         else:
-            r = getattr(self._deref(),n)
-            return self._wrap_data_out(r)
+            return super(ElementRef,self).__getattribute__(n)
 
     def __setattr__(self,n,v):
         if n in ElementRef.__dict__:
             object.__setattr__(self,n,v)
         else:
-            setattr(self._deref(),n,self._unwrap_data_in(v))
-
-    def __getitem__(self,k):
-        return self._wrap_data_out(
-                self._deref().__getitem__(
-                    self._unwrap_data_in(k)))
-
-    def __iter__(self):
-        for i in iter(self._deref()):
-            yield self._wrap_data_out(i) 
+            super(ElementRef,self).__setattr__(n,v)
 
     def __enter__(self):
         return self._deref()
@@ -294,6 +316,7 @@ class ElementRef(object):
     @non_evalable_repr_helper
     def __repr__(self):
         return {'id':str(self.id),'base':str(self._base.id)}
+
 
 class ElementRefContainer(ElementRef):
     """An ElementRef where the 'ref' is also the container for the Element
@@ -309,3 +332,4 @@ class ElementRefContainer(ElementRef):
 
     def _deref(self):
         return object.__getattribute__(self,'_elem')
+
