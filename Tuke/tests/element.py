@@ -167,9 +167,9 @@ class ElementTest(TestCase):
         T(a,'b',b)
         T(a,'b/d',d)
 
-        #T(b,'..',a)
-        #T(b,'../b',b)
-        #T(b,'../d',d)
+        T(b,'..',a['.'])
+        T(b,'../b',b)
+        T(b,'../b/d',d)
 
         e = Element(id='e')
         e2 = a.add(e)
