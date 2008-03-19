@@ -147,7 +147,7 @@ class ElementTest(TestCase):
                     self.assert_(False)
 
         a = Element(id='a')
-        T(a,'',a)
+        T(a,'',ElementRef(a,''))
         R(a,'foo',[])
         R(a,Id('foo'),[])
         R(a,'..',[a])

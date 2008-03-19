@@ -225,9 +225,7 @@ class Element(object):
         id = Tuke.Id(id)
 
         r = None
-        if not id:
-            return self
-        elif id[0] == '..' or len(id) > 1:
+        if not id or id[0] == '..' or len(id) > 1:
             r = Tuke.ElementRef(self,id)
         else:
             r = self.__dict__[self._element_id_to_dict_key(id[0])]
