@@ -96,21 +96,22 @@ class IdTest(TestCase):
             got = Id(id).relto(base)
             self.assert_(got == expected,'got: %s expected: %s' % (got,expected))
 
-        def R(ex,id,base):
-            self.assertRaises(ex,lambda: Id(id).relto(base))
-
-        T('','','.')
+        # One or the other empty
         T('a','','a')
-        T('a','a','..')
-        T('a/b','a','../b')
-        T('a/b/c/d','a/b/','../../c/d')
-        T('../a/b/c/d','../a/b/','../../../c/d')
+        T('','a','..')
+        T('','a/b','../../')
 
-        R(ValueError,'','a')
-        R(ValueError,'','a/b')
-        R(ValueError,'a','a/b')
-        R(ValueError,'b','a/b')
-        R(ValueError,'b/a','a/b')
+        # Common parts
+        T('a','','a')
+        T('a','a','.')
+        T('a/b','a','b')
+        T('a/b/c/d','a/b/','c/d')
+        T('../a/b/c/d','../a/b/','c/d')
+
+        # No common parts
+        T('b','a','../b')
+        T('../b','a','../../b')
+        T('../b','a/b','../../../b')
 
     def testId_len(self):
         """len(Id)"""
