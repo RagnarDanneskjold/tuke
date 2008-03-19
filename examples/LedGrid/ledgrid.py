@@ -37,9 +37,9 @@ from Tuke.library.footprint import Dil
 
 class Led(Symbol):
     def _init(self):
-        self.add(Pin(id='anode'))
-        self.add(Pin(id='cathode'))
         self.add(Dil(n=2))
+
+        self.create_linked_pins(('anode','cathode'))
 
 class LedGrid(Component):
     __required__ = ('rows','cols')

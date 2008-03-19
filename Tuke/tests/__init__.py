@@ -41,6 +41,7 @@ from Tuke.tests.pcb.pin import *
 from Tuke.tests.pcb.trace.basetrace import *
 
 from Tuke.tests.sch.component import *
+from Tuke.tests.sch.symbol import *
 
 class TukeTest(TestProgram):
     """A command-line program that runs a set of tests; this is primarily
