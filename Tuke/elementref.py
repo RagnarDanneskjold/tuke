@@ -193,12 +193,20 @@ class ElementRef(object):
 
     def _wrap_returned(self,r):
         """Wrap an arbitrary object that is to be returned from one of the
-        wrapped Element's instancemethods."""
+        wrapped Element's instancemethods.
+        
+        This translates the context from self._deref() to self._base
+        """
 
         import types
 
-        if isinstance(r,ElementRef):
-            return ElementRef(self._base,self._id + r._id)
+        if isinstance(r,Id):
+            return self._id + r 
+        elif isinstance(r,ElementRef):
+            if r._base is self._deref():
+                return ElementRef(self._base,self._id + r._id)
+            else:
+                return r
         elif isinstance(r,(types.GeneratorType)):
             # Generator objects, for instance iterlayout() will use this. The
             # above test is a bit limited though, iter((1,2,3)) is *not* a
