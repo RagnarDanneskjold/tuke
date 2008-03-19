@@ -20,19 +20,15 @@
 from Tuke.geometry import Geometry,Transformation 
 
 class Polygon(Geometry):
-    """A polygon"""
-    
-    def __init__(self,**kwargs):
-        """Polygon
+    """A polygon
 
-        ext - ((x,y),(x,y),...)
-        int - (((x,y),(x,y),...),
-               ((x,y),(x,y),...))
-        """
+    ext - ((x,y),(x,y),...)
+    int - (((x,y),(x,y),...),
+           ((x,y),(x,y),...))
+    """
 
-        Geometry.__init__(self,kwargs,
-                required=('ext',),
-                defaults={'int':()})
+    __required__ = ('ext',)
+    __defaults__ = {'int':()}
 
     def render(self):
         return (self.ext,self.int)

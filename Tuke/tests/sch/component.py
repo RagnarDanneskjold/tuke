@@ -27,16 +27,4 @@ class SchComponentTest(TestCase):
         def T(got,expected):
             self.assert_(got == expected,'\ngot: %s\nexpected: %s' % (repr(got),repr(expected)))
 
-        root = Component(pins=(Pin('a'),'b','c'))
-        
-        foo = Component(pins=('a','b','c'),id='foo')
-        bar = Component(pins=('a','b','c'),id='bar')
-        moo = Component(pins=('a','b','c'),id='moo')
-
-        single = SingleElement(id='single')
-
-        foo = root.add(foo)
-        single = root.add(single)
-        bar = root.add(bar)
-
-        moo = bar.add(moo)
+        # FIXME: should really be testing link_pins_to_footprint here

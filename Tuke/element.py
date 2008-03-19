@@ -24,6 +24,25 @@ import weakref
 
 import Tuke
 
+def versions_compatible(cur,other):
+    """Compare two versions and return compatibility.
+
+    Evaluated under usual major.minor scheme.
+    """
+
+    try:
+        # Enforce numerical versions, allowing strings and their ilk would be
+        # way too confusing.
+        for n in cur[0:2] + other[0:2]:
+            if not isinstance(n,int):
+                raise ValueError, 'Version major and minor must be ints: %s, %s' % (cur,other)
+            elif n < 0:
+                raise ValueError, 'Version major and minor must be greater than zero: %s, %s' % (cur,other)
+
+        return cur[0] == other[0] and cur[1] >= other[1]
+    except (TypeError, IndexError):
+        raise ValueError, 'Invalid version: %s, %s' % (cur,other)
+
 class Element(object):
     """Base element class.
     
@@ -45,42 +64,80 @@ class Element(object):
     They can be loaded and saved to disk.
     """
 
+    __required__ = ()
+    __defaults__ = {'id':None,'transform':None,'connects':None}
     __version__ = (0,0)
 
-    def __init__(self,kwargs,required=(),defaults={}):
-        """Initialize from kwargs
+    def _required_and_default_kwargs(self):
+        """Return the required and default kwargs as a tuple."""
 
-        All key/value pairs in kwargs will be adde to self.__dict__ Default
-        arguments can be provided in defaults
-        
-        If a key is present in required, but not in kwargs, a TypeError will be
-        raised. If a key is present in kwargs, but not in required or defaults,
-        a TypeError will be raised.
+        req = set()
+        d = {}
+        for cls in reversed(self.__class__.__mro__):
+            req.update(cls.__dict__.get('__required__',()))
+            d.update(cls.__dict__.get('__defaults__',{}))
+
+        return (req,d)
+
+    def _repr_kwargs(self):
+        """Return the list of kwargs needed to recreate the Element.
+    
+        This is all required arguments, and any default arguments who's values
+        have changed from the default.
         """
-        
-        self._kwargs_keys = set(kwargs.keys()) | set(('id','transform','connects'))
+        req,df = self._required_and_default_kwargs()
 
-        d = {'id':None,'transform':None,'connects':None}
-        d.update(defaults)
-        defaults = d
+        kwargs = {}
+        for k,v in df.items():
+            if self.__dict__[k] is not v:
+                req.add(k)
+                kwargs[k] = self.__dict__[k]
+        return kwargs 
 
-        required = set(required)
-        valid = required | set(defaults.keys())
+    def __init__(self,**kwargs):
+        # Initialize from kwargs
+        #
+        # All key/value pairs in kwargs will be adde to self.__dict__ Default
+        # arguments can be provided in defaults
+        #
+        # If a key is present in required, but not in kwargs, a TypeError will be
+        # raised. If a key is present in kwargs, but not in required or defaults,
+        # a TypeError will be raised.
+
+        # Check that all versions are compatible.
+        cls_version_required = self.__class__.__dict__.get('__version__',(0,0))
+        cls_version_given = kwargs.get('__version__',cls_version_required)
+
+        if not versions_compatible(cls_version_required,cls_version_given):
+            raise TypeError, \
+                    "Incompatible versions: got %s but need %s to create a %s" % \
+                    (cls_version_given,cls_version_required,self.__class__)
 
 
-        kw = defaults
-        kw.update(kwargs)
-
-        if set(kwargs.keys()) & required != required:
-            raise TypeError, 'Missing required arguments %s' % str(required.difference(set(kwargs.keys())))
-
+        # Setup the dict with args from kwargs
+        req,df = self._required_and_default_kwargs() 
+       
+        valid = req | set(df.keys())
         extra = set(kwargs.keys()).difference(valid)
         if extra:
             raise TypeError, 'Extra arguments %s' % str(extra)
 
-        self.__dict__.update(kw)
+        for k in req:
+            try:
+                self.__dict__[k] = kwargs[k]
+            except KeyError:
+                raise TypeError, 'Missing required argument %s' % k 
 
+        for k,d in df.items():
+            self.__dict__[k] = kwargs.get(k,d) 
 
+        # Call all the _init methods for all the classes.
+        [cls._init(self) for cls in \
+                reversed(self.__class__.__mro__) \
+                if issubclass(cls,Element)]
+
+    def _init(self):
+        import Tuke
         if not self.id:
             self.id = Tuke.Id.random()
         else:
@@ -90,6 +147,7 @@ class Element(object):
             raise ValueError, 'Invalid Element Id \'%s\': more than one path component' % str(self.id)
 
         if self.transform is None:
+            import Tuke.geometry
             self.transform = Tuke.geometry.Transformation()
 
         if self.connects is None:
@@ -98,6 +156,7 @@ class Element(object):
 
         self._parent = None
         self.parent_change_callbacks = weakref.WeakKeyDictionary()
+
 
     def _parent_setter(self,v):
         self._parent = v
@@ -232,26 +291,6 @@ class Element(object):
                 for l in s.iterlayout(layer_mask):
                     yield l
 
-    @staticmethod
-    def _basic_version_check(cur,other):
-        """Basic major/minor version check.
-
-        cur - Current version.
-        other - Version being checked.
-        """
-
-        try:
-            # Enforce numerical versions, allowing strings and their ilk would be
-            # way too confusing.
-            for n in cur[0:2] + other[0:2]:
-                if not isinstance(n,int):
-                    raise ValueError, 'Version major and minor must be ints: %s, %s' % (cur,other)
-                elif n < 0:
-                    raise ValueError, 'Version major and minor must be greater than zero: %s, %s' % (cur,other)
-
-            return cur[0] == other[0] and cur[1] >= other[1]
-        except (TypeError, IndexError):
-            raise ValueError, 'Invalid version: %s, %s' % (cur,other)
 
     class VersionError(ValueError):
         pass
@@ -263,28 +302,10 @@ class Element(object):
         # reraise
         return False
 
-    @classmethod 
-    def from_older_version(cls,other):
-        if not cls == other.__class__:
-            raise TypeError, 'Got %s, expected %s in from_older_version()' % (cls,other.__class__)
-        elif not cls._basic_version_check(cls.__version__,other.__version__):
-            raise cls.VersionError, '%s is an incompatible version of %s, need %s' % (other.__version__,cls,cls.__version__)
-        else:
-            return other
-
     @Tuke.repr_helper
     def __repr__(self):
-        kwargs = self._get_kwargs()
+        kwargs = self._repr_kwargs() 
         return ((),kwargs)
-
-    def _get_kwargs(self,a_kwargs = {}):
-        """Return the kwargs required to represent the Element"""
-        kwargs = {}
-        for k in self._kwargs_keys:
-            kwargs[k] = self.__dict__[k]
-
-        kwargs.update(a_kwargs)
-        return kwargs 
 
     def _serialize(self,r,indent,root=False,full=False):
         r.append('%s%s = %s; ' % (indent,self.id,repr(self)))
@@ -323,39 +344,8 @@ import Tuke
 
 
 class ReprableByArgsElement(Element):
-    """Base class for Elements representable by their arguments."""
-
-    def __init__(self,kwargs,required=(),defaults={}):
-        """Initialize from kwargs
-
-        All key/value pairs in kwargs will be adde to self.__dict__ Default
-        arguments can be provided in defaults
-        
-        If a key is present in required, but not in kwargs, a TypeError will be
-        raised. If a key is present in kwargs, but not in required or defaults,
-        a TypeError will be raised.
-        """
-
-        Element.__init__(self,kwargs,required,defaults)
-
-class srElement(ReprableByArgsElement):
-    def __init__(self,*args,**kwargs):
-        """Simple reprable Element
-
-        This is simply to save on typing for stuff like test code where you
-        want to quickly create a ReprableByArgsElement but don't want to mess
-        around with the kwargs, required, default stuff.
-        """
-
-        required = ()
-        defaults = kwargs
-
-        assert len(args) <= 1
-        if len(args) == 1:
-            defaults['id'] = args[0]
-
-        ReprableByArgsElement.__init__(self,defaults,defaults=defaults)
-
+    """Base class for Elements fully representable by their arguments."""
+    pass
 
 class SingleElement(Element):
     """Base class for elements without subelements."""

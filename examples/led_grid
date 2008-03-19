@@ -42,6 +42,6 @@ if __name__ == "__main__":
     rows = int(sys.argv[1])
     cols = int(sys.argv[2])
 
-    grid = LedGrid(rows,cols,spacing=0.5 * IN, id=rndId())
+    grid = LedGrid(rows=rows,cols=cols,spacing=0.5 * IN, id=rndId())
 
     print grid.serialize(full=True),

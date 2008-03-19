@@ -21,21 +21,18 @@ from Tuke import ReprableByArgsElement,Id
 from Tuke.geometry import Polygon,V
 
 class Pad(ReprableByArgsElement):
-    """Defines a pad"""
+    """Defines a pad
 
-    def __init__(self,**kwargs):
-        """Create a pad.
+    a - First point of line segment
+    b - Second point
+    thickness - Width of metal surrounding line segment
+    clearance - Separation of pad from other conductors
+    mask - Width of solder mask relief
+    """
 
-        a - First point of line segment
-        b - Second point
-        thickness - Width of metal surrounding line segment
-        clearance - Separation of pad from other conductors
-        mask - Width of solder mask relief
-        """
+    __required__ = ('a','b','thickness','clearance','mask')
 
-        ReprableByArgsElement.__init__(self,kwargs,
-                required=('a','b','thickness','clearance','mask'))
-
+    def _init(self):
         self.add(self.from_ab(self.thickness,id='pad',layer='top.pad'))
         self.add(self.from_ab(self.thickness + (self.clearance * 2),id='clearance',layer='top.clearance'))
         self.add(self.from_ab(self.mask,id='mask',layer='top.mask'))

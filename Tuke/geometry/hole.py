@@ -20,10 +20,7 @@
 from Tuke.geometry import Geometry
 
 class Hole(Geometry):
-    def __init__(self,**kwargs):
-        Geometry.__init__(self,kwargs,
-                required=('dia',),
-                defaults={'layer':'pcb.*.drill'})
-
+    __required__ = ('dia',)
+    def _init(self):
         if not self.dia > 0:
             raise ValueError, 'Hole diameter must be greater than zero: %d' % dia

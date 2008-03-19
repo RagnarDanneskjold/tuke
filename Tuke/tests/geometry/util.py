@@ -9,7 +9,7 @@
 # PURPOSE.
 
 from unittest import TestCase
-from Tuke import srElement
+from Tuke import Element
 from Tuke.geometry import V,translate,Transformation
 from Tuke.geometry.util import *
 
@@ -22,7 +22,7 @@ class UtilTest(TestCase):
         def T(a,b):
             self.assert_((a == b).all())
 
-        e = srElement()
+        e = Element()
 
         T(centerof(e),V(0,0))
         translate(e,V(1,2))

@@ -21,9 +21,4 @@ from Tuke import ReprableByArgsElement,Id
 
 class Pin(ReprableByArgsElement):
     """Defines a Pin of a Component"""
-
-    def __init__(self,*args,**kwargs):
-        """Create a pin."""
-        if len(args) == 1 and not kwargs:
-            kwargs['id'] = args[0]
-        ReprableByArgsElement.__init__(self,kwargs)
+    pass

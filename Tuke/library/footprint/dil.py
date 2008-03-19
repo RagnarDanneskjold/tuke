@@ -22,27 +22,25 @@ from Tuke.pcb import Footprint,Pin
 from Tuke.geometry import translate,V
 
 class Dil(Footprint):
-    def __init__(self,**kwargs):
-        """Create new dual-inline package footprint.
+    """Define a dual-inline package footprint.
 
-        n - number of pins
-        width - package width
-        spacing - pin spacing
-        pad - pad thickness
-        drill - drill size
-        clearance - width of clearance from the pin pad
-        mask - diameter of the mask, independent of other values
-        """
+    n - number of pins
+    width - package width
+    spacing - pin spacing
+    pad - pad thickness
+    drill - drill size
+    clearance - width of clearance from the pin pad
+    mask - diameter of the mask, independent of other values
+    """
+    __required__ = ('n',)
+    __defaults__ = {'width':300 * MIL,
+                    'spacing':100 * MIL,
+                    'pad':16 * MIL,
+                    'drill':28 * MIL,
+                    'clearance':10 * MIL,
+                    'mask':60 * MIL}
 
-        Footprint.__init__(self,kwargs,
-                required=('n',),
-                defaults={'width':300 * MIL,
-                          'spacing':100 * MIL,
-                          'pad':16 * MIL,
-                          'drill':28 * MIL,
-                          'clearance':10 * MIL,
-                          'mask':60 * MIL})
-
+    def _init(self):
         assert not self.n % 2
 
         # Generate the pins

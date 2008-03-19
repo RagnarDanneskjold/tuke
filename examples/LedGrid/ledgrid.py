@@ -36,26 +36,25 @@ from Tuke.sch import Component,Pin,Symbol
 from Tuke.library.footprint import Dil
 
 class Led(Symbol):
-    def __init__(self,id):
-        Symbol.__init__(self,
-                pins = (Pin('anode'),Pin('cathode')),
-                footprint = Dil(n=2),
-                id = id)
+    def _init(self):
+        self.add(Pin(id='anode'))
+        self.add(Pin(id='cathode'))
+        self.add(Dil(n=2))
 
 class LedGrid(Component):
-    def __init__(self,rows,cols,spacing,id):
-        Component.__init__(self,
-                pins = (Pin('anode'),Pin('cathode')),
-                id = id)
-
+    __required__ = ('rows','cols')
+    __defaults__ = {'spacing':0.5}
+    __version__ = (0,0)
+    __baseversion__ = (0,0)
+    def _init(self):
         top_leds = []
         bottom_leds = []
 
-        for x in xrange(cols):
+        for x in xrange(self.cols):
             prev = None
-            for y in xrange(rows):
+            for y in xrange(self.rows):
                 l = Led(id=Id('LED%s_%s' % (str(x),str(y))))
-                translate(l,V((x * spacing) - ((cols - 1) * spacing / 2),(y * spacing) - ((rows - 1) * spacing / 2)))
+                translate(l,V((x * self.spacing) - ((self.cols - 1) * self.spacing / 2),(y * self.spacing) - ((self.rows - 1) * self.spacing / 2)))
                 l = self.add(l)
 
                 if not prev:

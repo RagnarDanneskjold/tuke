@@ -21,21 +21,20 @@ from Tuke import ReprableByArgsElement,Id
 from Tuke.geometry import Circle,Hole,Polygon,V
 
 class Pin(ReprableByArgsElement):
-    """Defines a pin"""
+    """Defines a pin
 
-    def __init__(self,**kwargs): #dia,thickness,clearance,mask,square=False,id=Id()):
-        """Create a pin
+    dia - diameter of the hole
+    thickness - thickness of the surrounding pad
+    clearance - width of clearance from the pad
+    mask - diameter of the mask, independent of other values
+    square - square flag
 
-        dia - diameter of the hole
-        thickness - thickness of the surrounding pad
-        clearance - width of clearance from the pad
-        mask - diameter of the mask, independent of other values
-        square - square flag
-        """
-        ReprableByArgsElement.__init__(self,kwargs,
-                required=('dia','thickness','clearance','mask'),
-                defaults={'square':False})
+    """
 
+    __required__ = ('dia','thickness','clearance','mask')
+    __defaults__ = {'square':False}
+
+    def _init(self):
         self.square = bool(self.square)
 
         def gen_pad_shape(dia,id,layer=None):

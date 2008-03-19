@@ -28,27 +28,6 @@ class Symbol(Component):
     A Symbol is a Component with a Footprint.
     """
 
-    def __init__(self,pins=(),footprint=None,id=Id()):
-        """Create a symbol.
-
-        pins - Pin list. Order is important, each pin will be linked to it's
-               corresponding footprint pin, starting at 1.
-        footprint - Footprint element to use.
-        id - Id name
-        """
-
-        Component.__init__(self,id=id)
-
-        assert isinstance(footprint,Footprint)
-        self.add(footprint)
-
-        for p in pins:
-            if not isinstance(p,Pin):
-                p = Pin(p)
-            self.add(p)
-
-        self.link_pins_to_footprint(pins)
-
     def link_pins_to_footprint(self,pins):
         """Link pins to footprint.
 

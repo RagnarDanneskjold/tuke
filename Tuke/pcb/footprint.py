@@ -29,7 +29,4 @@ class Footprint(ReprableByArgsElement):
 
     Footprints always have an id of 'footprint'
     """
-    def __init__(self,kwargs,required=(),defaults={}):
-        assert not kwargs.has_key('id')
-        kwargs['id'] = 'footprint'
-        ReprableByArgsElement.__init__(self,kwargs,required,defaults)
+    __defaults__ = {'id':'footprint'}

@@ -28,9 +28,9 @@ import re
 class Footprint(Tuke.pcb.footprint.Footprint):
     """Wrapper for gEDA/PCB footprints"""
 
-    def __init__(self,**kwargs):
-        Tuke.pcb.footprint.Footprint.__init__(self,kwargs,required=('file',))
+    __required__ = ('file',)
 
+    def _init(self):
         f = open(self.file,"r")
 
         for l in f:

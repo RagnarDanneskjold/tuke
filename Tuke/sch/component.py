@@ -33,17 +33,4 @@ class Component(Element):
 
     Pin names must be valid python names, sutable for c.pin_name
     """
-
-    def __init__(self,pins=(),id=Id()):
-        """Create a component.
-
-        pins - Pin list
-        id - Id name
-        """
-
-        Element.__init__(self,id=id)
-
-        for p in pins:
-            if not isinstance(p,Pin):
-                p = Pin(p)
-            self.add(p)
+    pass

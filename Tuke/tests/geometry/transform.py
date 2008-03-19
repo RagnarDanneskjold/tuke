@@ -14,7 +14,7 @@ import Tuke.tests.common
 
 
 import Tuke
-from Tuke import srElement
+from Tuke import Element
 from Tuke.geometry import V,Transformation,Translation,translate,Rotation,rotate,RotationAroundCenter,rotate_around_center,Scale,scale
 
 from math import pi
@@ -77,7 +77,7 @@ class GeometrytransformTest(TestCase):
             to a and checks that the resulting vertex is == b.
             """
 
-            e = srElement()
+            e = Element()
 
             f(e,*args,**kwargs)
 

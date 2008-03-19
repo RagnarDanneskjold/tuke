@@ -33,8 +33,7 @@ class Geometry(ReprableByArgsElement,SingleElement):
     See the Polygon and Hole classes for more info.
     """
 
-    def __init__(self,kwargs,required=set(),defaults={}):
-        d = {'layer':'*',id:''}
-        d.update(defaults)
-        ReprableByArgsElement.__init__(self,kwargs,required,d) 
+    __defaults__ = {'layer':'*'}
+
+    def _init(self):
         self.layer = Layer(self.layer)
