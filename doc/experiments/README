@@ -2,7 +2,6 @@ These are various experiements devised during the development of Tuke.
 Benchmarks used to decide on good approaches to solve problems should be saved
 here for instance. Similarly, quick tests to find out that some things can't be
 done, should also go here, however elementary. (like the
-wrapping_arbitrary_objects experiment) Experiments should be completely
-self-contained and not depend on any part of Tuke.
+wrapping_arbitrary_objects experiment) 
 
-Please remember to write these to use python2.5, like the rest of Tuke.
+Please remember to write these to use python2.5.

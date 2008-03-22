@@ -1,0 +1,159 @@
+#!/usr/bin/python2.5
+# vim: tabstop=4 expandtab shiftwidth=4 fileencoding=utf8
+# ### BOILERPLATE ###
+# Tuke - Electrical Design Automation toolset
+# Copyright (C) 2008 Peter Todd <pete@petertodd.org>
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# ### BOILERPLATE ###
+
+
+"""
+Object wrapper via attribute replacement.
+
+A ElementRef-style object wrapper needs to translate the majority of attribute
+accesses in some way, to go from one context to another. Here two approaches
+are compared, __getattribute__ w/ isinstance checks, to detect and wrap
+accesses, and having the enclosing wrapper setup carefully constructed
+propertymethods.
+
+"""
+
+import timeit
+
+class idstr(str):
+    """Wrap this string."""
+    pass
+
+class element(object):
+    """Basic unwrapped element."""
+
+    # Direct attribute access
+    strattr = idstr('foo') 
+
+    def what_is_strattr(self):
+        # Access through a function, this should be wrapped only once.
+        assert self.strattr == idstr('foo')
+        return self.strattr
+
+class getattribute_proxy(object):
+    """__getattribute__ version of the proxy.
+
+    Just uses __getattribute__ to intercept everything, and translates idstr's.
+
+    """
+
+    def __init__(self,obj):
+       self._obj = obj
+
+    def __getattribute__(self_real,n):
+        self = lambda n: object.__getattribute__(self_real,n)
+
+        obj = self('_obj')
+
+        if n == '__class__':
+            return obj.__class__
+        elif n == '_obj':
+            return obj
+        else:
+            v = getattr(obj,n)
+
+            import types
+
+            if isinstance(v,idstr):
+                return idstr('wrapped') + v
+            elif isinstance(v,types.MethodType):
+                class MethodWrapper(object):
+                    def __init__(self,fn):
+                        self.fn = fn
+                    def __call__(self,*args,**kwargs):
+                        r = self.fn(*args,**kwargs)
+                        if isinstance(r,idstr):
+                            return idstr('wrapped') + r
+                        else:
+                            return r
+                return MethodWrapper(v)
+            else:
+                return v
+
+    def __setattr__(self,n,v):
+        if n in ('__class__','_obj'):
+            object.__setattr__(self,n,v)
+        else:
+            setattr(object.__getattribute__(self,'_obj'),n,v)
+
+class replace_proxy(object):
+    """Attribute replacement proxy.
+
+    At initialization scans the wrapped objects dict for stuff that should be
+    wrapped, then wraps that stuff as specially constructed propertys
+
+    """
+
+    def __new__(cls,obj):
+        # A property, only works when it's an attribute of a *class*, not an
+        # object. So in addition to the desire to have
+        # isinstance(obj,'replace_proxy') work, we're forced to create a new
+        # class. Of course, classes don't change, so this could be cached in a
+        # dict in a more complex example.
+
+        cls = type('replace_proxy',
+                   (cls,obj.__class__),
+                   {})
+
+        # The actual scanning code is pretty simple really, so we're only
+        # showing the end-result of what it would do.
+
+        # The property is pretty simple, just wrap it.
+        cls.strattr = property(lambda self: idstr('wrapped') + self._obj.strattr)
+
+
+        # The method not so much, it can't see that it's wrapped, so we have to
+        # pass a different self to it. We're still working at the *class*
+        # level, and therefore the function is a unbound method.
+
+        base_class = obj.__class__
+
+        f = """
+        def f(self,*args,**kwargs):
+            r = base_class.%s(self._obj,*args,**kwargs)
+            if isinstance(r,idstr):
+                return idstr('wrapped') + r
+            else:
+                return r
+        """
+        
+        cls.what_is_strattr = \
+                lambda self,*args,**kwargs: \
+                    data_out(obj.__class__.what_is_strattr
+
+        self = object.__new__(cls)
+        self._obj = obj
+
+        return self
+
+def test(obj,wrapped=True,n=1000,comp=idstr('wrappedfoo')):
+    for i in range(n):
+        assert obj.strattr == comp
+        assert obj.what_is_strattr() == comp
+
+def time(code,setup,n=10):
+    t = timeit.Timer(code, setup)
+
+    print "'%s' took %fs" % (code,t.timeit(n))
+
+
+time("test(element(),comp=idstr('foo'))", "from __main__ import test,element,idstr")
+time("test(getattribute_proxy(element()))", "from __main__ import test,element,getattribute_proxy")
+time("test(replace_proxy(element()))", "from __main__ import test,element,replace_proxy")
