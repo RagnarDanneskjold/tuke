@@ -1,0 +1,5 @@
+These are various experiements devised during the development of Tuke.
+Benchmarks used to decide on good approaches to solve problems should be saved
+here for instance. Similarly, quick tests to find out that some things can't be
+done, should also go here, however elementary. (like the
+wrapping_arbitrary_objects experiment) 
