@@ -58,6 +58,19 @@ class ContextTest(TestCase):
 
         T(c.v,(c,))
 
+        # A callback set before the first time the value was set
+        f1 = foo()
+        c = ct('The Salmon of Doubt')
+        def fn(*args):
+            c.v = args
+        context.notify(f1,f1.bar,c,fn)
+
+        T(c.v,'The Salmon of Doubt')
+
+        f1.bar = 'Creation'
+
+        T(c.v,(c,))
+
     def test_context_source_for_memory_leaks(self):
         """context_source does not leak memory"""
         def T(got,expected = True):

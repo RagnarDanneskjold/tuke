@@ -98,8 +98,8 @@ class context_source(object):
         attrs_of_obj[v] = weakref.WeakKeyDictionary()
 
         # Clean slate, callbacks can safely call notify()
-        for obj,fn in old_callbacks.iteritems():
-            fn(obj)
+        for o,fn in old_callbacks.iteritems():
+            fn(o)
 
 
 def notify(obj,attr,callback_obj,callback):
@@ -144,12 +144,12 @@ def notify(obj,attr,callback_obj,callback):
     except KeyError:
         context_source_callbacks_by_obj[obj] = {}
         attrs_of_obj = context_source_callbacks_by_obj[obj]
-    else:
-        cb = None
-        try:
-            cb = attrs_of_obj[attr]
-        except KeyError:
-            cb = weakref.WeakKeyDictionary()
-            attrs_of_obj[attr] = cb 
+    
+    cb = None
+    try:
+        cb = attrs_of_obj[attr]
+    except KeyError:
+        cb = weakref.WeakKeyDictionary()
+        attrs_of_obj[attr] = cb 
 
-        cb[callback_obj] = callback
+    cb[callback_obj] = callback
