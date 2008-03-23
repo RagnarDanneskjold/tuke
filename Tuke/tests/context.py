@@ -14,6 +14,9 @@ from unittest import TestCase
 
 import Tuke.context as context
 
+import sys
+import gc
+
 class ContextTest(TestCase):
     """Perform tests of the context module"""
 
@@ -34,14 +37,14 @@ class ContextTest(TestCase):
         # Make sure everything is transparent:
         f1 = foo()
         f2 = foo()
-        T(f1.bar,d)
-        T(f2.bar,d)
+        T(f1.bar is d)
+        T(f2.bar is d)
 
         n = ct('Evidence of a Baker')
         f1.bar = n 
-        T(f1.bar,n)
-        T(f2.bar,d)
-        T(foo.bar,d)
+        T(f1.bar is n)
+        T(f2.bar is d)
+        T(foo.bar is d)
 
         # Test a callback:
         c = ct('a day without yesterday')
@@ -51,27 +54,29 @@ class ContextTest(TestCase):
 
         T(c.v,'a day without yesterday')
 
-        f1.bar = ct('Creation')
+        f1.bar = 'Creation'
 
         T(c.v,(c,))
 
-    def test_notify_raises(self):
-        """notify() raises an error if attr isn't a context source"""
-        def R(exp,fn):
-            self.assertRaises(exp,fn)
+    def test_context_source_for_memory_leaks(self):
+        """context_source does not leak memory"""
+        def T(got,expected = True):
+            self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
 
-        class ct(object):
-            def __init__(self,v):
-                self.v = v
+        # The way callbacks are implemented could potentially leak memory, this
+        # makes sure they don't.
 
-        d = ct(42)
         class foo(object):
-            bar = context.context_source(d)
-            date = 479606400
+            bar = context.context_source(None)
         f = foo()
-        f.head = 0x89504e470d0a1a0aL
 
-        R(TypeError,lambda:context.notify(f,f.date,f,lambda a,b: None))
-        R(TypeError,lambda:context.notify(f,f.head,f,lambda a,b: None))
-        R(TypeError,lambda:context.notify(f,None,f,lambda a,b: None))
-        R(TypeError,lambda:context.notify(f,'The Salmon of Doubt',f,lambda a,b: None))
+        d = 'ISBN 3936122202'
+        baseline_ref_count = sys.getrefcount(d)
+
+        f.bar = d
+        f.bar = None
+        T(sys.getrefcount(d),baseline_ref_count)
+
+        f.bar = d
+        del f
+        T(sys.getrefcount(d),baseline_ref_count)

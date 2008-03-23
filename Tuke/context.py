@@ -21,7 +21,7 @@
 
 import weakref
 
-context_source_callbacks = weakref.WeakKeyDictionary()
+context_source_callbacks_by_obj = weakref.WeakKeyDictionary() 
 
 class _empty(object):
     pass
@@ -75,24 +75,27 @@ class context_source(object):
     def __set__(self,obj,v):
         # Get the list of callbacks corresponding to the current value first,
         # before we wipe out that value.
-        objects_with_attr = None
+        attrs_of_obj = None
         old_callbacks = {}
         try:
-            objects_with_attr = context_source_callbacks[self.byobj[obj]]
+            attrs_of_obj = context_source_callbacks_by_obj[obj]
         except KeyError:
-            pass
+            context_source_callbacks_by_obj[obj] = {}
+            attrs_of_obj = context_source_callbacks_by_obj[obj]
         else:
             try:
-                old_callbacks = objects_with_attr[obj]
+                old_callbacks = attrs_of_obj[self.byobj[obj]]
 
-                # callbacks are only called once
-                del objects_with_attr[obj]
+                # Without this del every time a context_source attribute was
+                # set to a different value, it'd leak a bit of memory by
+                # leaving a reference to the value in attrs_of_obj[value]
+                del attrs_of_obj[self.byobj[obj]]
             except KeyError:
                 pass
 
         self.byobj[obj] = v
 
-        context_source_callbacks[v] = weakref.WeakKeyDictionary()
+        attrs_of_obj[v] = weakref.WeakKeyDictionary()
 
         # Clean slate, callbacks can safely call notify()
         for obj,fn in old_callbacks.iteritems():
@@ -112,35 +115,41 @@ def notify(obj,attr,callback_obj,callback):
     after the change to attr is recorded; the function may call notify() again
     to re-register.
 
-    Due to the implementation, if attr is not a context_source, and error will
+    Due to the implementation, if attr is not a context_source, an error will
     *not* be raised.
-
-    For the terminally curious... The reason why specifying attr isn't enough
-    is that by the time attr gets passed to notify() it already *is* the
-    attribute; __get__ returns the attribute itself. So we need to know the
-    object containing attr to be able to fully know exactly when to notify,
-    important when multiple objects reference the same attribute, such as in
-    Element.parent
-
-    The reason why checking that attr is actually a context_source is similar,
-    attr itself does not give that information, and looking for attr in
-    obj.__dict__ doesn't work as well, as even .__dict__ lookups still trigger
-    the descriptor protocol and give us attr. Secondly context_sources are
-    defined at the class level and have no mechanism for determining that an
-    instance of a class has been defined.
 
     """
 
+    # For the terminally curious... The reason why specifying attr isn't enough
+    # is that by the time attr gets passed to notify() it already *is* the
+    # attribute; __get__ returns the attribute itself. So we need to know the
+    # object containing attr to be able to fully know exactly when to notify,
+    # important when multiple objects reference the same attribute, such as in
+    # Element.parent
+    #
+    # The reason why checking that attr is actually a context_source is
+    # similar, attr itself does not give that information, and looking for attr
+    # in obj.__dict__ doesn't work as well, as even .__dict__ lookups still
+    # trigger the descriptor protocol and give us attr. Secondly
+    # context_sources are defined at the class level and have no mechanism for
+    # determining that an instance of a class has been defined. So we can't go
+    # looking for attr in the context_source_callbacks_by_obj[obj] dict,
+    # because even if it's valid it might not be in there yet if no call backs
+    # have been set.
+
+
+    attrs_of_obj = None
     try:
-        objects_with_attr = context_source_callbacks[attr]
+        attrs_of_obj = context_source_callbacks_by_obj[obj]
     except KeyError:
-        raise TypeError, "'%s' is not a context_source" % repr(attr)
+        context_source_callbacks_by_obj[obj] = {}
+        attrs_of_obj = context_source_callbacks_by_obj[obj]
     else:
         cb = None
         try:
-            cb = objects_with_attr[obj]
+            cb = attrs_of_obj[attr]
         except KeyError:
             cb = weakref.WeakKeyDictionary()
-            objects_with_attr[obj] = cb 
+            attrs_of_obj[attr] = cb 
 
         cb[callback_obj] = callback
