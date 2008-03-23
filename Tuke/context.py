@@ -21,6 +21,11 @@
 
 import weakref
 
+context_source_callbacks = weakref.WeakKeyDictionary()
+
+class _empty(object):
+    pass
+_initial_key = _empty()
 class context_source(object):
     """Define a source of context information.
     
@@ -46,23 +51,96 @@ class context_source(object):
     introspective code can determine what a classes attributes initial values
     are without having to know about context_sources.
 
+    Note that due to implementation reasons context_source attribute values and
+    context_source attribute containing classes must be weakref-able.
+
     """
 
     def __init__(self,initial):
         """Define context source, with an initial value"""
-        self.initial = initial
         self.byobj = weakref.WeakKeyDictionary()
+        self.byobj[_initial_key] = initial
 
     def __get__(self,obj,objtype):
         if obj is None:
-            return self.initial
+            return self.byobj[_initial_key] 
         else:
             try:
                 return self.byobj[obj]
             except KeyError:
-                self.byobj[obj] = self.initial
-                return self.initial
+                self.byobj[obj] = self.byobj[_initial_key] 
+                return self.byobj[obj] 
 
         return None
     def __set__(self,obj,v):
+        # Get the list of callbacks corresponding to the current value first,
+        # before we wipe out that value.
+        objects_with_attr = None
+        old_callbacks = {}
+        try:
+            objects_with_attr = context_source_callbacks[self.byobj[obj]]
+        except KeyError:
+            pass
+        else:
+            try:
+                old_callbacks = objects_with_attr[obj]
+
+                # callbacks are only called once
+                del objects_with_attr[obj]
+            except KeyError:
+                pass
+
         self.byobj[obj] = v
+
+        context_source_callbacks[v] = weakref.WeakKeyDictionary()
+
+        # Clean slate, callbacks can safely call notify()
+        for obj,fn in old_callbacks.iteritems():
+            fn(obj)
+
+
+def notify(obj,attr,callback_obj,callback):
+    """Set a callback for any change of a context_source
+
+    - `obj`: the object containing the attribute.
+    - `attr`: the attribute itself. 
+    - `callback_obj`: passed to the callback.
+    - `callback`: callback function in the form fn(callback_obj)
+
+    A weakref is created to callback_obj, if this object is deleted, the
+    callback is automatically removed as well. The callback function is called
+    after the change to attr is recorded; the function may call notify() again
+    to re-register.
+
+    Due to the implementation, if attr is not a context_source, and error will
+    *not* be raised.
+
+    For the terminally curious... The reason why specifying attr isn't enough
+    is that by the time attr gets passed to notify() it already *is* the
+    attribute; __get__ returns the attribute itself. So we need to know the
+    object containing attr to be able to fully know exactly when to notify,
+    important when multiple objects reference the same attribute, such as in
+    Element.parent
+
+    The reason why checking that attr is actually a context_source is similar,
+    attr itself does not give that information, and looking for attr in
+    obj.__dict__ doesn't work as well, as even .__dict__ lookups still trigger
+    the descriptor protocol and give us attr. Secondly context_sources are
+    defined at the class level and have no mechanism for determining that an
+    instance of a class has been defined.
+
+    """
+
+    try:
+        objects_with_attr = context_source_callbacks[attr]
+    except KeyError:
+        raise TypeError, "'%s' is not a context_source" % repr(attr)
+    else:
+        cb = None
+        try:
+            cb = objects_with_attr[obj]
+        except KeyError:
+            cb = weakref.WeakKeyDictionary()
+            objects_with_attr[obj] = cb 
+
+        cb[callback_obj] = callback
