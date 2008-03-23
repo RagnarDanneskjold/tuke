@@ -22,7 +22,32 @@
 import weakref
 
 class context_source(object):
-    """Defines a source of context information."""
+    """Define a source of context information.
+    
+    A source of context is simply an object attribute whose value, if changed,
+    would change the context of another object. A simple example is the
+    transform attribute of Elements, which if changed changes context-dependent
+    geometry of sub-Elements.
+
+    To trap changes to the attribute context_source is implemented with the
+    descriptor protocol, and us used much like property::
+
+        class Element(object):
+            transform = context_source(Transformation())
+
+    Any instance of Element now has a .transform attribute who's initial value
+    is Transformation(), and can be gotten and set like any normal attribute.
+    Just like normal class attributes, non-immutable attributes are shared
+    accross all class instances. Therefor all context_source types should be
+    immutable.
+
+    Element.transform also is equal to Transformation(), unlike property where
+    class.some_property is visible as a property method object. This is done so
+    introspective code can determine what a classes attributes initial values
+    are without having to know about context_sources.
+
+    """
+
     def __init__(self,initial):
         """Define context source, with an initial value"""
         self.initial = initial
