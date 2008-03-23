@@ -10,6 +10,10 @@ http://dirtsimple.org/2004/11/stream-of-consciousness-testing.html
 http://opensource.franz.com/preamble.html
 -licensing issues with lisp and the lgpl
 
+http://www.python.org/workshops/1997-10/proceedings/zukowski.html
+-Implementing a Selective Undo Framework in Python
+- could be useful later
+
 cypthon <- "python" compiled to c
 
 some quick ideas:
