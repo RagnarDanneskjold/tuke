@@ -70,6 +70,7 @@ class Element(object):
     __version__ = (0,0)
 
     parent = context.context_source(None)
+    transform = context.context_source(None)
 
     def _required_and_default_kwargs(self):
         """Return the required and default kwargs as a tuple."""
