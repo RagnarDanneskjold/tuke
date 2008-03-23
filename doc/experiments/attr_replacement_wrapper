@@ -120,18 +120,18 @@ class replace_proxy(object):
         # The actual scanning code is pretty simple really, so we're only
         # showing the end-result of what it would do.
 
-        # The property is pretty simple, just wrap it.
+        # Properties are just wrapped. 
         cls.strattr = property(lambda self: idstr('wrapped') + self._obj.strattr)
 
 
-        # The method not so much, it can't see that it's wrapped, so we have to
-        # pass a different self to it. We're still working at the *class*
-        # level, and therefore the function is a unbound method.
+        # The method can't see that it's wrapped, so we have to pass a
+        # different self to it. We're still working at the *class* level, and
+        # therefore the function is a unbound method.
 
         base_class = obj.__class__
       
         # String substitution is a nice way to create exactly what we need and
-        # avoid the indirection that a class would give us.
+        # avoid the indirection that a callable class would give us.
         f = """
 lambda self,*args,**kwargs: \
     self._data_out(obj.__class__.%(fn_name)s(self._obj,*args,**kwargs))
