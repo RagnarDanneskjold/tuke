@@ -20,6 +20,7 @@ DEBUG = False
 from Tuke.tests.main import *
 from Tuke.tests.meta import *
 
+from Tuke.tests.context import *
 from Tuke.tests.element import *
 from Tuke.tests.elementref import *
 from Tuke.tests.id import *
