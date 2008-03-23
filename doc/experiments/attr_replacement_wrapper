@@ -54,8 +54,13 @@ class getattribute_proxy(object):
 
     """
 
+
+    _idstr_wrapping = None
+    _obj = None
     def __init__(self,obj):
-       self._obj = obj
+        self._obj = obj
+
+        self._idstr_wrapping = idstr('wrapped')
 
     def __getattribute__(self_real,n):
         self = lambda n: object.__getattribute__(self_real,n)
@@ -64,8 +69,8 @@ class getattribute_proxy(object):
 
         if n == '__class__':
             return obj.__class__
-        elif n == '_obj':
-            return obj
+        elif n in getattribute_proxy.__dict__:
+            return object.__getattribute__(self,n)
         else:
             v = getattr(obj,n)
 
@@ -124,24 +129,28 @@ class replace_proxy(object):
         # level, and therefore the function is a unbound method.
 
         base_class = obj.__class__
-
+      
+        # String substitution is a nice way to create exactly what we need and
+        # avoid the indirection that a class would give us.
         f = """
-        def f(self,*args,**kwargs):
-            r = base_class.%s(self._obj,*args,**kwargs)
-            if isinstance(r,idstr):
-                return idstr('wrapped') + r
-            else:
-                return r
-        """
-        
-        cls.what_is_strattr = \
-                lambda self,*args,**kwargs: \
-                    data_out(obj.__class__.what_is_strattr
+lambda self,*args,**kwargs: \
+    self._data_out(obj.__class__.%(fn_name)s(self._obj,*args,**kwargs))
+"""
+        setattr(cls,'what_is_strattr',
+            eval(f % {'fn_name':'what_is_strattr'},locals()))
 
         self = object.__new__(cls)
         self._obj = obj
 
+        self._idstr_wrapping = idstr('wrapped')
+
         return self
+
+    def _data_out(self,r):
+        if isinstance(r,idstr):
+            return self._idstr_wrapping + r
+        else:
+            return r
 
 def test(obj,wrapped=True,n=1000,comp=idstr('wrappedfoo')):
     for i in range(n):
