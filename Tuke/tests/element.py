@@ -17,6 +17,7 @@ import common
 
 from unittest import TestCase
 import Tuke
+import Tuke.context
 from Tuke import Element,ElementRef,ElementRefError,Id,rndId
 
 from Tuke.geometry import Geometry,V,Transformation,Translation,translate,centerof
@@ -39,13 +40,11 @@ class ElementTest(TestCase):
         b = Element(id='b')
 
         T(b.parent,None)
-        T(b.parent_change_callbacks.items(),[])
 
         called = [] 
         def c(elem):
             called.append(elem)
-            T(elem.parent_change_callbacks.items(),[])
-        b.parent_change_callbacks[b] = c
+        Tuke.context.notify(b,b.parent,b,c)
 
         a.add(b)
         T(b.parent,a)

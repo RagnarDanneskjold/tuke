@@ -23,6 +23,7 @@ from collections import deque
 import weakref
 
 import Tuke
+import Tuke.context as context
 
 def versions_compatible(cur,other):
     """Compare two versions and return compatibility.
@@ -67,6 +68,8 @@ class Element(object):
     __required__ = ()
     __defaults__ = {'id':None,'transform':None,'connects':None}
     __version__ = (0,0)
+
+    parent = context.context_source(None)
 
     def _required_and_default_kwargs(self):
         """Return the required and default kwargs as a tuple."""
@@ -154,37 +157,6 @@ class Element(object):
             self.connects = Tuke.Connects()
         self.connects.base = self
 
-        self._parent = None
-        self.parent_change_callbacks = weakref.WeakKeyDictionary()
-
-
-    def _parent_setter(self,v):
-        self._parent = v
-
-        old_callbacks = self.parent_change_callbacks
-        self.parent_change_callbacks = weakref.WeakKeyDictionary()
-
-        for obj,fn in old_callbacks.iteritems():
-            fn(obj)
-    parent = property(lambda self: self._parent,_parent_setter)
-
-    parent_change_callbacks = None
-    """Parent change callback.
-
-    This is a WeakKeyDictionary who's values will be called with the keys as
-    the argument when ever parent changes. Before the callbacks are run
-    parent_change_callback is reset to an empty WeakKeyDictionary. If the
-    callback still needs to monitor parent, it must add another callback.
-    
-    The logic behind this is sometimes you want to know when the topology of
-    the Element graph changes. So you setup callbacks in the correct place
-    which when called update whatever it is that needs to be updated. It's
-    implemented as a WeakKeyDictionary so that callbacks don't get left around
-    when the object that needs them changes. Finally for convenience the object
-    that needed the callback is passed to the function, often preventing the
-    need to create closures.
-    
-    """
 
     # Some notes on the sub-elements implementation:
     #
