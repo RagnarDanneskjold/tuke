@@ -1,1 +1,54 @@
-Tuke - Electronic Design Automation toolset, written in Python. 
+=============
+ README: Tuke
+=============
+
+:Author: Peter Todd
+:Contact: 'peter'[:-1]@petertodd.org
+:Web site: http://petertodd.org
+
+.. contents::
+
+Purpose
+=======
+
+Tuke is a Python library that aims to make it easy to write programs that
+generate schematics and assocated pcb layout. A simple example is a large LED
+grid. With Tuke, instead of manually creating the (large) schematic and then
+manually laying out the grid, you would write Python code that defined the
+components, netlist, and finally physical position of the footprints and traces
+on the board. This can be done once, so that if any aspect of the design
+changes, it's a simple matter of rerunning the program rather than manually
+changing a 16x32 led grid to a 24x48 grid.
+
+Project Files & Directories
+===========================
+
+* README: You're reading it.
+
+* COPYING: GPL-3 license that Tuke is placed under
+
+* doc: Very rough documentation currently.
+
+  - doc/experiments: Various coding experiments.
+
+* examples: Various Tuke using examples:
+
+  - led_grid: Create a x*y led grid. Kept up to date with the latest
+    implemented features and as a way to help guide the design.
+
+* Tuke: Source code for the Tuke module.
+
+The Name
+========
+
+The following Python expression was used to choose the name of Tuke:
+
+lambda n,i: [reduce(lambda a,b: a + b,[random.sample(map(lambda x: chr(ord('a') + x),range(26)),1)[0] for c in range(n)]) for t in range(i)]
+
+Where n=4, i=1000
+
+Followed by checking Google, apt-get and Freshmeat for conflicts. I highly
+suggest this procedure, although, for smaller projects increasing n may be
+appropriate. Small phrases obtained from the Google search may prove to be more
+memorable as well, such as my solenoid controller board, 'Post-Napoleonic
+Europe' and it's associated Python class, 'QuadrupleAlliance'
