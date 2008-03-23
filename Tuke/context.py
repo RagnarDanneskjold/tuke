@@ -35,7 +35,7 @@ class context_source(object):
     geometry of sub-Elements.
 
     To trap changes to the attribute context_source is implemented with the
-    descriptor protocol, and us used much like property::
+    descriptor protocol, and is used much like property::
 
         class Element(object):
             transform = context_source(Transformation())
