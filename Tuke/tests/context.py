@@ -43,7 +43,7 @@ class ContextTest(TestCase):
         T(f2.bar,d)
         T(foo.bar,d)
 
-        # Setup some callbacks:
+        # Test a callback:
         c = ct('a day without yesterday')
         def fn(*args):
             c.v = args
@@ -54,3 +54,24 @@ class ContextTest(TestCase):
         f1.bar = ct('Creation')
 
         T(c.v,(c,))
+
+    def test_notify_raises(self):
+        """notify() raises an error if attr isn't a context source"""
+        def R(exp,fn):
+            self.assertRaises(exp,fn)
+
+        class ct(object):
+            def __init__(self,v):
+                self.v = v
+
+        d = ct(42)
+        class foo(object):
+            bar = context.context_source(d)
+            date = 479606400
+        f = foo()
+        f.head = 0x89504e470d0a1a0aL
+
+        R(TypeError,lambda:context.notify(f,f.date,f,lambda a,b: None))
+        R(TypeError,lambda:context.notify(f,f.head,f,lambda a,b: None))
+        R(TypeError,lambda:context.notify(f,None,f,lambda a,b: None))
+        R(TypeError,lambda:context.notify(f,'The Salmon of Doubt',f,lambda a,b: None))
