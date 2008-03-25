@@ -90,31 +90,31 @@ class GeometrytransformTest(TestCase):
         T(V(-1,5),V(-2,15),scale,V(2,3))
         T(V(1,1),V(3,3),rotate_around_center,pi,V(2,2))
 
-    def testGeometryTransformation_build_context(self):
-        """Transformation._build_context()"""
+    def testGeometryTransformationbuild_context(self):
+        """Transformation.build_context()"""
         def T(got,expected = True):
             self.assert_(repr(expected) == repr(got),'got: %s  expected: %s' % (got,expected))
 
-        T(Transformation()._build_context(Transformation(),False),Transformation())
-        T(Transformation()._build_context(Transformation(),True),Transformation())
+        T(Transformation().build_context(Transformation(),False),Transformation())
+        T(Transformation().build_context(Transformation(),True),Transformation())
 
-        T(Transformation()._build_context(Translation(V(1,1)),False),
+        T(Transformation().build_context(Translation(V(1,1)),False),
                 Translation(V(1,1)))
-        T(Translation(V(1,1))._build_context(Transformation(),True),
+        T(Translation(V(1,1)).build_context(Transformation(),True),
                 Translation(V(-1,-1))) 
-        T(Translation(V(1,1))._build_context(Translation(V(1,1)),True),
+        T(Translation(V(1,1)).build_context(Translation(V(1,1)),True),
                 Transformation())
 
     def testGeometryTransformation_applyremove_context(self):
-        """Transformation._(apply|remove)_context"""
+        """Transformation.(apply|remove)_context"""
         def T(t,context,expected):
             elem = Element()
             elem.transform = context
 
-            got = t._apply_context(context) 
+            got = t.apply_context(context) 
             self.assert_(repr(expected) == repr(got),'apply_context - got: %s  expected: %s' % (got,expected))
 
-            got = got._remove_context(context)
+            got = got.remove_context(context)
             expected = t
             self.assert_(repr(expected) == repr(got),'apply_context - got: %s  expected: %s' % (got,expected))
 

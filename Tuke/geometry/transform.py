@@ -109,17 +109,17 @@ class Transformation(matrix):
 
         return r
 
-    def _build_context(self,base,reverse):
+    def build_context(self,base,reverse):
         if reverse:
             return base * self.I
         else:
             return base * self
 
-    def _apply_context(self,elem):
+    def apply_context(self,elem):
         return elem * self
 
-    def _remove_context(self,elem):
-        return self * elem.I
+    def remove_context(self,elem):
+        return elem.I * self
 
     @odd_shape_handler
     @repr_helper
