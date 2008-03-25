@@ -176,6 +176,11 @@ class Id(object):
         else:
             return base + self
 
+    def _apply_context(self,elem):
+        return elem.id + self
+
+    def _remove_context(self,elem):
+        return self.relto(elem.id)
 
 def rndId():
     """Alias for Id.random()"""
