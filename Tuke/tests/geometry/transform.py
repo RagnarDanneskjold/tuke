@@ -89,3 +89,18 @@ class GeometrytransformTest(TestCase):
         T(V(1,1),V(-1,-1),rotate,pi)
         T(V(-1,5),V(-2,15),scale,V(2,3))
         T(V(1,1),V(3,3),rotate_around_center,pi,V(2,2))
+
+    def testGeometryTransformation_build_context(self):
+        """Transformation._build_context()"""
+        def T(got,expected = True):
+            self.assert_(repr(expected) == repr(got),'got: %s  expected: %s' % (got,expected))
+
+        T(Transformation()._build_context(Transformation(),False),Transformation())
+        T(Transformation()._build_context(Transformation(),True),Transformation())
+
+        T(Transformation()._build_context(Translation(V(1,1)),False),
+                Translation(V(1,1)))
+        T(Translation(V(1,1))._build_context(Transformation(),True),
+                Translation(V(-1,-1))) 
+        T(Translation(V(1,1))._build_context(Translation(V(1,1)),True),
+                Transformation())

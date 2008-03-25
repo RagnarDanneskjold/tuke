@@ -109,6 +109,12 @@ class Transformation(matrix):
 
         return r
 
+    def _build_context(self,base,reverse):
+        if reverse:
+            return base * self.I
+        else:
+            return base * self
+
     @odd_shape_handler
     @repr_helper
     def __repr__(self):
