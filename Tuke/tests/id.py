@@ -223,6 +223,16 @@ class IdTest(TestCase):
         self.assertRaises(TypeError,lambda x: Id(x),1)
         self.assertRaises(TypeError,lambda x: Id() + x,1)
 
+    def testId_build_context(self):
+        """Id._build_context()"""
+
+        def T(got,expected = True):
+            self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
+
+        T(Id('spam')._build_context(Id('eggs'),False),Id('eggs/spam'))
+        T(Id('spam')._build_context(Id('ham/eggs'),False),Id('ham/eggs/spam'))
+        T(Id('spam')._build_context(Id('ham/eggs'),True),Id('ham'))
+
     def test_rndId(self):
         """rndId()"""
 

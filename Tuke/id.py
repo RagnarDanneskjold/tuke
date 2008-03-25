@@ -169,6 +169,14 @@ class Id(object):
     def __hash__(self):
         return hash(self._id)
 
+    def _build_context(self,base,reverse):
+        assert len(self) == 1
+        if reverse:
+            return base + Id('..')
+        else:
+            return base + self
+
+
 def rndId():
     """Alias for Id.random()"""
     return Id.random()
