@@ -115,6 +115,12 @@ class Transformation(matrix):
         else:
             return base * self
 
+    def _apply_context(self,elem):
+        return elem * self
+
+    def _remove_context(self,elem):
+        return self * elem.I
+
     @odd_shape_handler
     @repr_helper
     def __repr__(self):

@@ -104,3 +104,21 @@ class GeometrytransformTest(TestCase):
                 Translation(V(-1,-1))) 
         T(Translation(V(1,1))._build_context(Translation(V(1,1)),True),
                 Transformation())
+
+    def testGeometryTransformation_applyremove_context(self):
+        """Transformation._(apply|remove)_context"""
+        def T(t,context,expected):
+            elem = Element()
+            elem.transform = context
+
+            got = t._apply_context(context) 
+            self.assert_(repr(expected) == repr(got),'apply_context - got: %s  expected: %s' % (got,expected))
+
+            got = got._remove_context(context)
+            expected = t
+            self.assert_(repr(expected) == repr(got),'apply_context - got: %s  expected: %s' % (got,expected))
+
+
+        T(Transformation(),Transformation(),Transformation())
+        T(Transformation(),Translation(V(1,1)),Translation(V(1,1)))
+        T(Translation(V(-1,-1)),Translation(V(1,1)),Transformation())
