@@ -223,18 +223,17 @@ class IdTest(TestCase):
         self.assertRaises(TypeError,lambda x: Id(x),1)
         self.assertRaises(TypeError,lambda x: Id() + x,1)
 
-    def testIdbuild_context(self):
-        """Id.build_context()"""
+    def testId_build_context(self):
+        """Id._build_context()"""
 
         def T(got,expected = True):
             self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
 
-        T(Id('spam').build_context(Id('eggs'),False),Id('eggs/spam'))
-        T(Id('spam').build_context(Id('ham/eggs'),False),Id('ham/eggs/spam'))
-        T(Id('spam').build_context(Id('ham/eggs'),True),Id('ham'))
+        T(Id('spam')._build_context(Id('eggs'),False),Id('eggs/spam'))
+        T(Id('spam')._build_context(Id('ham/eggs'),False),Id('ham/eggs/spam'))
+        T(Id('spam')._build_context(Id('ham/eggs'),True),Id('ham'))
 
     def testId_apply_context(self):
-        """Id.apply_context()"""
         def T(got,expected = True):
             self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
 
@@ -242,12 +241,11 @@ class IdTest(TestCase):
             def __init__(self,id):
                 self.id = Id(id)
 
-        T(Id().apply_context(e('ham')),Id('ham'))
-        T(Id('eggs').apply_context(e('ham')),Id('ham/eggs'))
-        T(Id('..').apply_context(e('ham')),Id())
+        T(Id()._apply_context(e('ham')),Id('ham'))
+        T(Id('eggs')._apply_context(e('ham')),Id('ham/eggs'))
+        T(Id('..')._apply_context(e('ham')),Id())
 
     def testId_remove_context(self):
-        """Id.remove_context()"""
         def T(got,expected = True):
             self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
 
@@ -255,15 +253,15 @@ class IdTest(TestCase):
             def __init__(self,id):
                 self.id = id
 
-        T(Id().remove_context(e('spam')),Id('..'))
+        T(Id()._remove_context(e('spam')),Id('..'))
 
-        T(Id('ham').remove_context(e('ham')),Id())
-        T(Id('ham/eggs/spam').remove_context(e('ham/eggs/spam')),Id())
-        T(Id('ham/eggs').remove_context(e('ham/eggs/spam')),Id('..'))
+        T(Id('ham')._remove_context(e('ham')),Id())
+        T(Id('ham/eggs/spam')._remove_context(e('ham/eggs/spam')),Id())
+        T(Id('ham/eggs')._remove_context(e('ham/eggs/spam')),Id('..'))
 
-        T(Id('ham/eggs').remove_context(e('Notary/Sojac')),Id('../../ham/eggs'))
+        T(Id('ham/eggs')._remove_context(e('Notary/Sojac')),Id('../../ham/eggs'))
 
-        T(Id('..').remove_context(e('../ham/eggs/spam')),Id('../../../'))
+        T(Id('..')._remove_context(e('../ham/eggs/spam')),Id('../../../'))
 
     def test_rndId(self):
         """rndId()"""

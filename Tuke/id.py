@@ -169,17 +169,17 @@ class Id(object):
     def __hash__(self):
         return hash(self._id)
 
-    def build_context(self,base,reverse):
+    def _build_context(self,base,reverse):
         assert len(self) == 1
         if reverse:
             return base + Id('..')
         else:
             return base + self
 
-    def apply_context(self,elem):
+    def _apply_context(self,elem):
         return elem.id + self
 
-    def remove_context(self,elem):
+    def _remove_context(self,elem):
         return self.relto(elem.id)
 
 def rndId():
