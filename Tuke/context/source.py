@@ -17,16 +17,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-"""Context managment."""
+"""Context sources."""
 
 import weakref
 
-context_source_callbacks_by_obj = weakref.WeakKeyDictionary() 
+source_callbacks_by_obj = weakref.WeakKeyDictionary() 
 
 class _empty(object):
     pass
 _initial_key = _empty()
-class context_source(object):
+class Source(object):
     """Define a source of context information.
     
     A source of context is simply an object attribute whose value, if changed,
@@ -34,25 +34,25 @@ class context_source(object):
     transform attribute of Elements, which if changed changes context-dependent
     geometry of sub-Elements.
 
-    To trap changes to the attribute context_source is implemented with the
+    To trap changes to the attribute context.source is implemented with the
     descriptor protocol, and is used much like property::
 
         class Element(object):
-            transform = context_source(Transformation())
+            transform = context.source(Transformation())
 
     Any instance of Element now has a .transform attribute who's initial value
     is Transformation(), and can be gotten and set like any normal attribute.
     Just like normal class attributes, non-immutable attributes are shared
-    accross all class instances. Therefor all context_source types should be
+    accross all class instances. Therefor all context.source types should be
     immutable.
 
     Element.transform also is equal to Transformation(), unlike property where
     class.some_property is visible as a property method object. This is done so
     introspective code can determine what a classes attributes initial values
-    are without having to know about context_sources.
+    are without having to know about context.sources.
 
-    Note that due to implementation reasons context_source attribute values and
-    context_source attribute containing classes must be weakref-able.
+    Note that due to implementation reasons context.source attribute values and
+    context.source attribute containing classes must be weakref-able.
 
     """
 
@@ -78,10 +78,10 @@ class context_source(object):
         attrs_of_obj = None
         old_callbacks = {}
         try:
-            attrs_of_obj = context_source_callbacks_by_obj[obj]
+            attrs_of_obj = source_callbacks_by_obj[obj]
         except KeyError:
-            context_source_callbacks_by_obj[obj] = {}
-            attrs_of_obj = context_source_callbacks_by_obj[obj]
+            source_callbacks_by_obj[obj] = {}
+            attrs_of_obj = source_callbacks_by_obj[obj]
         else:
             try:
                 old_callbacks = attrs_of_obj[self.byobj[obj]]
@@ -103,7 +103,7 @@ class context_source(object):
 
 
 def notify(obj,attr,callback_obj,callback):
-    """Set a callback for any change of a context_source
+    """Set a callback for any change of a context.source
 
     - `obj`: the object containing the attribute.
     - `attr`: the attribute itself. 
@@ -115,7 +115,7 @@ def notify(obj,attr,callback_obj,callback):
     after the change to attr is recorded; the function may call notify() again
     to re-register.
 
-    Due to the implementation, if attr is not a context_source, an error will
+    Due to the implementation, if attr is not a context.source, an error will
     *not* be raised.
 
     """
@@ -127,23 +127,23 @@ def notify(obj,attr,callback_obj,callback):
     # important when multiple objects reference the same attribute, such as in
     # Element.parent
     #
-    # The reason why checking that attr is actually a context_source is
+    # The reason why checking that attr is actually a context.source is
     # similar, attr itself does not give that information, and looking for attr
     # in obj.__dict__ doesn't work as well, as even .__dict__ lookups still
     # trigger the descriptor protocol and give us attr. Secondly
-    # context_sources are defined at the class level and have no mechanism for
+    # context.sources are defined at the class level and have no mechanism for
     # determining that an instance of a class has been defined. So we can't go
-    # looking for attr in the context_source_callbacks_by_obj[obj] dict,
+    # looking for attr in the context.source_callbacks_by_obj[obj] dict,
     # because even if it's valid it might not be in there yet if no call backs
     # have been set.
 
 
     attrs_of_obj = None
     try:
-        attrs_of_obj = context_source_callbacks_by_obj[obj]
+        attrs_of_obj = source_callbacks_by_obj[obj]
     except KeyError:
-        context_source_callbacks_by_obj[obj] = {}
-        attrs_of_obj = context_source_callbacks_by_obj[obj]
+        source_callbacks_by_obj[obj] = {}
+        attrs_of_obj = source_callbacks_by_obj[obj]
     
     cb = None
     try:

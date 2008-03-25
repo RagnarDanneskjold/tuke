@@ -17,11 +17,9 @@ import Tuke.context as context
 import sys
 import gc
 
-class ContextTest(TestCase):
-    """Perform tests of the context module"""
-
-    def test_context_source(self):
-        """context_source"""
+class SourceTest(TestCase):
+    def test_Source(self):
+        """Source"""
         def T(got,expected = True):
             self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
 
@@ -31,7 +29,7 @@ class ContextTest(TestCase):
 
         d = ct(42)
         class foo(object):
-            bar = context.context_source(d)
+            bar = context.Source(d)
         T(foo.bar,d)
 
         # Make sure everything is transparent:
@@ -71,8 +69,8 @@ class ContextTest(TestCase):
 
         T(c.v,(c,))
 
-    def test_context_source_for_memory_leaks(self):
-        """context_source does not leak memory"""
+    def test_Source_for_memory_leaks(self):
+        """Source does not leak memory"""
         def T(got,expected = True):
             self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
 
@@ -80,7 +78,7 @@ class ContextTest(TestCase):
         # makes sure they don't.
 
         class foo(object):
-            bar = context.context_source(None)
+            bar = context.Source(None)
         f = foo()
 
         d = 'ISBN 3936122202'

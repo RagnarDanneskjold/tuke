@@ -69,8 +69,8 @@ class Element(object):
     __defaults__ = {'id':None,'transform':None,'connects':None}
     __version__ = (0,0)
 
-    parent = context.context_source(None)
-    transform = context.context_source(None)
+    parent = context.Source(None)
+    transform = context.Source(None)
 
     def _required_and_default_kwargs(self):
         """Return the required and default kwargs as a tuple."""
@@ -313,6 +313,9 @@ import Tuke
 
         return ''.join(r)
 
+
+    def _apply_context(self,base):
+        return ElementRef(self,base)
 
 class ReprableByArgsElement(Element):
     """Base class for Elements fully representable by their arguments."""

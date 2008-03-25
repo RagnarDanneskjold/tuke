@@ -20,12 +20,13 @@ DEBUG = False
 from Tuke.tests.main import *
 from Tuke.tests.meta import *
 
-from Tuke.tests.context import *
 from Tuke.tests.element import *
 from Tuke.tests.elementref import *
 from Tuke.tests.id import *
 from Tuke.tests.connects import *
 from Tuke.tests.repr_helper import *
+
+from Tuke.tests.context.source import *
 
 from Tuke.tests.geda.footprint import *
 
