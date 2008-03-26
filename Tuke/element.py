@@ -93,20 +93,20 @@ class Element(object):
 
         kwargs = {}
         for k,v in df.items():
-            if self.__dict__[k] is not v:
+            if getattr(self,k) is not v:
                 req.add(k)
-                kwargs[k] = self.__dict__[k]
+                kwargs[k] = getattr(self,k)
         return kwargs 
 
     def __init__(self,**kwargs):
         # Initialize from kwargs
         #
-        # All key/value pairs in kwargs will be adde to self.__dict__ Default
-        # arguments can be provided in defaults
+        # All key/value pairs in kwargs will be added to self, self.key = value
+        # Default arguments can be provided in defaults
         #
-        # If a key is present in required, but not in kwargs, a TypeError will be
-        # raised. If a key is present in kwargs, but not in required or defaults,
-        # a TypeError will be raised.
+        # If a key is present in required, but not in kwargs, a TypeError will
+        # be raised. If a key is present in kwargs, but not in required or
+        # defaults, a TypeError will be raised.
 
         # Check that all versions are compatible.
         cls_version_required = self.__class__.__dict__.get('__version__',(0,0))
@@ -128,7 +128,7 @@ class Element(object):
 
         for k in req:
             try:
-                self.__dict__[k] = kwargs[k]
+                setattr(self,k,kwargs[k])
             except KeyError:
                 raise TypeError, 'Missing required argument %s' % k 
 
@@ -136,9 +136,9 @@ class Element(object):
             setattr(self,k,kwargs.get(k,d))
 
         # Call all the _init methods for all the classes.
-        [cls._init(self) for cls in \
-                reversed(self.__class__.__mro__) \
-                if issubclass(cls,Element)]
+        for cls in reversed(self.__class__.__mro__):
+            if issubclass(cls,Element):
+                cls._init(self)
 
     def _init(self):
         import Tuke
