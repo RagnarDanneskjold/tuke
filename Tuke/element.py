@@ -132,9 +132,9 @@ class Element(object):
             setattr(self,k,kwargs.get(k,d))
 
         # Call all the _init methods for all the classes.
-        [cls._init(self) for cls in \
-                reversed(self.__class__.__mro__) \
-                if issubclass(cls,Element)]
+        for cls in reversed(self.__class__.__mro__):
+            if issubclass(cls,Element):
+                cls._init(self)
 
     def _init(self):
         import Tuke
