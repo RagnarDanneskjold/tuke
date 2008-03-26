@@ -133,7 +133,7 @@ class Element(object):
                 raise TypeError, 'Missing required argument %s' % k 
 
         for k,d in df.items():
-            self.__dict__[k] = kwargs.get(k,d) 
+            setattr(self,k,kwargs.get(k,d))
 
         # Call all the _init methods for all the classes.
         [cls._init(self) for cls in \
