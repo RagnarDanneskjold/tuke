@@ -321,6 +321,10 @@ class ElementTest(TestCase):
         T(box.prop_got,2)
         T(box.prop_set,2)
 
+        # A previous version of repr_kwargs had the same incorrect usage of
+        # __dict__, catch that.
+        T(repr(box).find('open') > 0)
+
     def testElementSerialize(self):
         """Element.serialize()"""
 
