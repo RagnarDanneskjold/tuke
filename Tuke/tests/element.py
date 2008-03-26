@@ -290,6 +290,37 @@ class ElementTest(TestCase):
         R((0,'sdf'))
         R([0,'sdf'])
 
+    def testElement__init_does_not_mangle_properties(self):
+        """Element._init() system does not mangle properties"""
+        def T(got,expected = True):
+            self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
+
+        # If the Element._init() stuff is implemented to use __dict__ directly,
+        # rather than setattr, properties get mangled at initialization.
+
+        class SkinnerBox(Element):
+            __defaults__ = dict(open=False,prop_set=0,prop_got=0)
+            def get_open(self):
+                self.prop_got += 1
+                return self._open
+            def set_open(self,v):
+                self.prop_set += 1
+                self._open = v
+            open = property(get_open,set_open)
+
+        box = SkinnerBox()
+        T(box.open,False)
+        T(box.prop_got,1)
+        T(box.prop_set,1)
+
+        box.open = True
+        T(box.prop_got,1)
+        T(box.prop_set,2)
+
+        T(box.open,True)
+        T(box.prop_got,2)
+        T(box.prop_set,2)
+
     def testElementSerialize(self):
         """Element.serialize()"""
 
