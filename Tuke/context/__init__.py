@@ -18,3 +18,4 @@
 # ### BOILERPLATE ###
 
 from source import Source,notify
+from wrapper import wrap

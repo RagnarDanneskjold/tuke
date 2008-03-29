@@ -69,6 +69,7 @@ class Element(object):
     __defaults__ = {'id':None,'transform':None,'connects':None}
     __version__ = (0,0)
 
+    id = context.Source(Tuke.Id())
     parent = context.Source(None)
     transform = context.Source(None)
 
