@@ -1,0 +1,93 @@
+#!/usr/bin/python2.5
+# vim: tabstop=4 expandtab shiftwidth=4 fileencoding=utf8
+# ### BOILERPLATE ###
+# Tuke - Electrical Design Automation toolset
+# Copyright (C) 2008 Peter Todd <pete@petertodd.org>
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# ### BOILERPLATE ###
+
+
+"""
+Pure python object proxying methods.
+
+"""
+
+import timeit
+
+import weakref
+
+
+change_detect_callbacks = weakref.WeakKeyDictionary()
+
+class change_detector(object):
+    def __init__(self,*args,**kwargs):
+        print self,args,kwargs
+
+    def __get__(self,instance,owner):
+        print 'get'
+        return self.v
+    def __set__(self,obj,value):
+        try:
+            cb = change_detect_callbacks[self.v]
+        except (KeyError,AttributeError):
+            pass
+        else:
+            print 'cb',cb
+
+        print 'set',self,obj,value
+        self.v = value
+
+class foo(object):
+    bar = change_detector()
+
+def test(obj,wrapped=True,n=10000,method_isinstance=False,duck_typed=False):
+    for i in range(10000):
+        if method_isinstance:
+            if not obj.isinstance(element):
+                raise Exception
+            if not is_proxy(obj):
+                raise Exception
+        elif duck_typed:
+            if not hasattr(obj,'is_element'):
+                raise Exception
+            if not hasattr(obj,'is_proxy'): 
+                raise Exception
+        else:
+            if not isinstance(obj,element):
+                raise Exception
+            if not (isinstance(obj,proxy) == wrapped):
+                raise Exception
+        obj.unchanged_var += obj.unchanged_func()
+        obj.changed_var += obj.changed_func()
+
+    assert obj.unchanged_var == n + 1
+    if wrapped:
+        assert obj.changed_var == (n + 1) * 2
+    else:
+        assert obj.changed_var == n + 1
+
+def time(code,setup,n=10):
+    t = timeit.Timer(code, setup)
+
+    print "'%s' took %fs" % (code,t.timeit(n))
+
+
+#time("test(element(),wrapped=False)", "from __main__ import test,element")
+
+f1 = foo()
+f2 = foo()
+
+f1.bar = foo() 
+f2.bar = foo()
