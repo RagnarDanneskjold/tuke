@@ -66,6 +66,18 @@ Wrapped_setattr(Wrapped *self,PyObject *name,PyObject *value){
     return PyObject_SetAttr(self->_wrapped_obj,name,value);
 }
 
+static PyObject *
+Wrapped_repr(Wrapped *self){
+    char buf[360];
+    PyOS_snprintf(buf,sizeof(buf),
+                  "<Wrapped at %p wrapping %.100s at %p with %.100s at %p>", self,
+                  self->_wrapped_obj->ob_type->tp_name,
+                  self->_wrapped_obj,
+                  self->_wrapping_context->ob_type->tp_name,
+                  self->_wrapping_context);
+    return PyString_FromString(buf);
+}
+
 static PyMemberDef Wrapped_members[] = {
     {"_wrapped_obj", T_OBJECT_EX, offsetof(Wrapped, _wrapped_obj), 0,
      "_wrapped_obj name"},
@@ -85,7 +97,7 @@ static PyTypeObject WrappedType = {
     0,                         /*tp_getattr*/
     0,                         /*tp_setattr*/
     0,                         /*tp_compare*/
-    0,                         /*tp_repr*/
+    Wrapped_repr,              /*tp_repr*/
     0,                         /*tp_as_number*/
     0,                         /*tp_as_sequence*/
     0,                         /*tp_as_mapping*/
