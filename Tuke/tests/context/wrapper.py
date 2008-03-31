@@ -113,7 +113,7 @@ class WrapperTest(TestCase):
             if equiv_in is None:
                 equiv_in = data_in
 
-            bypass = data_in 
+            bypass = unwrapped 
             r = elem.d(data_in)
 
             T(bypass,unwrapped)

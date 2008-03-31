@@ -137,11 +137,37 @@ apply_context(PyObject *context,PyObject *obj){
     }
     else if (PyObject_IsInstance(obj,(PyObject *)&WrappableType)){
         printf("wrapp\n");
-        r =  Wrapped_new(&WrappedType,obj,context);
+        r = Wrapped_new(&WrappedType,obj,context);
     }
-    else if (PyTuple_Check(obj)){
-        printf("tuple\n");
-        r = obj;
+    else if (PyMethod_Check(obj)){
+        printf("method %s\n",PyString_AsString(PyObject_Repr(obj)));
+        r = Wrapped_new(&WrappedType,obj,context); 
+    }
+    else if (PyTuple_CheckExact(obj)){
+        printf("tuple %s\n",PyString_AsString(PyObject_Repr(obj)));
+        r = PyTuple_New(PyTuple_GET_SIZE(obj));
+        if (r == NULL) return NULL;
+        int i;
+        printf("building tuple\n");
+        for (i = 0; i < PyTuple_GET_SIZE(obj); i++){
+            PyObject *v = PyTuple_GET_ITEM(obj,i),*w = NULL;
+
+            printf("%s -> ",PyString_AsString(PyObject_Repr(v)));
+ 
+            Py_INCREF(v);
+            w = apply_context(context,v);
+            printf("%s\n",PyString_AsString(PyObject_Repr(w)));
+            if (w != NULL){
+                Py_INCREF(w);
+                Py_DECREF(v);
+                PyTuple_SET_ITEM(r,i,w);
+            } else {
+                Py_DECREF(v);
+                Py_DECREF(r);
+                return NULL;
+            }
+        }
+        printf("final tuple -> %s\n",PyString_AsString(PyObject_Repr(r)));
     }
     else{
         printf("other %s\n",PyString_AsString(PyObject_Repr(obj)));
@@ -172,8 +198,30 @@ remove_context(PyObject *context,PyObject *obj){
         r = Wrapped_new(&WrappedType,obj,context);
     }
     else if (PyTuple_CheckExact(obj)){
-        printf("tuple\n");
-        r = obj;
+        printf("tuple %s\n",PyString_AsString(PyObject_Repr(obj)));
+        r = PyTuple_New(PyTuple_GET_SIZE(obj));
+        if (r == NULL) return NULL;
+        int i;
+        printf("building tuple\n");
+        for (i = 0; i < PyTuple_GET_SIZE(obj); i++){
+            PyObject *v = PyTuple_GET_ITEM(obj,i),*w = NULL;
+
+            printf("%s -> ",PyString_AsString(PyObject_Repr(v)));
+ 
+            Py_INCREF(v);
+            w = remove_context(context,v);
+            printf("%s\n",PyString_AsString(PyObject_Repr(w)));
+            if (w != NULL){
+                Py_INCREF(w);
+                Py_DECREF(v);
+                PyTuple_SET_ITEM(r,i,w);
+            } else {
+                Py_DECREF(v);
+                Py_DECREF(r);
+                return NULL;
+            }
+        }
+        printf("final tuple -> %s\n",PyString_AsString(PyObject_Repr(r)));
     }
     else{
         printf("other %s\n",PyString_AsString(PyObject_Repr(obj)));
@@ -240,7 +288,42 @@ Wrapped_setattr(Wrapped *self,PyObject *name,PyObject *value){
     return r;
 }
 
-WRAP_TERNARY(Wrapped_call, PyEval_CallObjectWithKeywords,apply_context,remove_context)
+static PyObject *
+Wrapped_call(Wrapped *self,PyObject *args,PyObject *kwargs){
+    PyObject *unwrapped_args=NULL, *unwrapped_kwargs=NULL;
+    PyObject *r = NULL;
+
+    printf("call %s %s %s\n",PyString_AsString(PyObject_Repr(self)),
+                             PyString_AsString(PyObject_Repr(args)),
+                             PyString_AsString(PyObject_Repr(kwargs)));
+
+    Py_XINCREF(args);
+    unwrapped_args = remove_context(self->_wrapping_context,args);
+    if (unwrapped_args == NULL) goto error;
+    Py_XINCREF(unwrapped_args);
+
+    if (kwargs != NULL){
+        Py_XINCREF(kwargs);
+        unwrapped_kwargs = remove_context(self->_wrapping_context,kwargs);
+        if (unwrapped_kwargs == NULL) goto error;
+        Py_XINCREF(unwrapped_kwargs);
+    }
+
+    r = PyObject_Call(self->_wrapped_obj,unwrapped_args,unwrapped_kwargs);
+
+    if (r == NULL) goto error;
+
+    printf("returning %s\n",PyString_AsString(PyObject_Repr(r)));
+    r = apply_context(self->_wrapping_context,r);
+
+    printf("returning %s\n",PyString_AsString(PyObject_Repr(r)));
+
+error:
+    Py_XDECREF(args);
+    Py_XDECREF(kwargs);
+
+    return r;
+}
 
 WRAP_UNARY(Wrapped_str, PyObject_Str,null_apply_context)
 
