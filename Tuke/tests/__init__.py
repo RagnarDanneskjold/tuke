@@ -27,6 +27,7 @@ from Tuke.tests.connects import *
 from Tuke.tests.repr_helper import *
 
 from Tuke.tests.context.source import *
+from Tuke.tests.context.wrapper import *
 
 from Tuke.tests.geda.footprint import *
 

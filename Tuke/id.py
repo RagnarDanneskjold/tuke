@@ -19,11 +19,13 @@
 
 from Tuke import repr_helper
 
+import Tuke.context as context
+
 import re
 
 valid_id_re = re.compile('^([_A-Za-z][_A-Za-z0-9]*|\.|\.\.)$')
 
-class Id(object):
+class Id(context.Translatable):
     """Element identifiers.
     
     Id's are identifiers with a path. The path is relative, so for instance
