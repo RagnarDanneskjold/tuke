@@ -19,4 +19,4 @@ export PYTHONPATH=.
 
 Then after every change to a native C module:
 
-./setup develop -d .
+./setup.py develop -d .
