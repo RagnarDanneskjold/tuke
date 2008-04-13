@@ -25,7 +25,9 @@ Project Files & Directories
 
 * README: You're reading it.
 
-* COPYING: GPL-3 license that Tuke is placed under
+* COPYING: GPL-3 license that Tuke is placed under.
+
+* HACKING: Some notes on hacking the code.
 
 * doc: Very rough documentation currently.
 
