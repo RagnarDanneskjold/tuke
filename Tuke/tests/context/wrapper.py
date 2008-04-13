@@ -52,6 +52,25 @@ class WrapperTest(TestCase):
         T(isinstance(w,context.Wrapped))
         T(isinstance(w,Element))
 
+    def test_is_Wrapped(self):
+        """Wrapped(foo) is Wrapped(foo)"""
+
+        # These objects aren't supposed to be wrapped.
+        def T(obj):
+            a = Element(id=Id('a'))
+            self.assert_(context.Wrapped(obj,a) is obj)
+        T(None)
+        T(True)
+        T(False)
+        T(3)
+        T(31415)
+        T(3.14)
+        T(10j)
+        T(type(None))
+        T(type(self))
+
+#        T(Id('a'))
+
     def test_Wrapped_getset_attr(self):
         """(get|set)attr on Wrapped object"""
         def T(got,expected = True):

@@ -98,15 +98,30 @@ Wrapped_new(PyTypeObject *type, PyObject *obj, PyObject *context)
 {
     Wrapped *self;
 
-    self = (Wrapped *)type->tp_alloc(type, 0);
+    // Unwrappable, non-containers don't get wrapped.
+    if (obj == Py_None ||
+        PyBool_Check(obj) ||
+        PyInt_Check(obj) ||
+        PyLong_Check(obj) ||
+        PyFloat_Check(obj) || 
+        PyComplex_Check(obj) ||
+        PyType_Check(obj)){
 
-    Py_INCREF(obj);
-    self->_wrapped_obj = obj;
+        // If this incref is removed, segfaults happen.
+        Py_INCREF(obj);
+        return obj;
+    }
+    else{
+        self = (Wrapped *)type->tp_alloc(type, 0);
 
-    Py_INCREF(context);
-    self->_wrapping_context = context;
+        Py_INCREF(obj);
+        self->_wrapped_obj = obj;
 
-    return (PyObject *)self;
+        Py_INCREF(context);
+        self->_wrapping_context = context;
+
+        return (PyObject *)self;
+    }
 }
 
 static PyObject *
