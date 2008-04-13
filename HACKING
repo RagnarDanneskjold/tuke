@@ -14,9 +14,9 @@ In-Place Development
 Tuke uses some native C modules which need to be compiled before use. setup.py
 uses setup tools, so the correct command sequence is the following:
 
-export PYTHONPATH=.
-
+mkdir build
+export PYTHONPATH=build
 
 Then after every change to a native C module:
 
-./setup.py develop -d .
+./setup.py develop -d build
