@@ -75,7 +75,15 @@ class WrapperTest(TestCase):
         f = tempfile.TemporaryFile()
         T(f)
 
-#        T(Id('a'))
+        # These objects are supposed to be wrapped.
+        def T(obj):
+            a = Element(id=Id('a'))
+            self.assert_(context.Wrapped(obj,a) is context.Wrapped(obj,a))
+        T(object())
+        T({})
+        T(Id('a'))
+
+        self.assert_(not context.wrapper._wrapped_cache)
 
     def test_Wrapped_getset_attr(self):
         """(get|set)attr on Wrapped object"""

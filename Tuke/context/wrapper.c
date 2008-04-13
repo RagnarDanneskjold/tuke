@@ -78,6 +78,8 @@ static PyTypeObject TranslatableType = {
 };
 
 
+PyDictObject *wrapped_cache;
+
 static PyTypeObject WrappedType;
 
 typedef struct {
@@ -87,8 +89,14 @@ typedef struct {
 } Wrapped;
 
 static void
-Wrapped_dealloc(Wrapped* self)
-{
+Wrapped_dealloc(Wrapped* self){
+    PyTupleObject *key;
+    key = (PyTupleObject *)Py_BuildValue("(l,l)",
+                                         (long)self->_wrapped_obj,
+                                         (long)self->_wrapping_context);
+    PyDict_DelItem(wrapped_cache,key);
+
+    Py_XDECREF(key);
     Py_XDECREF(self->_wrapped_obj);
     Py_XDECREF(self->_wrapping_context);
 }
@@ -115,15 +123,33 @@ Wrapped_new(PyTypeObject *type, PyObject *obj, PyObject *context)
         return obj;
     }
     else{
-        self = (Wrapped *)type->tp_alloc(type, 0);
+        // Return an existing Wrapped object if possible.
+        PyTupleObject *key;
+      
+        key = (PyTupleObject *)Py_BuildValue("(l,l)",(long)obj,(long)context);
+        if (!key) return;
+        
+        self = (Wrapped *)PyDict_GetItem(wrapped_cache,key);
+        if (self){
+            Py_DECREF(key);
+            return self;
+        } else {
+            self = (Wrapped *)type->tp_alloc(type, 0);
 
-        Py_INCREF(obj);
-        self->_wrapped_obj = obj;
+            Py_INCREF(obj);
+            self->_wrapped_obj = obj;
 
-        Py_INCREF(context);
-        self->_wrapping_context = context;
+            Py_INCREF(context);
+            self->_wrapping_context = context;
 
-        return (PyObject *)self;
+            if (PyDict_SetItem(wrapped_cache,key,self)){
+                Py_DECREF(key);
+                return NULL;
+            }
+
+            Py_DECREF(key);
+            return (PyObject *)self;
+        }
     }
 }
 
@@ -474,6 +500,10 @@ initwrapper(void)
 {
     PyObject* m;
 
+    wrapped_cache = PyDict_New();
+    if (!wrapped_cache)
+        return;
+
     if (PyType_Ready(&WrappedType) < 0)
         return;
 
@@ -495,6 +525,7 @@ initwrapper(void)
     PyModule_AddObject(m, "Wrapped", (PyObject *)&WrappedType);
     PyModule_AddObject(m, "Wrappable", (PyObject *)&WrappableType);
     PyModule_AddObject(m, "Translatable", (PyObject *)&TranslatableType);
+    PyModule_AddObject(m, "_wrapped_cache",(PyObject *)wrapped_cache);
 }
 
 // Local Variables:
