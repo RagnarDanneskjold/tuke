@@ -1,5 +1,5 @@
 # vim: tabstop=4 expandtab shiftwidth=4 fileencoding=utf8
-# (c) 2007 Peter Todd <pete@petertodd.org>
+# (c) 2007,2008 Peter Todd <pete@petertodd.org>
 #
 # This program is made available under the GNU GPL version 3.0 or
 # greater. See the accompanying file COPYING for details.
@@ -22,6 +22,6 @@ class MainTest(TestCase):
     def testMain(self):
         """main() accepts -m"""
 
-        common.load_dataset("empty")
+        common.load_dataset("check_dataset_not_empty1")
 
         main(["-m","test message"])

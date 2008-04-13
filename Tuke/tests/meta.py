@@ -1,5 +1,5 @@
 # vim: tabstop=4 expandtab shiftwidth=4 fileencoding=utf8
-# (c) 2007 Peter Todd <pete@petertodd.org>
+# (c) 2007,2008 Peter Todd <pete@petertodd.org>
 #
 # This program is made available under the GNU GPL version 3.0 or
 # greater. See the accompanying file COPYING for details.
@@ -23,7 +23,7 @@ class MetaTest(TestCase):
         self.assertRaises(AssertionError,common.load_dataset,"invalid dataset")
 
         # make sure the above didn't clobber further tests 
-        common.load_dataset('empty')
+        common.load_dataset('check_dataset_not_empty1')
 
     def testCheckDataset(self):
         """check_dataset()"""
@@ -38,10 +38,7 @@ class MetaTest(TestCase):
         def f(a,b):
             self.assert_(not check(a,b))
 
-        t("empty","empty")
-        f("empty","check_dataset_not_empty1")
         t("check_dataset_not_empty1","check_dataset_not_empty1")
-        f("check_dataset_not_empty1","check_dataset_not_empty2")
         f("check_dataset_not_empty1","check_dataset_not_empty3")
         f("check_dataset_not_empty1","check_dataset_not_empty4")
         t("check_dataset_not_empty4","check_dataset_not_empty4")
