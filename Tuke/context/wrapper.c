@@ -107,7 +107,8 @@ Wrapped_new(PyTypeObject *type, PyObject *obj, PyObject *context)
         PyComplex_Check(obj) ||
         PyType_Check(obj) ||
         PyString_Check(obj) ||
-        PyUnicode_Check(obj)){
+        PyUnicode_Check(obj) ||
+        PyFile_Check(obj)){
 
         // If this incref is removed, segfaults happen.
         Py_INCREF(obj);

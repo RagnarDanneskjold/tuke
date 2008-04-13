@@ -71,6 +71,10 @@ class WrapperTest(TestCase):
         T('foo')
         T(u'foo')
 
+        import tempfile
+        f = tempfile.TemporaryFile()
+        T(f)
+
 #        T(Id('a'))
 
     def test_Wrapped_getset_attr(self):
