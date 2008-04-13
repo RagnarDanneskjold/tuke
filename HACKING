@@ -1,0 +1,22 @@
+=============
+ HACKING: Tuke
+=============
+
+:Author: Peter Todd
+:Contact: 'peter'[:-1]@petertodd.org
+:Web site: http://petertodd.org
+
+.. contents::
+
+In-Place Development
+====================
+
+Tuke uses some native C modules which need to be compiled before use. setup.py
+uses setup tools, so the correct command sequence is the following:
+
+export PYTHONPATH=.
+
+
+Then after every change to a native C module:
+
+./setup develop -d .
