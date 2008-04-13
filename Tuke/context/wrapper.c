@@ -125,7 +125,7 @@ Wrapped_new(PyTypeObject *type, PyObject *obj, PyObject *context)
 {
     Wrapped *self;
 
-    // Unwrappable, non-containers don't get wrapped.
+    // Basic types don't get wrapped at all.
     if (obj == Py_None ||
         PyBool_Check(obj) ||
         PyInt_Check(obj) ||
