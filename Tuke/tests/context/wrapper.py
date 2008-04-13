@@ -54,6 +54,7 @@ class WrapperTest(TestCase):
 
     def test_is_Wrapped(self):
         """Wrapped(foo) is Wrapped(foo)"""
+        keys = context.wrapper._wrapped_cache.keys()
 
         # These objects aren't supposed to be wrapped.
         def T(obj):
@@ -83,7 +84,7 @@ class WrapperTest(TestCase):
         T({})
         T(Id('a'))
 
-        self.assert_(not context.wrapper._wrapped_cache)
+        self.assert_(context.wrapper._wrapped_cache.keys() == keys)
 
     def test_Wrapped_getset_attr(self):
         """(get|set)attr on Wrapped object"""

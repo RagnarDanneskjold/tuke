@@ -86,19 +86,38 @@ typedef struct {
     PyObject_HEAD
     PyObject *_wrapped_obj;
     PyObject *_wrapping_context;
+    PyObject *in_weakreflist;
 } Wrapped;
+
+static int
+Wrapped_traverse(Wrapped *self, visitproc visit, void *arg){
+    Py_VISIT(self->_wrapped_obj);
+    Py_VISIT(self->_wrapping_context);
+    return 0;
+}
+
+static int
+Wrapped_clear(Wrapped *self){
+    Py_CLEAR(self->_wrapped_obj);
+    Py_CLEAR(self->_wrapping_context);
+    return 0;
+}
 
 static void
 Wrapped_dealloc(Wrapped* self){
     PyTupleObject *key;
+    if (self->in_weakreflist != NULL)
+            PyObject_ClearWeakRefs((PyObject *) self);
+
     key = (PyTupleObject *)Py_BuildValue("(l,l)",
                                          (long)self->_wrapped_obj,
                                          (long)self->_wrapping_context);
     PyDict_DelItem(wrapped_cache,key);
 
     Py_XDECREF(key);
-    Py_XDECREF(self->_wrapped_obj);
-    Py_XDECREF(self->_wrapping_context);
+
+    Wrapped_clear(self);
+    self->ob_type->tp_free((PyObject*)self);
 }
 
 static PyObject *
@@ -125,16 +144,20 @@ Wrapped_new(PyTypeObject *type, PyObject *obj, PyObject *context)
     else{
         // Return an existing Wrapped object if possible.
         PyTupleObject *key;
-      
+     
+        // The cache is just a (id(obj),id(context) -> weakref(Wrapped) dict.
         key = (PyTupleObject *)Py_BuildValue("(l,l)",(long)obj,(long)context);
         if (!key) return;
         
-        self = (Wrapped *)PyDict_GetItem(wrapped_cache,key);
+        self = (Wrapped *)PyDict_GetItem((PyObject *)wrapped_cache,(PyObject *)key);
         if (self){
+            self = PyWeakref_GET_OBJECT(self);
             Py_DECREF(key);
             return self;
         } else {
             self = (Wrapped *)type->tp_alloc(type, 0);
+
+            self->in_weakreflist = NULL;
 
             Py_INCREF(obj);
             self->_wrapped_obj = obj;
@@ -142,7 +165,8 @@ Wrapped_new(PyTypeObject *type, PyObject *obj, PyObject *context)
             Py_INCREF(context);
             self->_wrapping_context = context;
 
-            if (PyDict_SetItem(wrapped_cache,key,self)){
+            if (PyDict_SetItem(wrapped_cache,key,
+                               PyWeakref_NewRef((PyObject *)self,NULL))){
                 Py_DECREF(key);
                 return NULL;
             }
@@ -466,12 +490,12 @@ static PyTypeObject WrappedType = {
     Wrapped_getattr,           /*tp_getattro*/
     Wrapped_setattr,           /*tp_setattro*/
     0,                         /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT, /*tp_flags*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /*tp_flags*/
     "Wrap object in a context",           /* tp_doc */
-    0,		               /* tp_traverse */
-    0,		               /* tp_clear */
+    (traverseproc)Wrapped_traverse,     /* tp_traverse */
+    (inquiry)Wrapped_clear,             /* tp_clear */
     0,		               /* tp_richcompare */
-    0,		               /* tp_weaklistoffset */
+    offsetof(Wrapped, in_weakreflist),  /* tp_weaklistoffset */
     0,		               /* tp_iter */
     0,		               /* tp_iternext */
     0,             /* tp_methods */
