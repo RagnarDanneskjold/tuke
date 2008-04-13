@@ -1,1 +1,7 @@
 *.pyc
+*.so
+build/*
+easy-install.pth
+tuke.egg-info
+site.py
+tuke.egg-link
