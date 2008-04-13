@@ -68,6 +68,8 @@ class WrapperTest(TestCase):
         T(10j)
         T(type(None))
         T(type(self))
+        T('foo')
+        T(u'foo')
 
 #        T(Id('a'))
 
