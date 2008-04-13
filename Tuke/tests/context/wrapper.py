@@ -127,4 +127,15 @@ class WrapperTest(TestCase):
         w = context.Wrapped(b,a)
 
         W(w,0,0)
+        W(w,(),())
+        W(w,[],[])
+
+        W(w,[(),[[],[()]]],
+            [(),[[],[()]]])
+
         W(w,Id('spam/ham'),Id('ham'))
+
+        W(w,(Id('spam/ham'),),(Id('ham'),))
+        W(w,[Id('spam/ham'),],[Id('ham'),])
+
+        W(w,[(Id('spam/ham'),)],[(Id('ham'),)])

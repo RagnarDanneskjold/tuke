@@ -169,6 +169,32 @@ apply_context(PyObject *context,PyObject *obj){
         }
         printf("final tuple -> %s\n",PyString_AsString(PyObject_Repr(r)));
     }
+    else if (PyList_CheckExact(obj)){
+        printf("tuple %s\n",PyString_AsString(PyObject_Repr(obj)));
+        r = PyList_New(PyList_GET_SIZE(obj));
+        if (r == NULL) return NULL;
+        int i;
+        printf("building tuple\n");
+        for (i = 0; i < PyList_GET_SIZE(obj); i++){
+            PyObject *v = PyList_GET_ITEM(obj,i),*w = NULL;
+
+            printf("%s -> ",PyString_AsString(PyObject_Repr(v)));
+ 
+            Py_INCREF(v);
+            w = apply_context(context,v);
+            printf("%s\n",PyString_AsString(PyObject_Repr(w)));
+            if (w != NULL){
+                Py_INCREF(w);
+                Py_DECREF(v);
+                PyList_SET_ITEM(r,i,w);
+            } else {
+                Py_DECREF(v);
+                Py_DECREF(r);
+                return NULL;
+            }
+        }
+        printf("final tuple -> %s\n",PyString_AsString(PyObject_Repr(r)));
+    }
     else{
         printf("other %s\n",PyString_AsString(PyObject_Repr(obj)));
         r = obj;
@@ -215,6 +241,32 @@ remove_context(PyObject *context,PyObject *obj){
                 Py_INCREF(w);
                 Py_DECREF(v);
                 PyTuple_SET_ITEM(r,i,w);
+            } else {
+                Py_DECREF(v);
+                Py_DECREF(r);
+                return NULL;
+            }
+        }
+        printf("final tuple -> %s\n",PyString_AsString(PyObject_Repr(r)));
+    }
+    else if (PyList_CheckExact(obj)){
+        printf("tuple %s\n",PyString_AsString(PyObject_Repr(obj)));
+        r = PyList_New(PyList_GET_SIZE(obj));
+        if (r == NULL) return NULL;
+        int i;
+        printf("building tuple\n");
+        for (i = 0; i < PyList_GET_SIZE(obj); i++){
+            PyObject *v = PyList_GET_ITEM(obj,i),*w = NULL;
+
+            printf("%s -> ",PyString_AsString(PyObject_Repr(v)));
+ 
+            Py_INCREF(v);
+            w = remove_context(context,v);
+            printf("%s\n",PyString_AsString(PyObject_Repr(w)));
+            if (w != NULL){
+                Py_INCREF(w);
+                Py_DECREF(v);
+                PyList_SET_ITEM(r,i,w);
             } else {
                 Py_DECREF(v);
                 Py_DECREF(r);
