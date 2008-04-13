@@ -109,6 +109,7 @@ Wrapped_dealloc(Wrapped* self){
     if (self->in_weakreflist != NULL)
             PyObject_ClearWeakRefs((PyObject *) self);
 
+    printf("deallocing Wrapped %d %d\n",self->_wrapped_obj,self->_wrapping_context);
     key = (PyTupleObject *)Py_BuildValue("(l,l)",
                                          (long)self->_wrapped_obj,
                                          (long)self->_wrapping_context);
@@ -121,9 +122,36 @@ Wrapped_dealloc(Wrapped* self){
 }
 
 static PyObject *
-Wrapped_new(PyTypeObject *type, PyObject *obj, PyObject *context)
-{
+Wrapped_new(PyTypeObject *type, PyObject *obj, PyObject *context){
     Wrapped *self;
+
+    self = (Wrapped *)type->tp_alloc(type, 0);
+
+    self->in_weakreflist = NULL;
+
+    Py_INCREF(obj);
+    self->_wrapped_obj = obj;
+
+    Py_INCREF(context);
+    self->_wrapping_context = context;
+
+    printf("new Wrapped %d %d\n",self->_wrapped_obj,self->_wrapping_context);
+    return (PyObject *)self;
+}
+
+static PyObject *
+pyWrapped_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    PyObject *obj,*context;
+    if (! PyArg_ParseTuple(args, "OO", &obj, &context))
+        return NULL; 
+
+    return Wrapped_new(type,obj,context);
+}
+
+static PyObject *
+wrap(PyObject *obj,PyObject *context){
+    PyObject *self,*self_ref;
 
     // Basic types don't get wrapped at all.
     if (obj == Py_None ||
@@ -137,7 +165,6 @@ Wrapped_new(PyTypeObject *type, PyObject *obj, PyObject *context)
         PyUnicode_Check(obj) ||
         PyFile_Check(obj)){
 
-        // If this incref is removed, segfaults happen.
         Py_INCREF(obj);
         return obj;
     }
@@ -149,42 +176,55 @@ Wrapped_new(PyTypeObject *type, PyObject *obj, PyObject *context)
         key = (PyTupleObject *)Py_BuildValue("(l,l)",(long)obj,(long)context);
         if (!key) return;
         
-        self = (Wrapped *)PyDict_GetItem((PyObject *)wrapped_cache,(PyObject *)key);
-        if (self){
-            self = PyWeakref_GET_OBJECT(self);
+        printf("looking for\n");
+        self_ref = (Wrapped *)PyDict_GetItem((PyObject *)wrapped_cache,(PyObject *)key);
+        printf("self was ");
+        if (self_ref){
+            printf("found\n");
+            self = PyWeakref_GET_OBJECT(self_ref);
+            Py_INCREF(self);
             Py_DECREF(key);
             return self;
         } else {
-            self = (Wrapped *)type->tp_alloc(type, 0);
+            printf("didn't find\n");
 
-            self->in_weakreflist = NULL;
-
-            Py_INCREF(obj);
-            self->_wrapped_obj = obj;
-
-            Py_INCREF(context);
-            self->_wrapping_context = context;
-
-            if (PyDict_SetItem(wrapped_cache,key,
-                               PyWeakref_NewRef((PyObject *)self,NULL))){
+            self = Wrapped_new(&WrappedType,obj,context);
+            if (!self){
                 Py_DECREF(key);
                 return NULL;
             }
 
+            PyObject *objref;
+            objref = PyWeakref_NewRef(self,NULL);
+            if (!objref){
+                Py_DECREF(self);
+                Py_DECREF(key);
+                return NULL;
+            }
+
+            if (PyDict_SetItem((PyObject *)wrapped_cache,(PyObject *)key,objref)){
+                Py_DECREF(objref);
+                Py_DECREF(self);
+                Py_DECREF(key);
+                printf("set item error\n");
+                return NULL;
+            }
+
             Py_DECREF(key);
-            return (PyObject *)self;
+            Py_DECREF(objref);
+            return self;
         }
     }
 }
 
 static PyObject *
-pyWrapped_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
+py_wrap(PyTypeObject *junk, PyObject *args){
     PyObject *obj,*context;
-    if (! PyArg_ParseTuple(args, "OO", &obj, &context))
+
+    if (!PyArg_ParseTuple(args, "OO", &obj, &context))
         return NULL; 
 
-    return Wrapped_new(type,obj,context);
+    return wrap(obj,context);
 }
 
 static PyObject *
@@ -205,11 +245,11 @@ apply_context(PyObject *context,PyObject *obj){
     }
     else if (PyObject_IsInstance(obj,(PyObject *)&WrappableType)){
         printf("wrapp\n");
-        r = Wrapped_new(&WrappedType,obj,context);
+        r = wrap(obj,context);
     }
     else if (PyMethod_Check(obj)){
         printf("method %s\n",PyString_AsString(PyObject_Repr(obj)));
-        r = Wrapped_new(&WrappedType,obj,context); 
+        r = wrap(obj,context); 
     }
     else if (PyTuple_CheckExact(obj)){
         printf("tuple %s\n",PyString_AsString(PyObject_Repr(obj)));
@@ -289,7 +329,7 @@ remove_context(PyObject *context,PyObject *obj){
     }
     else if (PyObject_IsInstance(obj,(PyObject *)&WrappableType)){
         printf("wrapp\n");
-        r = Wrapped_new(&WrappedType,obj,context);
+        r = wrap(obj,context);
     }
     else if (PyTuple_CheckExact(obj)){
         printf("tuple %s\n",PyString_AsString(PyObject_Repr(obj)));
@@ -512,7 +552,9 @@ static PyTypeObject WrappedType = {
 };
 
 static PyMethodDef methods[] = {
-    {NULL}
+    {"wrap", (PyCFunction)py_wrap, METH_VARARGS,
+     "Wrap an object with a context."},
+    {NULL,NULL,0,NULL}
 };
 
 
@@ -541,7 +583,6 @@ initwrapper(void)
 
     m = Py_InitModule3("wrapper", methods,
                        "Object wrapping");
-
     if (m == NULL)
         return;
 

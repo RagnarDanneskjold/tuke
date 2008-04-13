@@ -31,7 +31,7 @@ class WrapperTest(TestCase):
         # Check ref counting behavior
         ref_orig_a = sys.getrefcount(a)
         ref_orig_b = sys.getrefcount(a)
-        w = context.Wrapped(b,a)
+        w = context.wrap(b,a)
         T(sys.getrefcount(a) - ref_orig_a,1)
         T(sys.getrefcount(b) - ref_orig_b,1)
 
@@ -47,7 +47,7 @@ class WrapperTest(TestCase):
         a = Element(id=Id('a'))
         b = Element(id=Id('b'))
 
-        w = context.Wrapped(b,a)
+        w = context.wrap(b,a)
 
         T(isinstance(w,context.Wrapped))
         T(isinstance(w,Element))
@@ -59,7 +59,7 @@ class WrapperTest(TestCase):
         # These objects aren't supposed to be wrapped.
         def T(obj):
             a = Element(id=Id('a'))
-            self.assert_(context.Wrapped(obj,a) is obj)
+            self.assert_(context.wrap(obj,a) is obj)
         T(None)
         T(True)
         T(False)
@@ -79,7 +79,7 @@ class WrapperTest(TestCase):
         # These objects are supposed to be wrapped.
         def T(obj):
             a = Element(id=Id('a'))
-            self.assert_(context.Wrapped(obj,a) is context.Wrapped(obj,a))
+            self.assert_(context.wrap(obj,a) is context.wrap(obj,a))
         T(object())
         T({})
         T(Id('a'))
@@ -97,7 +97,7 @@ class WrapperTest(TestCase):
         a = Element(id=Id('a'))
         b = Element(id=Id('b'))
 
-        w = context.Wrapped(b,a)
+        w = context.wrap(b,a)
 
         R(AttributeError,lambda: w.VenezuelanBeaverCheese)
        
@@ -158,7 +158,7 @@ class WrapperTest(TestCase):
         a = Element(id=Id('spam'))
         b = skit(id=Id('ham'))
 
-        w = context.Wrapped(b,a)
+        w = context.wrap(b,a)
 
         W(w,0,0)
         W(w,(),())
