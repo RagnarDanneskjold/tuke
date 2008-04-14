@@ -81,6 +81,8 @@ class WrapperTest(TestCase):
             a = Element(id=Id('a'))
             self.assert_(context.wrap(obj,a) is context.wrap(obj,a))
         T(object())
+        T(())
+        T((1,2,3))
         T({})
         T(Id('a'))
 

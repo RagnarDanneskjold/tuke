@@ -153,9 +153,6 @@ wrap(PyObject *obj,PyObject *context){
         Py_INCREF(obj);
         return obj;
     }
-    else if (PyTuple_CheckExact(obj)){
-        return wrap_tuple(obj,context);
-    }
     else{
         // Return an existing Wrapped object if possible.
         PyTupleObject *key;
