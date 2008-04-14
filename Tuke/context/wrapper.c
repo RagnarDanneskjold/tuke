@@ -19,11 +19,9 @@
 #include <Python.h>
 #include "structmember.h"
 
-typedef struct {
-    PyObject_HEAD
-} Wrappable;
+#include "wrapper.h"
 
-static PyTypeObject WrappableType = {
+PyTypeObject WrappableType = {
     PyObject_HEAD_INIT(NULL)
     0,                         /*ob_size*/
     "wrapper.Wrappable",             /*tp_name*/
@@ -48,11 +46,7 @@ static PyTypeObject WrappableType = {
     "Mixin to signify objects that can be wrapped in contexts.", /* tp_doc */
 };
 
-typedef struct {
-    PyObject_HEAD
-} Translatable;
-
-static PyTypeObject TranslatableType = {
+PyTypeObject TranslatableType = {
     PyObject_HEAD_INIT(NULL)
     0,                         /*ob_size*/
     "wrapper.Translatable",             /*tp_name*/
@@ -77,17 +71,7 @@ static PyTypeObject TranslatableType = {
     "Mixin to signify objects that support the (add|remove)_context protocol.", /* tp_doc */
 };
 
-
 PyDictObject *wrapped_cache;
-
-static PyTypeObject WrappedType;
-
-typedef struct {
-    PyObject_HEAD
-    PyObject *_wrapped_obj;
-    PyObject *_wrapping_context;
-    PyObject *in_weakreflist;
-} Wrapped;
 
 static int
 Wrapped_traverse(Wrapped *self, visitproc visit, void *arg){
@@ -509,7 +493,7 @@ static PyMemberDef Wrapped_members[] = {
     {NULL}  /* Sentinel */
 };
 
-static PyTypeObject WrappedType = {
+PyTypeObject WrappedType = {
     PyObject_HEAD_INIT(NULL)
     0,                         /*ob_size*/
     "wrapper.Wrapped",             /*tp_name*/
@@ -556,7 +540,6 @@ static PyMethodDef methods[] = {
      "Wrap an object with a context."},
     {NULL,NULL,0,NULL}
 };
-
 
 #ifndef PyMODINIT_FUNC	// declarations for DLL import/export
 #define PyMODINIT_FUNC void
