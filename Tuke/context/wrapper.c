@@ -153,6 +153,13 @@ wrap(PyObject *obj,PyObject *context){
         Py_INCREF(obj);
         return obj;
     }
+    // Translatable types have their context applied, but they can't be put in
+    // the cache because they don't have a destructor that would remove them.
+    else if (PyObject_IsInstance(obj,(PyObject *)&TranslatableType)){
+       printf("trans\n");
+       return PyObject_CallMethod(obj,"_apply_context","O",context);
+    }
+    // Everything else gets wrapped with some sort of wrapping object.
     else{
         // Return an existing Wrapped object if possible.
         PyTupleObject *key;

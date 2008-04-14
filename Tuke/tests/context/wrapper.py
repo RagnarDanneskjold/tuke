@@ -84,7 +84,6 @@ class WrapperTest(TestCase):
         T(())
         T((1,2,3))
         T({})
-        T(Id('a'))
 
         self.assert_(context.wrapper._wrapped_cache.keys() == keys)
 
