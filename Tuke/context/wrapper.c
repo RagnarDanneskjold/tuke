@@ -290,39 +290,68 @@ Wrapped_setattr(Wrapped *self,PyObject *name,PyObject *value){
 
 static PyObject *
 Wrapped_call(Wrapped *self,PyObject *args,PyObject *kwargs){
+    int i;
     PyObject *unwrapped_args=NULL, *unwrapped_kwargs=NULL;
-    PyObject *r = NULL;
+    PyObject *r,*wr;
 
-    printf("call %s %s %s\n",PyString_AsString(PyObject_Repr(self)),
+    printf("call %s(%s,%s)\n",PyString_AsString(PyObject_Repr(self)),
                              PyString_AsString(PyObject_Repr(args)),
                              PyString_AsString(PyObject_Repr(kwargs)));
 
+    // A straight xremove_context won't work as PyObject_call only handles
+    // actual tuple's and dicts for args,kwargs Fortunately *args cannot be
+    // assigned to, and assigning to **kwargs doesn't change the callers
+    // **kwargs, otherwise we'd have an unhandled edge case for those expat
+    // C++-programmers.
+
+    // Pretty sure this can only be called in wrapped mode, so insure that
+    // assumption is correct.
+    if (self->apply != 1){
+        PyErr_SetString(PyExc_RuntimeError,"Wrapped_call while self->apply != 1");
+        return NULL;
+    }
+
     Py_XINCREF(args);
-    unwrapped_args = xremove_context(self,self->_wrapping_context,args);
-    if (unwrapped_args == NULL) goto error;
-    Py_XINCREF(unwrapped_args);
+    unwrapped_args = PyTuple_New(PyTuple_GET_SIZE(args));
+    if (unwrapped_args == NULL) return NULL;
+    for (i = 0; i < PyTuple_GET_SIZE(args); i++){
+        PyObject *v = PyTuple_GET_ITEM(args,i),*w = NULL;
+
+        w = xremove_context(self,self->_wrapping_context,v);
+        PyTuple_SET_ITEM(unwrapped_args,i,w);
+    }
 
     if (kwargs != NULL){
         Py_XINCREF(kwargs);
-        unwrapped_kwargs = xremove_context(self,self->_wrapping_context,kwargs);
-        if (unwrapped_kwargs == NULL) goto error;
-        Py_XINCREF(unwrapped_kwargs);
+        unwrapped_kwargs = PyDict_New();
+        if (!unwrapped_kwargs) return NULL;
+        PyObject *k,*v;
+        Py_ssize_t pos = 0;
+        while (PyDict_Next(kwargs,&pos,&k,&v)){
+            v = xremove_context(self,self->_wrapping_context,v);
+            if (PyDict_SetItem(unwrapped_kwargs,k,v)) return NULL;
+            Py_DECREF(v);
+        }
     }
 
+    printf("unwcall %s(%s,%s)\n",PyString_AsString(PyObject_Repr(self)),
+                             PyString_AsString(PyObject_Repr(unwrapped_args)),
+                             PyString_AsString(PyObject_Repr(unwrapped_kwargs)));
     r = PyObject_Call(self->_wrapped_obj,unwrapped_args,unwrapped_kwargs);
-
-    if (r == NULL) goto error;
+    // Currently calling a un-callable Wrapped object gets to this point, but
+    // with an exception, so the following DECREF's are important and may see
+    // user code.
+    Py_DECREF(unwrapped_args);
+    Py_XDECREF(unwrapped_kwargs);
+    if (r == NULL) return NULL;
 
     printf("returning %s\n",PyString_AsString(PyObject_Repr(r)));
-    r = xapply_context(self,self->_wrapping_context,r);
+    wr = xapply_context(self,self->_wrapping_context,r);
+    Py_DECREF(r);
 
-    printf("returning %s\n",PyString_AsString(PyObject_Repr(r)));
+    printf("returning %s\n",PyString_AsString(PyObject_Repr(wr)));
 
-error:
-    Py_XDECREF(args);
-    Py_XDECREF(kwargs);
-
-    return r;
+    return wr;
 }
 
 WRAP_UNARY(Wrapped_str, PyObject_Str,null_xapply_context)
