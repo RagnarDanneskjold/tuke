@@ -145,13 +145,19 @@ Wrapped_new(PyTypeObject *type, PyObject *obj, PyObject *context)
         // Return an existing Wrapped object if possible.
         PyTupleObject *key;
      
-        // The cache is just a (id(obj),id(context) -> weakref(Wrapped) dict.
+        // The cache is a (id(obj),id(context) -> Wrapped dict.
+        //
+        // However, an actual reference to Wrapped would cause problems, as it
+        // would prevent garbage collection, so instead an opaque PyCObject is
+        // used. This is ok, as the Wrapped object itself serves as a
+        // reference, so the dict entry will always be deleted before the
+        // pointed too object. 
         key = (PyTupleObject *)Py_BuildValue("(l,l)",(long)obj,(long)context);
         if (!key) return;
         
         self = (Wrapped *)PyDict_GetItem((PyObject *)wrapped_cache,(PyObject *)key);
         if (self){
-            self = PyWeakref_GET_OBJECT(self);
+            self = PyCObject_AsVoidPtr(self);
             Py_DECREF(key);
             return self;
         } else {
@@ -165,9 +171,16 @@ Wrapped_new(PyTypeObject *type, PyObject *obj, PyObject *context)
             Py_INCREF(context);
             self->_wrapping_context = context;
 
-            if (PyDict_SetItem(wrapped_cache,key,
-                               PyWeakref_NewRef((PyObject *)self,NULL))){
+            PyObject *selfptr;
+            selfptr = PyCObject_FromVoidPtr(self,NULL);
+            if (!selfptr){
                 Py_DECREF(key);
+                return NULL;
+            }
+
+            if (PyDict_SetItem(wrapped_cache,key,selfptr)){
+                Py_DECREF(key);
+                Py_DECREF(selfptr);
                 return NULL;
             }
 
