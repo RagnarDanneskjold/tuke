@@ -22,8 +22,7 @@ import sys, os, getopt
 from setuptools import setup, find_packages, Extension
 
 context_wrapper = Extension('Tuke.context.wrapper',
-    sources = ['Tuke/context/wrap_tuple.c',
-               'Tuke/context/wrapper.c'])
+    sources = ['Tuke/context/wrapper.c'])
 
 if sys.version_info[:2] < (2,5):
     print "Sorry, Tuke requires version 2.5 or later of python"

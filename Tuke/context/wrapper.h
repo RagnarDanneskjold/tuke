@@ -40,11 +40,9 @@ typedef struct {
     PyObject_HEAD
     PyObject *_wrapped_obj;
     PyObject *_wrapping_context;
+    int apply;
     PyObject *in_weakreflist;
 } Wrapped;
-
-PyObject *
-wrap(PyObject *obj,PyObject *context);
 
 // Local Variables:
 // mode: C

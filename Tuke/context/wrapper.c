@@ -95,9 +95,10 @@ Wrapped_dealloc(Wrapped* self){
             PyObject_ClearWeakRefs((PyObject *) self);
 
     printf("deallocing Wrapped %d %d\n",self->_wrapped_obj,self->_wrapping_context);
-    key = (PyTupleObject *)Py_BuildValue("(l,l)",
+    key = (PyTupleObject *)Py_BuildValue("(l,l,i)",
                                          (long)self->_wrapped_obj,
-                                         (long)self->_wrapping_context);
+                                         (long)self->_wrapping_context,
+                                         self->apply);
     PyDict_DelItem(wrapped_cache,key);
 
     Py_XDECREF(key);
@@ -107,12 +108,13 @@ Wrapped_dealloc(Wrapped* self){
 }
 
 static PyObject *
-Wrapped_new(PyTypeObject *type, PyObject *obj, PyObject *context){
+Wrapped_new(PyTypeObject *type, PyObject *obj, PyObject *context, int apply){
     Wrapped *self;
 
     self = (Wrapped *)type->tp_alloc(type, 0);
-
     self->in_weakreflist = NULL;
+
+    self->apply = apply;
 
     Py_INCREF(obj);
     self->_wrapped_obj = obj;
@@ -120,23 +122,14 @@ Wrapped_new(PyTypeObject *type, PyObject *obj, PyObject *context){
     Py_INCREF(context);
     self->_wrapping_context = context;
 
-    printf("new Wrapped %d %d\n",self->_wrapped_obj,self->_wrapping_context);
+    printf("new Wrapped %d %d %d\n",self->_wrapped_obj,self->_wrapping_context,self->apply);
     return (PyObject *)self;
 }
 
-static PyObject *
-pyWrapped_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    PyObject *obj,*context;
-    if (! PyArg_ParseTuple(args, "OO", &obj, &context))
-        return NULL; 
-
-    return Wrapped_new(type,obj,context);
-}
-
 PyObject *
-wrap(PyObject *obj,PyObject *context){
+apply_remove_context(PyObject *context,PyObject *obj,int raw_apply){
     PyObject *self,*self_ref;
+    int apply = raw_apply ? 1 : 0;
 
     // Basic types don't get wrapped at all.
     if (obj == Py_None ||
@@ -156,22 +149,31 @@ wrap(PyObject *obj,PyObject *context){
     // Translatable types have their context applied, but they can't be put in
     // the cache because they don't have a destructor that would remove them.
     else if (PyObject_IsInstance(obj,(PyObject *)&TranslatableType)){
-       printf("trans\n");
-       return PyObject_CallMethod(obj,"_apply_context","O",context);
+        printf("trans\n");
+        if (apply){
+            return PyObject_CallMethod(obj,"_apply_context","O",context);
+        } else {
+            return PyObject_CallMethod(obj,"_remove_context","O",context);
+        }
+    }
+    else if (!apply && PyObject_IsInstance(obj,(PyObject *)&WrappedType) &&
+             ((Wrapped *)obj)->_wrapping_context == context){
+        Py_INCREF(((Wrapped *)obj)->_wrapped_obj);
+        return ((Wrapped *)obj)->_wrapped_obj;
     }
     // Everything else gets wrapped with some sort of wrapping object.
     else{
         // Return an existing Wrapped object if possible.
         PyTupleObject *key;
      
-        // The cache is a (id(obj),id(context) -> Wrapped dict.
+        // The cache is a dict of (id(obj),id(context),apply) -> Wrapped object.
         //
         // However, an actual reference to Wrapped would cause problems, as it
         // would prevent garbage collection, so instead an opaque PyCObject is
         // used. This is ok, as the Wrapped object itself serves as a
         // reference, so the dict entry will always be deleted before the
         // pointed too object. 
-        key = (PyTupleObject *)Py_BuildValue("(l,l)",(long)obj,(long)context);
+        key = (PyTupleObject *)Py_BuildValue("(l,l,i)",(long)obj,(long)context,apply);
         if (!key) return NULL;
         
         printf("looking for\n");
@@ -185,7 +187,7 @@ wrap(PyObject *obj,PyObject *context){
         } else {
             printf("didn't find\n");
 
-            self = Wrapped_new(&WrappedType,obj,context);
+            self = Wrapped_new(&WrappedType,obj,context,apply);
             if (!self){
                 Py_DECREF(key);
                 return NULL;
@@ -213,184 +215,27 @@ wrap(PyObject *obj,PyObject *context){
 }
 
 static PyObject *
-py_wrap(PyTypeObject *junk, PyObject *args){
+wrap(PyTypeObject *junk, PyObject *args){
     PyObject *obj,*context;
 
     if (!PyArg_ParseTuple(args, "OO", &obj, &context))
         return NULL; 
 
-    return wrap(obj,context);
+    return apply_remove_context(context,obj,1);
 }
 
-static PyObject *
-apply_context(PyObject *context,PyObject *obj){
-    PyObject *r;
-    printf("apply %s\n",PyString_AsString(PyObject_Repr(context)));
-    if (obj == NULL){
-        printf("NULL\n");
-        return NULL;
-    }
-    else if (PyType_Check(obj)){
-        printf("type\n");
-        r = obj;
-    }
-    else if (PyObject_IsInstance(obj,(PyObject *)&TranslatableType)){
-       printf("trans\n");
-       r = PyObject_CallMethod(obj,"_apply_context","O",context);
-    }
-    else if (PyObject_IsInstance(obj,(PyObject *)&WrappableType)){
-        printf("wrapp\n");
-        r = wrap(obj,context);
-    }
-    else if (PyMethod_Check(obj)){
-        printf("method %s\n",PyString_AsString(PyObject_Repr(obj)));
-        r = wrap(obj,context); 
-    }
-    else if (PyTuple_CheckExact(obj)){
-        printf("tuple %s\n",PyString_AsString(PyObject_Repr(obj)));
-        r = PyTuple_New(PyTuple_GET_SIZE(obj));
-        if (r == NULL) return NULL;
-        int i;
-        printf("building tuple\n");
-        for (i = 0; i < PyTuple_GET_SIZE(obj); i++){
-            PyObject *v = PyTuple_GET_ITEM(obj,i),*w = NULL;
 
-            printf("%s -> ",PyString_AsString(PyObject_Repr(v)));
- 
-            Py_INCREF(v);
-            w = apply_context(context,v);
-            printf("%s\n",PyString_AsString(PyObject_Repr(w)));
-            if (w != NULL){
-                Py_INCREF(w);
-                Py_DECREF(v);
-                PyTuple_SET_ITEM(r,i,w);
-            } else {
-                Py_DECREF(v);
-                Py_DECREF(r);
-                return NULL;
-            }
-        }
-        printf("final tuple -> %s\n",PyString_AsString(PyObject_Repr(r)));
-    }
-    else if (PyList_CheckExact(obj)){
-        printf("tuple %s\n",PyString_AsString(PyObject_Repr(obj)));
-        r = PyList_New(PyList_GET_SIZE(obj));
-        if (r == NULL) return NULL;
-        int i;
-        printf("building tuple\n");
-        for (i = 0; i < PyList_GET_SIZE(obj); i++){
-            PyObject *v = PyList_GET_ITEM(obj,i),*w = NULL;
+#define xapply_context(self,context,obj) apply_remove_context(context,obj,((Wrapped *)self)->apply) 
+#define xremove_context(self,context,obj) apply_remove_context(context,obj,~(((Wrapped *)self)->apply))
 
-            printf("%s -> ",PyString_AsString(PyObject_Repr(v)));
- 
-            Py_INCREF(v);
-            w = apply_context(context,v);
-            printf("%s\n",PyString_AsString(PyObject_Repr(w)));
-            if (w != NULL){
-                Py_INCREF(w);
-                Py_DECREF(v);
-                PyList_SET_ITEM(r,i,w);
-            } else {
-                Py_DECREF(v);
-                Py_DECREF(r);
-                return NULL;
-            }
-        }
-        printf("final tuple -> %s\n",PyString_AsString(PyObject_Repr(r)));
-    }
-    else{
-        printf("other %s\n",PyString_AsString(PyObject_Repr(obj)));
-        r = obj;
-    }
-    return r;
-}
-#define null_apply_context(context,obj) obj
-
-static PyObject *
-remove_context(PyObject *context,PyObject *obj){
-    PyObject *r;
-    printf("remove %s\n",PyString_AsString(PyObject_Repr(context)));
-    if (obj == NULL){
-        printf("NULL\n");
-        return NULL;
-    }
-    else if (PyType_Check(obj)){
-        printf("type\n");
-        r = obj;
-    }
-    else if (PyObject_IsInstance(obj,(PyObject *)&TranslatableType)){
-       printf("trans\n");
-       r = PyObject_CallMethod(obj,"_remove_context","O",context);
-    }
-    else if (PyObject_IsInstance(obj,(PyObject *)&WrappableType)){
-        printf("wrapp\n");
-        r = wrap(obj,context);
-    }
-    else if (PyTuple_CheckExact(obj)){
-        printf("tuple %s\n",PyString_AsString(PyObject_Repr(obj)));
-        r = PyTuple_New(PyTuple_GET_SIZE(obj));
-        if (r == NULL) return NULL;
-        int i;
-        printf("building tuple\n");
-        for (i = 0; i < PyTuple_GET_SIZE(obj); i++){
-            PyObject *v = PyTuple_GET_ITEM(obj,i),*w = NULL;
-
-            printf("%s -> ",PyString_AsString(PyObject_Repr(v)));
- 
-            Py_INCREF(v);
-            w = remove_context(context,v);
-            printf("%s\n",PyString_AsString(PyObject_Repr(w)));
-            if (w != NULL){
-                Py_INCREF(w);
-                Py_DECREF(v);
-                PyTuple_SET_ITEM(r,i,w);
-            } else {
-                Py_DECREF(v);
-                Py_DECREF(r);
-                return NULL;
-            }
-        }
-        printf("final tuple -> %s\n",PyString_AsString(PyObject_Repr(r)));
-    }
-    else if (PyList_CheckExact(obj)){
-        printf("tuple %s\n",PyString_AsString(PyObject_Repr(obj)));
-        r = PyList_New(PyList_GET_SIZE(obj));
-        if (r == NULL) return NULL;
-        int i;
-        printf("building tuple\n");
-        for (i = 0; i < PyList_GET_SIZE(obj); i++){
-            PyObject *v = PyList_GET_ITEM(obj,i),*w = NULL;
-
-            printf("%s -> ",PyString_AsString(PyObject_Repr(v)));
- 
-            Py_INCREF(v);
-            w = remove_context(context,v);
-            printf("%s\n",PyString_AsString(PyObject_Repr(w)));
-            if (w != NULL){
-                Py_INCREF(w);
-                Py_DECREF(v);
-                PyList_SET_ITEM(r,i,w);
-            } else {
-                Py_DECREF(v);
-                Py_DECREF(r);
-                return NULL;
-            }
-        }
-        printf("final tuple -> %s\n",PyString_AsString(PyObject_Repr(r)));
-    }
-    else{
-        printf("other %s\n",PyString_AsString(PyObject_Repr(obj)));
-        r = obj;
-    }
-    return r;
-}
-#define null_remove_context(context,obj) obj
+#define null_xapply_context(self,context,obj) obj
+#define null_xremove_context(self,context,obj) obj
 
 #define WRAP_UNARY(method, generic, apply) \
     static PyObject * \
     method(PyObject *self) { \
         printf("WRAP_UNARY " # method " " # generic " " # apply "\n"); \
-        return apply(((Wrapped *)self)->_wrapping_context, \
+        return apply(self,((Wrapped *)self)->_wrapping_context, \
                      generic(((Wrapped *)self)->_wrapped_obj)); \
     }
 
@@ -398,19 +243,19 @@ remove_context(PyObject *context,PyObject *obj){
     static PyObject * \
     method(PyObject *self, PyObject *args) { \
         printf("WRAP_BINARY " # method " " # generic " " # apply " " # remove "\n"); \
-        return apply(((Wrapped *)self)->_wrapping_context, \
+        return apply(self,((Wrapped *)self)->_wrapping_context, \
                      generic(((Wrapped *)self)->_wrapped_obj, \
-                             remove(((Wrapped *)self)->_wrapping_context,args))); \
+                             remove(self,((Wrapped *)self)->_wrapping_context,args))); \
     }
 
 #define WRAP_TERNARY(method, generic, apply, remove) \
     static PyObject * \
     method(PyObject *self, PyObject *args, PyObject *kwargs) { \
         printf("WRAP_TERNARY " # method " " # generic " " # apply " " # remove "\n"); \
-        return apply(((Wrapped *)self)->_wrapping_context, \
+        return apply(self,((Wrapped *)self)->_wrapping_context, \
                      generic(((Wrapped *)self)->_wrapped_obj, \
-                             remove(((Wrapped *)self)->_wrapping_context,args), \
-                             remove(((Wrapped *)self)->_wrapping_context,kwargs))); \
+                             remove(self,((Wrapped *)self)->_wrapping_context,args), \
+                             remove(self,((Wrapped *)self)->_wrapping_context,kwargs))); \
     }
 
 
@@ -426,7 +271,7 @@ Wrapped_getattr(Wrapped *self,PyObject *name){
     }
 
     printf("returning %s\n",PyString_AsString(PyObject_Repr(r)));
-    return apply_context(self->_wrapping_context,r);
+    return xapply_context(self,self->_wrapping_context,r);
 }
 
 int
@@ -435,7 +280,7 @@ Wrapped_setattr(Wrapped *self,PyObject *name,PyObject *value){
     int r;
 
     Py_INCREF(value);
-    unwrapped = remove_context(self->_wrapping_context,value);
+    unwrapped = xremove_context(self,self->_wrapping_context,value);
     Py_INCREF(unwrapped);
     r = PyObject_SetAttr(self->_wrapped_obj,name,unwrapped);
     Py_DECREF(value);
@@ -453,13 +298,13 @@ Wrapped_call(Wrapped *self,PyObject *args,PyObject *kwargs){
                              PyString_AsString(PyObject_Repr(kwargs)));
 
     Py_XINCREF(args);
-    unwrapped_args = remove_context(self->_wrapping_context,args);
+    unwrapped_args = xremove_context(self,self->_wrapping_context,args);
     if (unwrapped_args == NULL) goto error;
     Py_XINCREF(unwrapped_args);
 
     if (kwargs != NULL){
         Py_XINCREF(kwargs);
-        unwrapped_kwargs = remove_context(self->_wrapping_context,kwargs);
+        unwrapped_kwargs = xremove_context(self,self->_wrapping_context,kwargs);
         if (unwrapped_kwargs == NULL) goto error;
         Py_XINCREF(unwrapped_kwargs);
     }
@@ -469,7 +314,7 @@ Wrapped_call(Wrapped *self,PyObject *args,PyObject *kwargs){
     if (r == NULL) goto error;
 
     printf("returning %s\n",PyString_AsString(PyObject_Repr(r)));
-    r = apply_context(self->_wrapping_context,r);
+    r = xapply_context(self,self->_wrapping_context,r);
 
     printf("returning %s\n",PyString_AsString(PyObject_Repr(r)));
 
@@ -480,9 +325,9 @@ error:
     return r;
 }
 
-WRAP_UNARY(Wrapped_str, PyObject_Str,null_apply_context)
+WRAP_UNARY(Wrapped_str, PyObject_Str,null_xapply_context)
 
-WRAP_BINARY(Wrapped_compare,PyObject_Compare,null_apply_context,remove_context)
+WRAP_BINARY(Wrapped_compare,PyObject_Compare,null_xapply_context,xremove_context)
 
 static PyObject *
 Wrapped_repr(Wrapped *self){
@@ -543,12 +388,12 @@ PyTypeObject WrappedType = {
     0,                         /* tp_dictoffset */
     0,      /* tp_init */
     0,                         /* tp_alloc */
-    pyWrapped_new,             /* tp_new */
+    0,                         /* tp_new */
 };
 
 static PyMethodDef methods[] = {
-    {"wrap", (PyCFunction)py_wrap, METH_VARARGS,
-     "Wrap an object with a context."},
+    {"wrap", (PyCFunction)wrap, METH_VARARGS,
+     "Wrap an object."},
     {NULL,NULL,0,NULL}
 };
 
