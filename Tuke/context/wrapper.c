@@ -20,6 +20,7 @@
 #include "structmember.h"
 
 #include "wrapper.h"
+#include "wrap_tuple.h"
 
 PyTypeObject WrappableType = {
     PyObject_HEAD_INIT(NULL)
@@ -133,7 +134,7 @@ pyWrapped_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return Wrapped_new(type,obj,context);
 }
 
-static PyObject *
+PyObject *
 wrap(PyObject *obj,PyObject *context){
     PyObject *self,*self_ref;
 
@@ -152,13 +153,16 @@ wrap(PyObject *obj,PyObject *context){
         Py_INCREF(obj);
         return obj;
     }
+    else if (PyTuple_CheckExact(obj)){
+        return wrap_tuple(obj,context);
+    }
     else{
         // Return an existing Wrapped object if possible.
         PyTupleObject *key;
      
         // The cache is just a (id(obj),id(context) -> weakref(Wrapped) dict.
         key = (PyTupleObject *)Py_BuildValue("(l,l)",(long)obj,(long)context);
-        if (!key) return;
+        if (!key) return NULL;
         
         printf("looking for\n");
         self_ref = (Wrapped *)PyDict_GetItem((PyObject *)wrapped_cache,(PyObject *)key);

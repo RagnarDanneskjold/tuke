@@ -16,35 +16,33 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ### BOILERPLATE ###
 
-#ifndef WRAPPER_H
-#define WRAPPER_H
-
 #include <Python.h>
-#include "structmember.h"
 
-typedef struct {
-    PyObject_HEAD
-} Wrappable;
-
-extern PyTypeObject WrappableType;
-
-typedef struct {
-    PyObject_HEAD
-} Translatable;
-
-extern PyTypeObject TranslatableType;
-
-extern PyTypeObject WrappedType;
-
-typedef struct {
-    PyObject_HEAD
-    PyObject *_wrapped_obj;
-    PyObject *_wrapping_context;
-    PyObject *in_weakreflist;
-} Wrapped;
+#include "wrapper.h"
 
 PyObject *
-wrap(PyObject *obj,PyObject *context);
+wrap_tuple(PyObject *obj,PyObject *context){
+    // Since tuples are immutable, although their contents may not be, wrapping
+    // a tuple is a matter of creating a new tuple, with wrapped inner
+    // elements.
+    PyObject *r = PyTuple_New(PyTuple_GET_SIZE(obj));
+    if (r == NULL) return NULL;
+
+    printf("building tuple\n");
+    int i;
+    for (i = 0; i < PyTuple_GET_SIZE(obj); i++){
+        PyObject *v = PyTuple_GET_ITEM(obj,i),*w = NULL;
+
+        printf("%s -> ",PyString_AsString(PyObject_Repr(v)));
+
+        w = wrap(v,context);
+        PyTuple_SET_ITEM(r,i,w);
+
+        printf("%s\n",PyString_AsString(PyObject_Repr(w)));
+    }
+    printf("final tuple -> %s\n",PyString_AsString(PyObject_Repr(r)));
+    return r;
+}
 
 // Local Variables:
 // mode: C
@@ -53,4 +51,3 @@ wrap(PyObject *obj,PyObject *context);
 // indent-tabs-mode: nil
 // End:
 // vim: et:sw=4:sts=4:ts=4:cino=>4s,{s,\:s,+s,t0,g0,^-4,e-4,n-4,p4s,(0,=s:
-#endif 

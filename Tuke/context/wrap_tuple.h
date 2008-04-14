@@ -16,35 +16,11 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ### BOILERPLATE ###
 
-#ifndef WRAPPER_H
-#define WRAPPER_H
-
-#include <Python.h>
-#include "structmember.h"
-
-typedef struct {
-    PyObject_HEAD
-} Wrappable;
-
-extern PyTypeObject WrappableType;
-
-typedef struct {
-    PyObject_HEAD
-} Translatable;
-
-extern PyTypeObject TranslatableType;
-
-extern PyTypeObject WrappedType;
-
-typedef struct {
-    PyObject_HEAD
-    PyObject *_wrapped_obj;
-    PyObject *_wrapping_context;
-    PyObject *in_weakreflist;
-} Wrapped;
+#ifndef WRAP_TUPLE_H
+#define WRAP_TUPLE_H
 
 PyObject *
-wrap(PyObject *obj,PyObject *context);
+wrap_tuple(PyObject *obj,PyObject *context);
 
 // Local Variables:
 // mode: C
