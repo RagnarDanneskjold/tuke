@@ -86,6 +86,24 @@ class WrapperTest(TestCase):
 
         self.assert_(context.wrapper._wrapped_cache.keys() == keys)
 
+    def test_circular_Wrapped_are_garbage_collected(self):
+        """Wrapped objects with circular references are garbage collected"""
+
+        keys = context.wrapper._wrapped_cache.keys()
+        a = Element(id=Id('a'))
+
+        class foo(Element):
+            pass
+
+        b = foo(id=Id('b')) 
+        b.a = context.Wrapped(b,a)
+
+        del a
+        del b
+        import gc
+        gc.collect(2)
+        self.assert_(context.wrapper._wrapped_cache.keys() == keys)
+
     def test_Wrapped_getset_attr(self):
         """(get|set)attr on Wrapped object"""
         def T(got,expected = True):
