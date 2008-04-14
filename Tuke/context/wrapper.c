@@ -187,14 +187,6 @@ wrap(PyObject *obj,PyObject *context){
                 return NULL;
             }
 
-            PyObject *objref;
-            objref = PyWeakref_NewRef(self,NULL);
-            if (!objref){
-                Py_DECREF(self);
-                Py_DECREF(key);
-                return NULL;
-            }
-
             PyObject *selfptr;
             selfptr = PyCObject_FromVoidPtr(self,NULL);
             if (!selfptr){
@@ -210,7 +202,7 @@ wrap(PyObject *obj,PyObject *context){
             }
 
             Py_DECREF(key);
-            Py_DECREF(objref);
+            Py_DECREF(selfptr);
             return self;
         }
     }
