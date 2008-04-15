@@ -22,6 +22,32 @@
 #include "wrapper.h"
 #include "wrap_tuple.h"
 
+PyTypeObject ContextProviderType = {
+    PyObject_HEAD_INIT(NULL)
+    0,                         /*ob_size*/
+    "wrapper._ContextProvider",             /*tp_name*/
+    sizeof(Wrappable),         /*tp_basicsize*/
+    0,                         /*tp_itemsize*/
+    0,                         /*tp_dealloc*/
+    0,                         /*tp_print*/
+    0,                         /*tp_getattr*/
+    0,                         /*tp_setattr*/
+    0,                         /*tp_compare*/
+    0,                         /*tp_repr*/
+    0,                         /*tp_as_number*/
+    0,                         /*tp_as_sequence*/
+    0,                         /*tp_as_mapping*/
+    0,                         /*tp_hash */
+    0,                         /*tp_call*/
+    0,                         /*tp_str*/
+    0,                         /*tp_getattro*/
+    0,                         /*tp_setattro*/
+    0,                         /*tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
+    "Mixin to signify that an object can provide context.\n\n\
+Element should have this as a base class.", /* tp_doc */
+};
+
 PyTypeObject WrappableType = {
     PyObject_HEAD_INIT(NULL)
     0,                         /*ob_size*/
@@ -130,6 +156,13 @@ PyObject *
 apply_remove_context(PyObject *context,PyObject *obj,int raw_apply){
     PyObject *self,*self_ref;
     int apply = raw_apply ? 1 : 0;
+
+    if (!PyObject_IsInstance(context,&ContextProviderType)){
+        PyErr_Format(PyExc_TypeError,
+                     "context object must be an Element instance (not \"%.200s\")",
+                     context->ob_type->tp_name);
+        return NULL;
+    }
 
     // Basic types don't get wrapped at all.
     if (obj == Py_None ||
@@ -441,6 +474,10 @@ initwrapper(void)
     if (PyType_Ready(&WrappedType) < 0)
         return;
 
+    ContextProviderType.tp_new = PyType_GenericNew;
+    if (PyType_Ready(&ContextProviderType) < 0)
+        return;
+
     WrappableType.tp_new = PyType_GenericNew;
     if (PyType_Ready(&WrappableType) < 0)
         return;
@@ -456,6 +493,7 @@ initwrapper(void)
 
     Py_INCREF(&WrappedType);
     PyModule_AddObject(m, "Wrapped", (PyObject *)&WrappedType);
+    PyModule_AddObject(m, "_ContextProvider", (PyObject *)&ContextProviderType);
     PyModule_AddObject(m, "Wrappable", (PyObject *)&WrappableType);
     PyModule_AddObject(m, "Translatable", (PyObject *)&TranslatableType);
     PyModule_AddObject(m, "_wrapped_cache",(PyObject *)wrapped_cache);

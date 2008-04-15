@@ -20,6 +20,11 @@ import gc
 
 bypass = None
 class WrapperTest(TestCase):
+    def test_wrap_with_non_element_context(self):
+        """wrap() checks that context is an Element instance"""
+
+        self.assertRaises(TypeError,lambda: context.wrap(None,None))
+
     def test_Wrapped_obj_context_refcounts(self):
         """Wrapped maintains correct ref counts for obj and context"""
         def T(got,expected = True):
