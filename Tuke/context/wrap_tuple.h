@@ -20,7 +20,7 @@
 #define WRAP_TUPLE_H
 
 PyObject *
-wrap_tuple(PyObject *obj,PyObject *context);
+wrap_tuple(PyObject *context,PyObject *obj,int apply);
 
 // Local Variables:
 // mode: C

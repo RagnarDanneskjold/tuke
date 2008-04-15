@@ -81,8 +81,6 @@ class WrapperTest(TestCase):
             a = Element(id=Id('a'))
             self.assert_(context.wrap(obj,a) is context.wrap(obj,a))
         T(object())
-        T(())
-        T((1,2,3))
         T({})
 
         self.assert_(context.wrapper._wrapped_cache.keys() == keys)
@@ -181,10 +179,10 @@ class WrapperTest(TestCase):
 
         W(w,0,0)
         W(w,(),())
-        W(w,[],[])
+        #W(w,[],[])
 
-        W(w,[(),[[],[()]]],
-            [(),[[],[()]]])
+        #W(w,[(),[[],[()]]],
+        #    [(),[[],[()]]])
 
         W(w,Id('spam/ham'),Id('ham'))
 

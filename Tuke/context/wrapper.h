@@ -44,6 +44,10 @@ typedef struct {
     PyObject *in_weakreflist;
 } Wrapped;
 
+
+PyObject *
+apply_remove_context(PyObject *context,PyObject *obj,int raw_apply);
+
 // Local Variables:
 // mode: C
 // fill-column: 76

@@ -21,7 +21,7 @@
 #include "wrapper.h"
 
 PyObject *
-wrap_tuple(PyObject *obj,PyObject *context){
+wrap_tuple(PyObject *context,PyObject *obj,int apply){
     // Since tuples are immutable, although their contents may not be, wrapping
     // a tuple is a matter of creating a new tuple, with wrapped inner
     // elements.
@@ -35,7 +35,7 @@ wrap_tuple(PyObject *obj,PyObject *context){
 
         printf("%s -> ",PyString_AsString(PyObject_Repr(v)));
 
-        w = wrap(v,context);
+        w = apply_remove_context(context,v,apply);
         PyTuple_SET_ITEM(r,i,w);
 
         printf("%s\n",PyString_AsString(PyObject_Repr(w)));
