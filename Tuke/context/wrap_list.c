@@ -16,11 +16,31 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ### BOILERPLATE ###
 
-#ifndef WRAP_TUPLE_H
-#define WRAP_TUPLE_H
+#include <Python.h>
+
+#include "wrapper.h"
 
 PyObject *
-wrap_tuple(PyObject *context,PyObject *obj,int apply);
+wrap_list(PyObject *context,PyObject *obj,int apply){
+    // Lists are not immutable, so this naive implementation breaks that.
+    PyObject *r = PyList_New(PyList_GET_SIZE(obj));
+    if (r == NULL) return NULL;
+
+    printf("building list\n");
+    int i;
+    for (i = 0; i < PyList_GET_SIZE(obj); i++){
+        PyObject *v = PyList_GET_ITEM(obj,i),*w = NULL;
+
+        printf("%s -> ",PyString_AsString(PyObject_Repr(v)));
+
+        w = apply_remove_context(context,v,apply);
+        PyList_SET_ITEM(r,i,w);
+
+        printf("%s\n",PyString_AsString(PyObject_Repr(w)));
+    }
+    printf("final list -> %s\n",PyString_AsString(PyObject_Repr(r)));
+    return r;
+}
 
 // Local Variables:
 // mode: C
@@ -29,4 +49,3 @@ wrap_tuple(PyObject *context,PyObject *obj,int apply);
 // indent-tabs-mode: nil
 // End:
 // vim: et:sw=4:sts=4:ts=4:cino=>4s,{s,\:s,+s,t0,g0,^-4,e-4,n-4,p4s,(0,=s:
-#endif 

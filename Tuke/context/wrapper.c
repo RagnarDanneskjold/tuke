@@ -20,6 +20,7 @@
 #include "structmember.h"
 
 #include "wrapper.h"
+#include "wrap_list.h"
 #include "wrap_tuple.h"
 
 PyTypeObject ContextProviderType = {
@@ -178,6 +179,16 @@ apply_remove_context(PyObject *context,PyObject *obj,int apply){
         Py_INCREF(obj);
         return obj;
     }
+    else if (PyTuple_Check(obj)){
+        printf("wrap_tuple (%s,%s)\n",PyString_AsString(PyObject_Repr(context)),
+                                 PyString_AsString(PyObject_Repr(obj)));
+        return wrap_tuple(context,obj,apply);
+    }
+    else if (PyList_Check(obj)){
+        printf("wrap_list (%s,%s)\n",PyString_AsString(PyObject_Repr(context)),
+                                 PyString_AsString(PyObject_Repr(obj)));
+        return wrap_list(context,obj,apply);
+    }
     // Translatable types have their context applied, but they can't be put in
     // the cache because they don't have a destructor that would remove them.
     else if (PyObject_IsInstance(obj,(PyObject *)&TranslatableType)){
@@ -245,7 +256,7 @@ apply_remove_context(PyObject *context,PyObject *obj,int apply){
     }
 }
 
-static PyObject *
+PyObject *
 wrap(PyTypeObject *junk, PyObject *args){
     PyObject *obj,*context;
 

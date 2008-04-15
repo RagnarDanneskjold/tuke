@@ -16,11 +16,11 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ### BOILERPLATE ###
 
-#ifndef WRAP_TUPLE_H
-#define WRAP_TUPLE_H
+#ifndef WRAP_LIST_H
+#define WRAP_LIST_H
 
 PyObject *
-wrap_tuple(PyObject *context,PyObject *obj,int apply);
+wrap_list(PyObject *context,PyObject *obj,int apply);
 
 // Local Variables:
 // mode: C
