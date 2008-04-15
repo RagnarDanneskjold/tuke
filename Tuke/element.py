@@ -44,7 +44,7 @@ def versions_compatible(cur,other):
     except (TypeError, IndexError):
         raise ValueError, 'Invalid version: %s, %s' % (cur,other)
 
-class Element(object):
+class Element(context.wrapper._ContextProvider):
     """Base element class.
     
     Everything is an Element, from a single pad on a pcb, to a whole circuit.
