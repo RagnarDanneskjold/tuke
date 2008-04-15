@@ -401,14 +401,6 @@ Wrapped_repr(Wrapped *self){
     return PyString_FromString(buf);
 }
 
-static PyMemberDef Wrapped_members[] = {
-    {"_wrapped_obj", T_OBJECT_EX, offsetof(Wrapped, _wrapped_obj), 0,
-     "_wrapped_obj name"},
-    {"_wrapping_context", T_OBJECT_EX, offsetof(Wrapped, _wrapping_context), 0,
-     "_wrapping_context name"},
-    {NULL}  /* Sentinel */
-};
-
 PyTypeObject WrappedType = {
     PyObject_HEAD_INIT(NULL)
     0,                         /*ob_size*/
@@ -439,7 +431,7 @@ PyTypeObject WrappedType = {
     0,		               /* tp_iter */
     0,		               /* tp_iternext */
     0,             /* tp_methods */
-    Wrapped_members,             /* tp_members */
+    0,             /* tp_members */
     0,                         /* tp_getset */
     0,                         /* tp_base */
     0,                         /* tp_dict */
