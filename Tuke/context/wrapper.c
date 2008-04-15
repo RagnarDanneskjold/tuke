@@ -153,9 +153,8 @@ Wrapped_new(PyTypeObject *type, PyObject *obj, PyObject *context, int apply){
 }
 
 PyObject *
-apply_remove_context(PyObject *context,PyObject *obj,int raw_apply){
+apply_remove_context(PyObject *context,PyObject *obj,int apply){
     PyObject *self,*self_ref;
-    int apply = raw_apply ? 1 : 0;
 
     if (!PyObject_IsInstance(context,&ContextProviderType)){
         PyErr_Format(PyExc_TypeError,
@@ -182,7 +181,6 @@ apply_remove_context(PyObject *context,PyObject *obj,int raw_apply){
     // Translatable types have their context applied, but they can't be put in
     // the cache because they don't have a destructor that would remove them.
     else if (PyObject_IsInstance(obj,(PyObject *)&TranslatableType)){
-        printf("trans\n");
         if (apply){
             return PyObject_CallMethod(obj,"_apply_context","O",context);
         } else {
@@ -259,7 +257,7 @@ wrap(PyTypeObject *junk, PyObject *args){
 
 
 #define xapply_context(self,context,obj) apply_remove_context(context,obj,((Wrapped *)self)->apply) 
-#define xremove_context(self,context,obj) apply_remove_context(context,obj,~(((Wrapped *)self)->apply))
+#define xremove_context(self,context,obj) apply_remove_context(context,obj,!(((Wrapped *)self)->apply))
 
 #define null_xapply_context(self,context,obj) obj
 #define null_xremove_context(self,context,obj) obj
