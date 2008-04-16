@@ -85,7 +85,6 @@ class WrapperTest(TestCase):
             a = Element(id=Id('a'))
             self.assert_(context.wrap(obj,a) is context.wrap(obj,a))
         T(object())
-        T({})
 
         self.assert_(context.wrapper._wrapped_cache.keys() == keys)
 
@@ -155,13 +154,18 @@ class WrapperTest(TestCase):
     def test_Wrapped_data_in_out(self):
         """Wrapped data in/out"""
 
+        context_element = Element(id=Id('a'))
+        def apply(obj):
+            return context.wrapper._apply_remove_context(context_element,obj,1)
+        def remove(obj):
+            return context.wrapper._apply_remove_context(context_element,obj,0)
+
         def W(obj,expected_applied,expected_removed):
-            context_element = Element(id=Id('a'))
-            applied = context.wrapper._apply_remove_context(context_element,obj,1)
+            applied = apply(obj) 
             self.assert_(expected_applied == applied,
                     'applied context, got: %s  expected: %s'
                      % (applied,expected_applied))
-            removed = context.wrapper._apply_remove_context(context_element,obj,0)
+            removed = remove(obj) 
             self.assert_(expected_removed == removed,
                     'removed context, got: %s  expected: %s'
                      % (removed,expected_removed))
@@ -191,6 +195,6 @@ class WrapperTest(TestCase):
         W({1:skit('b')},{1:skit('a/b')},{1:skit('../b')})
         # Translatable object as key
         W({Id('b'):Id('b')},{Id('a/b'):Id('a/b')},{Id('../b'):Id('../b')})
-        # Wrapped object as key FIXME: doesn't work yet
-        #f = lambda:None
-        #W({f:Id('b')},{f:Id('a/b')},{f:Id('../b')}) 
+        # Wrapped object as key
+        f = lambda:None
+        W({f:Id('b')},{apply(f):Id('a/b')},{remove(f):Id('../b')}) 
