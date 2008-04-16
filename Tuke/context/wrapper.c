@@ -121,12 +121,12 @@ Wrapped_dealloc(Wrapped* self){
     if (self->in_weakreflist != NULL)
             PyObject_ClearWeakRefs((PyObject *) self);
 
-    printf("deallocing Wrapped %d %d\n",self->wrapped_obj,self->wrapping_context);
+    printf("deallocing Wrapped %d %d\n",(int)self->wrapped_obj,(int)self->wrapping_context);
     key = (PyTupleObject *)Py_BuildValue("(l,l,i)",
                                          (long)self->wrapped_obj,
                                          (long)self->wrapping_context,
                                          self->apply);
-    PyDict_DelItem(wrapped_cache,key);
+    PyDict_DelItem((PyObject *)wrapped_cache,(PyObject *)key);
 
     Py_XDECREF(key);
 
@@ -149,15 +149,15 @@ Wrapped_new(PyTypeObject *type, PyObject *obj, PyObject *context, int apply){
     Py_INCREF(context);
     self->wrapping_context = context;
 
-    printf("new Wrapped %d %d %d\n",self->wrapped_obj,self->wrapping_context,self->apply);
+    printf("new Wrapped %d %d %d\n",(int)self->wrapped_obj,(int)self->wrapping_context,(int)self->apply);
     return (PyObject *)self;
 }
 
 PyObject *
 apply_remove_context(PyObject *context,PyObject *obj,int apply){
-    PyObject *self,*self_ref;
+    PyObject *self;
 
-    if (!PyObject_IsInstance(context,&ContextProviderType)){
+    if (!PyObject_IsInstance((PyObject *)context,(PyObject *)&ContextProviderType)){
         PyErr_Format(PyExc_TypeError,
                      "context object must be an Element instance (not \"%.200s\")",
                      context->ob_type->tp_name);
@@ -219,7 +219,7 @@ apply_remove_context(PyObject *context,PyObject *obj,int apply){
         if (!key) return NULL;
         
         printf("looking for\n");
-        self = (Wrapped *)PyDict_GetItem((PyObject *)wrapped_cache,(PyObject *)key);
+        self = (PyObject *)PyDict_GetItem((PyObject *)wrapped_cache,(PyObject *)key);
         printf("self was ");
         if (self){
             self = PyCObject_AsVoidPtr(self);
@@ -243,7 +243,7 @@ apply_remove_context(PyObject *context,PyObject *obj,int apply){
                 return NULL;
             }
 
-            if (PyDict_SetItem(wrapped_cache,key,selfptr)){
+            if (PyDict_SetItem((PyObject *)wrapped_cache,(PyObject *)key,selfptr)){
                 Py_DECREF(key);
                 Py_DECREF(selfptr);
                 return NULL;
@@ -304,7 +304,7 @@ wrap(PyTypeObject *junk, PyObject *args){
 static PyObject *
 Wrapped_getattr(Wrapped *self,PyObject *name){
     PyObject *r = NULL;
-    printf("getattr %s %s ",PyString_AsString(PyObject_Repr(self)),PyString_AsString(PyObject_Repr(name)));
+    printf("getattr %s %s ",PyString_AsString(PyObject_Repr((PyObject *)self)),PyString_AsString(PyObject_Repr(name)));
 
     r = PyObject_GetAttr(self->wrapped_obj,name);
     if (r == NULL){
@@ -336,7 +336,7 @@ Wrapped_call(Wrapped *self,PyObject *args,PyObject *kwargs){
     PyObject *unwrapped_args=NULL, *unwrapped_kwargs=NULL;
     PyObject *r,*wr;
 
-    printf("call %s(%s,%s)\n",PyString_AsString(PyObject_Repr(self)),
+    printf("call %s(%s,%s)\n",PyString_AsString(PyObject_Repr((PyObject *)self)),
                              PyString_AsString(PyObject_Repr(args)),
                              PyString_AsString(PyObject_Repr(kwargs)));
 
@@ -376,7 +376,7 @@ Wrapped_call(Wrapped *self,PyObject *args,PyObject *kwargs){
         }
     }
 
-    printf("unwcall %s(%s,%s)\n",PyString_AsString(PyObject_Repr(self)),
+    printf("unwcall %s(%s,%s)\n",PyString_AsString(PyObject_Repr((PyObject *)self)),
                              PyString_AsString(PyObject_Repr(unwrapped_args)),
                              PyString_AsString(PyObject_Repr(unwrapped_kwargs)));
     r = PyObject_Call(self->wrapped_obj,unwrapped_args,unwrapped_kwargs);
