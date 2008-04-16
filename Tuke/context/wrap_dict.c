@@ -26,7 +26,6 @@ wrap_dict(PyObject *context,PyObject *obj,int apply){
     PyObject *r = PyDict_New();
     if (r == NULL) return NULL;
 
-    printf("building dict\n");
     PyObject *k,*v;
     Py_ssize_t pos = 0;
     while (PyDict_Next(obj,&pos,&k,&v)){
@@ -37,7 +36,6 @@ wrap_dict(PyObject *context,PyObject *obj,int apply){
         Py_DECREF(v);
         Py_DECREF(k);
     }
-    printf("final dict -> %s\n",PyString_AsString(PyObject_Repr(r)));
     return r;
 }
 
