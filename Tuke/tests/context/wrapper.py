@@ -247,6 +247,50 @@ class WrapperTest(TestCase):
         self.assertRaises(TypeError,lambda: w['a':'b'])
         self.assertRaises(TypeError,lambda: w[0:1])
 
+    def test_Wrapped_iteration(self):
+        """Wrapped objects can be iterated over"""
+        def T(got,expected = True):
+            self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
+        context_element = Element(id=Id('a'))
+        def apply(obj):
+            return context.wrapper._apply_remove_context(context_element,obj,1)
+        def remove(obj):
+            return context.wrapper._apply_remove_context(context_element,obj,0)
+
+        class skit(object):
+            def __init__(self,id):
+                self.id = Id(id)
+            def __eq__(self,other):
+                return self.id == other.id
+
+        class myrange_or_the_highrange:
+            def __iter__(self):
+                for i in bypass:
+                    yield i
+
+        global bypass
+        bypass = [None,Id('b'),skit('c')]
+
+        # apply a context
+        b = myrange_or_the_highrange()
+        r = []
+        for i in context.wrapper._apply_remove_context(context_element,b,1):
+            r += [i]
+        T(r,[None,Id('a/b'),apply(skit('c'))])
+
+        # remove a context
+        b = myrange_or_the_highrange()
+        r = []
+        for i in context.wrapper._apply_remove_context(context_element,b,0): 
+            r += [i]
+        T(r,[None,Id('../b'),remove(skit('c'))])
+
+    def test_Wrapped_non_iterable_raises_error(self):
+        """Wrapped objects that don't support the iteration protocol raise errors"""
+        a = Element(id=Id('a'))
+        w = context.wrap(object(),a)
+        self.assertRaises(TypeError,lambda: iter(w))
+
     def test_Wrapped_data_in_out(self):
         """Wrapped data in/out"""
 

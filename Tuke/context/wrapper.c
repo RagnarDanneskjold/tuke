@@ -527,6 +527,18 @@ static PyMappingMethods Wrapped_as_mapping = {
     (objobjargproc)Wrapped_ass_subscript, /*mp_ass_subscript*/
 };
 
+/* iterator slots */
+
+static PyObject *
+Wrapped_iter(Wrapped *self){
+    return xapply_context(self,PyObject_GetIter(self->wrapped_obj));
+}
+
+static PyObject *
+Wrapped_iternext(Wrapped *self){
+    return xapply_context(self,PyIter_Next(self->wrapped_obj));
+}
+
 PyTypeObject WrappedType = {
     PyObject_HEAD_INIT(NULL) // FIXME: s/NULL/&PyType_Type/ in weakrefobject.c, why?
     0,                         /*ob_size*/
@@ -554,8 +566,8 @@ PyTypeObject WrappedType = {
     (inquiry)Wrapped_clear,             /* tp_clear */
     0,		               /* tp_richcompare */
     offsetof(Wrapped, in_weakreflist),  /* tp_weaklistoffset */
-    0,		               /* tp_iter */
-    0,		               /* tp_iternext */
+    &Wrapped_iter,		               /* tp_iter */
+    &Wrapped_iternext,		               /* tp_iternext */
     0,             /* tp_methods */
     0,             /* tp_members */
     0,                         /* tp_getset */
