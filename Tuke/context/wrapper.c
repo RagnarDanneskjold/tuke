@@ -103,15 +103,15 @@ PyDictObject *wrapped_cache;
 
 static int
 Wrapped_traverse(Wrapped *self, visitproc visit, void *arg){
-    Py_VISIT(self->_wrapped_obj);
-    Py_VISIT(self->_wrapping_context);
+    Py_VISIT(self->wrapped_obj);
+    Py_VISIT(self->wrapping_context);
     return 0;
 }
 
 static int
 Wrapped_clear(Wrapped *self){
-    Py_CLEAR(self->_wrapped_obj);
-    Py_CLEAR(self->_wrapping_context);
+    Py_CLEAR(self->wrapped_obj);
+    Py_CLEAR(self->wrapping_context);
     return 0;
 }
 
@@ -121,10 +121,10 @@ Wrapped_dealloc(Wrapped* self){
     if (self->in_weakreflist != NULL)
             PyObject_ClearWeakRefs((PyObject *) self);
 
-    printf("deallocing Wrapped %d %d\n",self->_wrapped_obj,self->_wrapping_context);
+    printf("deallocing Wrapped %d %d\n",self->wrapped_obj,self->wrapping_context);
     key = (PyTupleObject *)Py_BuildValue("(l,l,i)",
-                                         (long)self->_wrapped_obj,
-                                         (long)self->_wrapping_context,
+                                         (long)self->wrapped_obj,
+                                         (long)self->wrapping_context,
                                          self->apply);
     PyDict_DelItem(wrapped_cache,key);
 
@@ -144,12 +144,12 @@ Wrapped_new(PyTypeObject *type, PyObject *obj, PyObject *context, int apply){
     self->apply = apply;
 
     Py_INCREF(obj);
-    self->_wrapped_obj = obj;
+    self->wrapped_obj = obj;
 
     Py_INCREF(context);
-    self->_wrapping_context = context;
+    self->wrapping_context = context;
 
-    printf("new Wrapped %d %d %d\n",self->_wrapped_obj,self->_wrapping_context,self->apply);
+    printf("new Wrapped %d %d %d\n",self->wrapped_obj,self->wrapping_context,self->apply);
     return (PyObject *)self;
 }
 
@@ -199,9 +199,9 @@ apply_remove_context(PyObject *context,PyObject *obj,int apply){
         }
     }
     else if (!apply && PyObject_IsInstance(obj,(PyObject *)&WrappedType) &&
-             ((Wrapped *)obj)->_wrapping_context == context){
-        Py_INCREF(((Wrapped *)obj)->_wrapped_obj);
-        return ((Wrapped *)obj)->_wrapped_obj;
+             ((Wrapped *)obj)->wrapping_context == context){
+        Py_INCREF(((Wrapped *)obj)->wrapped_obj);
+        return ((Wrapped *)obj)->wrapped_obj;
     }
     // Everything else gets wrapped with some sort of wrapping object.
     else{
@@ -277,27 +277,27 @@ wrap(PyTypeObject *junk, PyObject *args){
     static PyObject * \
     method(PyObject *self) { \
         printf("WRAP_UNARY " # method " " # generic " " # apply "\n"); \
-        return apply(self,((Wrapped *)self)->_wrapping_context, \
-                     generic(((Wrapped *)self)->_wrapped_obj)); \
+        return apply(self,((Wrapped *)self)->wrapping_context, \
+                     generic(((Wrapped *)self)->wrapped_obj)); \
     }
 
 #define WRAP_BINARY(method, generic, apply, remove) \
     static PyObject * \
     method(PyObject *self, PyObject *args) { \
         printf("WRAP_BINARY " # method " " # generic " " # apply " " # remove "\n"); \
-        return apply(self,((Wrapped *)self)->_wrapping_context, \
-                     generic(((Wrapped *)self)->_wrapped_obj, \
-                             remove(self,((Wrapped *)self)->_wrapping_context,args))); \
+        return apply(self,((Wrapped *)self)->wrapping_context, \
+                     generic(((Wrapped *)self)->wrapped_obj, \
+                             remove(self,((Wrapped *)self)->wrapping_context,args))); \
     }
 
 #define WRAP_TERNARY(method, generic, apply, remove) \
     static PyObject * \
     method(PyObject *self, PyObject *args, PyObject *kwargs) { \
         printf("WRAP_TERNARY " # method " " # generic " " # apply " " # remove "\n"); \
-        return apply(self,((Wrapped *)self)->_wrapping_context, \
-                     generic(((Wrapped *)self)->_wrapped_obj, \
-                             remove(self,((Wrapped *)self)->_wrapping_context,args), \
-                             remove(self,((Wrapped *)self)->_wrapping_context,kwargs))); \
+        return apply(self,((Wrapped *)self)->wrapping_context, \
+                     generic(((Wrapped *)self)->wrapped_obj, \
+                             remove(self,((Wrapped *)self)->wrapping_context,args), \
+                             remove(self,((Wrapped *)self)->wrapping_context,kwargs))); \
     }
 
 
@@ -306,14 +306,14 @@ Wrapped_getattr(Wrapped *self,PyObject *name){
     PyObject *r = NULL;
     printf("getattr %s %s ",PyString_AsString(PyObject_Repr(self)),PyString_AsString(PyObject_Repr(name)));
 
-    r = PyObject_GetAttr(self->_wrapped_obj,name);
+    r = PyObject_GetAttr(self->wrapped_obj,name);
     if (r == NULL){
         printf("failed!\n");
         return NULL;
     }
 
     printf("returning %s\n",PyString_AsString(PyObject_Repr(r)));
-    return xapply_context(self,self->_wrapping_context,r);
+    return xapply_context(self,self->wrapping_context,r);
 }
 
 int
@@ -322,9 +322,9 @@ Wrapped_setattr(Wrapped *self,PyObject *name,PyObject *value){
     int r;
 
     Py_INCREF(value);
-    unwrapped = xremove_context(self,self->_wrapping_context,value);
+    unwrapped = xremove_context(self,self->wrapping_context,value);
     Py_INCREF(unwrapped);
-    r = PyObject_SetAttr(self->_wrapped_obj,name,unwrapped);
+    r = PyObject_SetAttr(self->wrapped_obj,name,unwrapped);
     Py_DECREF(value);
 
     return r;
@@ -359,7 +359,7 @@ Wrapped_call(Wrapped *self,PyObject *args,PyObject *kwargs){
     for (i = 0; i < PyTuple_GET_SIZE(args); i++){
         PyObject *v = PyTuple_GET_ITEM(args,i),*w = NULL;
 
-        w = xremove_context(self,self->_wrapping_context,v);
+        w = xremove_context(self,self->wrapping_context,v);
         PyTuple_SET_ITEM(unwrapped_args,i,w);
     }
 
@@ -370,7 +370,7 @@ Wrapped_call(Wrapped *self,PyObject *args,PyObject *kwargs){
         PyObject *k,*v;
         Py_ssize_t pos = 0;
         while (PyDict_Next(kwargs,&pos,&k,&v)){
-            v = xremove_context(self,self->_wrapping_context,v);
+            v = xremove_context(self,self->wrapping_context,v);
             if (PyDict_SetItem(unwrapped_kwargs,k,v)) return NULL;
             Py_DECREF(v);
         }
@@ -379,7 +379,7 @@ Wrapped_call(Wrapped *self,PyObject *args,PyObject *kwargs){
     printf("unwcall %s(%s,%s)\n",PyString_AsString(PyObject_Repr(self)),
                              PyString_AsString(PyObject_Repr(unwrapped_args)),
                              PyString_AsString(PyObject_Repr(unwrapped_kwargs)));
-    r = PyObject_Call(self->_wrapped_obj,unwrapped_args,unwrapped_kwargs);
+    r = PyObject_Call(self->wrapped_obj,unwrapped_args,unwrapped_kwargs);
     // Currently calling a un-callable Wrapped object gets to this point, but
     // with an exception, so the following DECREF's are important and may see
     // user code.
@@ -388,7 +388,7 @@ Wrapped_call(Wrapped *self,PyObject *args,PyObject *kwargs){
     if (r == NULL) return NULL;
 
     printf("returning %s\n",PyString_AsString(PyObject_Repr(r)));
-    wr = xapply_context(self,self->_wrapping_context,r);
+    wr = xapply_context(self,self->wrapping_context,r);
     Py_DECREF(r);
 
     printf("returning %s\n",PyString_AsString(PyObject_Repr(wr)));
@@ -405,10 +405,10 @@ Wrapped_repr(Wrapped *self){
     char buf[360];
     PyOS_snprintf(buf,sizeof(buf),
                   "<Wrapped at %p wrapping %.100s at %p with %.100s at %p>", self,
-                  self->_wrapped_obj->ob_type->tp_name,
-                  self->_wrapped_obj,
-                  self->_wrapping_context->ob_type->tp_name,
-                  self->_wrapping_context);
+                  self->wrapped_obj->ob_type->tp_name,
+                  self->wrapped_obj,
+                  self->wrapping_context->ob_type->tp_name,
+                  self->wrapping_context);
     return PyString_FromString(buf);
 }
 

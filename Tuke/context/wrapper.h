@@ -38,8 +38,8 @@ extern PyTypeObject WrappedType;
 
 typedef struct {
     PyObject_HEAD
-    PyObject *_wrapped_obj;
-    PyObject *_wrapping_context;
+    PyObject *wrapped_obj;
+    PyObject *wrapping_context;
     int apply;
     PyObject *in_weakreflist;
 } Wrapped;
