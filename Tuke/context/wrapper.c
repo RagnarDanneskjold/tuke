@@ -20,6 +20,8 @@
 #include "structmember.h"
 
 #include "wrapper.h"
+
+#include "wrap_dict.h"
 #include "wrap_list.h"
 #include "wrap_tuple.h"
 
@@ -188,6 +190,11 @@ apply_remove_context(PyObject *context,PyObject *obj,int apply){
         printf("wrap_list (%s,%s)\n",PyString_AsString(PyObject_Repr(context)),
                                  PyString_AsString(PyObject_Repr(obj)));
         return wrap_list(context,obj,apply);
+    }
+    else if (PyDict_Check(obj)){
+        printf("wrap_dict (%s,%s)\n",PyString_AsString(PyObject_Repr(context)),
+                                 PyString_AsString(PyObject_Repr(obj)));
+        return wrap_dict(context,obj,apply);
     }
     // Translatable types have their context applied, but they can't be put in
     // the cache because they don't have a destructor that would remove them.

@@ -22,8 +22,9 @@ import sys, os, getopt
 from setuptools import setup, find_packages, Extension
 
 context_wrapper = Extension('Tuke.context.wrapper',
-    sources = ['Tuke/context/wrap_tuple.c',
+    sources = ['Tuke/context/wrap_dict.c',
                'Tuke/context/wrap_list.c',
+               'Tuke/context/wrap_tuple.c',
                'Tuke/context/wrapper.c'])
 
 if sys.version_info[:2] < (2,5):

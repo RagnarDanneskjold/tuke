@@ -170,3 +170,14 @@ class WrapperTest(TestCase):
         W([1,],[1,],[1,])
         W([Id('b'),],[Id('a/b'),],[Id('../b'),])
         W([skit('b'),],[skit('a/b'),],[skit('../b'),])
+
+        # dicts
+        W({},{},{})
+        W({1:1},{1:1},{1:1})
+        W({1:Id('b')},{1:Id('a/b')},{1:Id('../b')})
+        W({1:skit('b')},{1:skit('a/b')},{1:skit('../b')})
+        # Translatable object as key
+        W({Id('b'):Id('b')},{Id('a/b'):Id('a/b')},{Id('../b'):Id('../b')})
+        # Wrapped object as key FIXME: doesn't work yet
+        #f = lambda:None
+        #W({f:Id('b')},{f:Id('a/b')},{f:Id('../b')}) 
