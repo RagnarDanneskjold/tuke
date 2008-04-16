@@ -28,19 +28,13 @@ wrap_tuple(PyObject *context,PyObject *obj,int apply){
     PyObject *r = PyTuple_New(PyTuple_GET_SIZE(obj));
     if (r == NULL) return NULL;
 
-    printf("building tuple\n");
     int i;
     for (i = 0; i < PyTuple_GET_SIZE(obj); i++){
-        PyObject *v = PyTuple_GET_ITEM(obj,i),*w = NULL;
-
-        printf("%s -> ",PyString_AsString(PyObject_Repr(v)));
-
+        PyObject *w = NULL,*v;
+        v = PyTuple_GET_ITEM(obj,i);
         w = apply_remove_context(context,v,apply);
         PyTuple_SET_ITEM(r,i,w);
-
-        printf("%s\n",PyString_AsString(PyObject_Repr(w)));
     }
-    printf("final tuple -> %s\n",PyString_AsString(PyObject_Repr(r)));
     return r;
 }
 
