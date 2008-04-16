@@ -430,6 +430,15 @@ Wrapped_repr(Wrapped *self){
     return PyString_FromString(buf);
 }
 
+static long
+Wrapped_hash(Wrapped *self){
+    // Remember that a hash of an object *may* collide with another object. By
+    // returning the hash of the wrapped object, that becomes much more likely,
+    // but given that any given context will most likely only see either the
+    // original object, or the wrapped verson, this is ok.
+    return PyObject_Hash(self->wrapped_obj);
+}
+
 PyTypeObject WrappedType = {
     PyObject_HEAD_INIT(NULL)
     0,                         /*ob_size*/
@@ -445,7 +454,7 @@ PyTypeObject WrappedType = {
     0,                         /*tp_as_number*/
     0,                         /*tp_as_sequence*/
     0,                         /*tp_as_mapping*/
-    0,                         /*tp_hash */
+    Wrapped_hash,              /*tp_hash */
     Wrapped_call,              /*tp_call*/
     Wrapped_str,               /*tp_str*/
     Wrapped_getattr,           /*tp_getattro*/

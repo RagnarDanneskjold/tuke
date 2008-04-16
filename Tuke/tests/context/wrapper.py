@@ -139,6 +139,19 @@ class WrapperTest(TestCase):
         T(sys.getrefcount(n) - 1,n_refc)
         T(sys.getrefcount(v) - 1,v_refc)
 
+    def test_Wrapped_hash(self):
+        """hash(Wrapped)"""
+        a = Element(id=Id('a'))
+
+        class smoot:
+            def __hash__(self):
+                return 1930
+        b = smoot()
+        w = context.wrap(b,a)
+
+        self.assert_(hash(b) == 1930)
+        self.assert_(hash(w) == 1930)
+
     def test_Wrapped_data_in_out(self):
         """Wrapped data in/out"""
 
