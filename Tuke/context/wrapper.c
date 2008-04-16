@@ -267,17 +267,17 @@ wrap(PyTypeObject *junk, PyObject *args){
 }
 
 
-#define xapply_context(self,context,obj) apply_remove_context(context,obj,((Wrapped *)self)->apply) 
-#define xremove_context(self,context,obj) apply_remove_context(context,obj,!(((Wrapped *)self)->apply))
+#define xapply_context(self,obj) apply_remove_context(((Wrapped *)self)->wrapping_context,obj,((Wrapped *)self)->apply) 
+#define xremove_context(self,obj) apply_remove_context(((Wrapped *)self)->wrapping_context,obj,!(((Wrapped *)self)->apply))
 
-#define null_xapply_context(self,context,obj) obj
-#define null_xremove_context(self,context,obj) obj
+#define null_xapply_context(self,obj) obj
+#define null_xremove_context(self,obj) obj
 
 #define WRAP_UNARY(method, generic, apply) \
     static PyObject * \
     method(PyObject *self) { \
         printf("WRAP_UNARY " # method " " # generic " " # apply "\n"); \
-        return apply(self,((Wrapped *)self)->wrapping_context, \
+        return apply(self, \
                      generic(((Wrapped *)self)->wrapped_obj)); \
     }
 
@@ -285,19 +285,19 @@ wrap(PyTypeObject *junk, PyObject *args){
     static PyObject * \
     method(PyObject *self, PyObject *args) { \
         printf("WRAP_BINARY " # method " " # generic " " # apply " " # remove "\n"); \
-        return apply(self,((Wrapped *)self)->wrapping_context, \
+        return apply(self, \
                      generic(((Wrapped *)self)->wrapped_obj, \
-                             remove(self,((Wrapped *)self)->wrapping_context,args))); \
+                             remove(self,args))); \
     }
 
 #define WRAP_TERNARY(method, generic, apply, remove) \
     static PyObject * \
     method(PyObject *self, PyObject *args, PyObject *kwargs) { \
         printf("WRAP_TERNARY " # method " " # generic " " # apply " " # remove "\n"); \
-        return apply(self,((Wrapped *)self)->wrapping_context, \
+        return apply(self, \
                      generic(((Wrapped *)self)->wrapped_obj, \
-                             remove(self,((Wrapped *)self)->wrapping_context,args), \
-                             remove(self,((Wrapped *)self)->wrapping_context,kwargs))); \
+                             remove(self,args), \
+                             remove(self,kwargs))); \
     }
 
 
@@ -313,7 +313,7 @@ Wrapped_getattr(Wrapped *self,PyObject *name){
     }
 
     printf("returning %s\n",PyString_AsString(PyObject_Repr(r)));
-    return xapply_context(self,self->wrapping_context,r);
+    return xapply_context(self,r);
 }
 
 int
@@ -322,7 +322,7 @@ Wrapped_setattr(Wrapped *self,PyObject *name,PyObject *value){
     int r;
 
     Py_INCREF(value);
-    unwrapped = xremove_context(self,self->wrapping_context,value);
+    unwrapped = xremove_context(self,value);
     Py_INCREF(unwrapped);
     r = PyObject_SetAttr(self->wrapped_obj,name,unwrapped);
     Py_DECREF(value);
@@ -359,7 +359,7 @@ Wrapped_call(Wrapped *self,PyObject *args,PyObject *kwargs){
     for (i = 0; i < PyTuple_GET_SIZE(args); i++){
         PyObject *v = PyTuple_GET_ITEM(args,i),*w = NULL;
 
-        w = xremove_context(self,self->wrapping_context,v);
+        w = xremove_context(self,v);
         PyTuple_SET_ITEM(unwrapped_args,i,w);
     }
 
@@ -370,7 +370,7 @@ Wrapped_call(Wrapped *self,PyObject *args,PyObject *kwargs){
         PyObject *k,*v;
         Py_ssize_t pos = 0;
         while (PyDict_Next(kwargs,&pos,&k,&v)){
-            v = xremove_context(self,self->wrapping_context,v);
+            v = xremove_context(self,v);
             if (PyDict_SetItem(unwrapped_kwargs,k,v)) return NULL;
             Py_DECREF(v);
         }
@@ -388,7 +388,7 @@ Wrapped_call(Wrapped *self,PyObject *args,PyObject *kwargs){
     if (r == NULL) return NULL;
 
     printf("returning %s\n",PyString_AsString(PyObject_Repr(r)));
-    wr = xapply_context(self,self->wrapping_context,r);
+    wr = xapply_context(self,r);
     Py_DECREF(r);
 
     printf("returning %s\n",PyString_AsString(PyObject_Repr(wr)));
