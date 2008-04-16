@@ -18,6 +18,9 @@ import Tuke.context as context
 import sys
 import gc
 
+# Used to let values bypass wrapper mangling.
+bypass = None
+
 class WrapperTest(TestCase):
     def test_wrap_with_non_element_context(self):
         """wrap() checks that context is an Element instance"""
@@ -150,6 +153,99 @@ class WrapperTest(TestCase):
 
         self.assert_(hash(b) == 1930)
         self.assert_(hash(w) == 1930)
+
+    def test_Wrapped_as_mapping_sequence(self):
+        """Wrapped objects support the mapping/sequence protocol"""
+
+        def T(got,expected = True):
+            self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
+        def B(got,expected,bypass_expected):
+            T(got,expected)
+            T(bypass,bypass_expected)
+
+        context_element = Element(id=Id('a'))
+        def apply(obj):
+            return context.wrapper._apply_remove_context(context_element,obj,1)
+        def remove(obj):
+            return context.wrapper._apply_remove_context(context_element,obj,0)
+
+        class skit(object):
+            def __init__(self,id):
+                self.id = Id(id)
+            def __eq__(self,other):
+                return self.id == other.id
+
+        class Ortelius_A005150:
+            def __len__(self):
+                return 1598-1527 + 3
+            def __getitem__(self,key):
+                global bypass
+                bypass = key 
+                return bypass
+            def __setitem__(self,key,value):
+                global bypass
+                bypass = (key,value)
+            def __contains__(self,other):
+                global bypass
+                bypass = other
+                return False
+
+        o = context.wrap(Ortelius_A005150(),context_element)
+
+        # Wrapped_length 
+        T(len(o),71 + 3)
+
+        # Wrapped_getitem 
+        T(o[None],None)
+        B(o[Id('b')],Id('b'),Id('../b'))
+        B(o[skit('b')],skit('b'),remove(skit('b')))
+
+        # getitem, got slice, as non-integer slice objects can't use the faster
+        # integer slice optimization path.
+        #
+        # FIXME: doesn't work, but this is a hell of an obscure use case...
+        # B(o[Id('a'):Id('b')],
+        #  apply(slice(Id('a'),Id('b'),None)),
+        #  slice(0,1,None))
+
+        # Wrapped_slice 
+        B(o[0:1],slice(0,1,None),slice(0,1,None))
+
+        # Wrapped_ass_subscript
+        o[0] = 1
+        T(bypass,(0,1))
+        o[Id('b')] = Id('c')
+        T(bypass,(Id('../b'),Id('../c')))
+        o[skit('b')] = skit('c')
+        T(bypass,(skit('../b'),skit('../c')))
+
+        # Again, still a assign to subscript, non-integer slice objects can't
+        # use the facter Wrapped_ass_slice optimization
+        #
+        # FIXME: doesn't work yet, again, obscure use case
+        #
+        #o['a':'b'] = 'c'
+        #T(bypass,(slice('a','b',None),'c'))
+
+        # Wrapped_ass_slice
+        o[0:1] = Id('b')
+        T(bypass,(slice(0,1,None),Id('../b')))
+
+        # Wrapped_contains
+        B(None in o,False,None)
+        B(1 in o,False,1)
+        B(Id('b') in o,False,Id('../b'))
+        B(skit('b') in o,False,skit('../b'))
+
+    def test_Wrapped_non_mapping_sequence_raises_error(self):
+        """Wrapped objects that don't support the mapping/sequence protocol raise errors"""
+        a = Element(id=Id('a'))
+        w = context.wrap(object(),a)
+        self.assertRaises(TypeError,lambda: len(w))
+        self.assertRaises(TypeError,lambda: w[0])
+        self.assertRaises(TypeError,lambda: w['a'])
+        self.assertRaises(TypeError,lambda: w['a':'b'])
+        self.assertRaises(TypeError,lambda: w[0:1])
 
     def test_Wrapped_data_in_out(self):
         """Wrapped data in/out"""

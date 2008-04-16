@@ -16,6 +16,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ### BOILERPLATE ###
 
+// Portions of this file are derived from weakrefobject.c from Python2.5 as
+// well as _zope_proxy_proxy.c from zope.proxy-3.4.0
+
 #include <Python.h>
 #include "structmember.h"
 
@@ -158,6 +161,14 @@ Wrapped_new(PyTypeObject *type, PyObject *obj, PyObject *context, int apply){
 PyObject *
 apply_remove_context(PyObject *context,PyObject *obj,int apply){
     PyObject *self;
+
+    // Lots of code does no checking before objects to us, so allow exceptions
+    // to propegate.
+    if (!context || !obj){
+        printf("apply_remove_context called with NULL %d %d\n",(int)context,(int)obj);
+        if (!PyErr_Occurred) PyErr_BadInternalCall();
+        return NULL;
+    }
 
     if (!PyObject_IsInstance((PyObject *)context,(PyObject *)&ContextProviderType)){
         PyErr_Format(PyExc_TypeError,
@@ -439,8 +450,85 @@ Wrapped_hash(Wrapped *self){
     return PyObject_Hash(self->wrapped_obj);
 }
 
+
+static Py_ssize_t
+Wrapped_length(Wrapped *self){
+    return PyObject_Length(self->wrapped_obj);
+}
+
+/* sequence slots */
+
+static PyObject *
+Wrapped_slice(Wrapped *self, Py_ssize_t i, Py_ssize_t j){
+    printf("Wrapped_slice\n");
+    return PySequence_GetSlice(self->wrapped_obj, i, j);
+}
+
+static int
+Wrapped_ass_slice(Wrapped *self, Py_ssize_t i, Py_ssize_t j, PyObject *value){
+    printf("Wrapped_ass_slice\n");
+    int r;
+    PyObject *wr;
+    wr = xremove_context(self,value);
+    if (!wr) return -1;
+    r = PySequence_SetSlice(self->wrapped_obj, i, j, wr);
+    Py_DECREF(wr);
+    return r;
+}
+
+static int
+Wrapped_contains(Wrapped *self, PyObject *value){
+    int r;
+    PyObject *wvalue;
+    wvalue = xremove_context(self,value);
+    r = PySequence_Contains(self->wrapped_obj, wvalue);
+    Py_DECREF(wvalue);
+    return r;
+}
+
+static PySequenceMethods Wrapped_as_sequence = {
+    (lenfunc)Wrapped_length,      /*sq_length*/
+    0,                          /*sq_concat*/
+    0,                          /*sq_repeat*/
+    0,                          /*sq_item*/
+    (ssizessizeargfunc)Wrapped_slice, /*sq_slice*/
+    0,                          /*sq_ass_item*/
+    (ssizessizeobjargproc)Wrapped_ass_slice, /*sq_ass_slice*/
+    (objobjproc)Wrapped_contains, /* sq_contains */
+};
+
+WRAP_BINARY(Wrapped_getitem,PyObject_GetItem,xapply_context,xremove_context)
+
+static int
+Wrapped_ass_subscript(Wrapped *self, PyObject *key, PyObject *value){
+    printf("Wrapped_ass_subscript\n");
+    int r = -1;
+    PyObject *wkey = NULL,*wvalue = NULL;
+    wkey = xremove_context(self,key);
+    if (!wkey) goto bail;
+    if (value == NULL){
+        if (!wvalue) goto bail;
+        r = PyObject_DelItem(self->wrapped_obj, wkey);
+    }
+    else {
+        wvalue = xremove_context(self,value);
+        r = PyObject_SetItem(self->wrapped_obj, wkey, wvalue);
+    }
+
+bail:
+    Py_DECREF(wkey);
+    Py_DECREF(wvalue);
+    return r;
+}
+
+static PyMappingMethods Wrapped_as_mapping = {
+    (lenfunc)Wrapped_length,        /*mp_length*/
+    Wrapped_getitem,                /*mp_subscript*/
+    (objobjargproc)Wrapped_ass_subscript, /*mp_ass_subscript*/
+};
+
 PyTypeObject WrappedType = {
-    PyObject_HEAD_INIT(NULL)
+    PyObject_HEAD_INIT(NULL) // FIXME: s/NULL/&PyType_Type/ in weakrefobject.c, why?
     0,                         /*ob_size*/
     "wrapper.Wrapped",             /*tp_name*/
     sizeof(Wrapped),             /*tp_basicsize*/
@@ -452,15 +540,15 @@ PyTypeObject WrappedType = {
     Wrapped_compare,           /*tp_compare*/
     Wrapped_repr,              /*tp_repr*/
     0,                         /*tp_as_number*/
-    0,                         /*tp_as_sequence*/
-    0,                         /*tp_as_mapping*/
+    &Wrapped_as_sequence,      /*tp_as_sequence*/
+    &Wrapped_as_mapping,       /*tp_as_mapping*/
     Wrapped_hash,              /*tp_hash */
     Wrapped_call,              /*tp_call*/
     Wrapped_str,               /*tp_str*/
     Wrapped_getattr,           /*tp_getattro*/
     Wrapped_setattr,           /*tp_setattro*/
     0,                         /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /*tp_flags*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /*tp_flags*/ // FIXME: should Py_TPFLAGS_CHECKTYPES be defined here?
     "Wrap object in a context",           /* tp_doc */
     (traverseproc)Wrapped_traverse,     /* tp_traverse */
     (inquiry)Wrapped_clear,             /* tp_clear */
