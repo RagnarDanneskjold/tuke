@@ -18,7 +18,6 @@ import Tuke.context as context
 import sys
 import gc
 
-bypass = None
 class WrapperTest(TestCase):
     def test_wrap_with_non_element_context(self):
         """wrap() checks that context is an Element instance"""
@@ -141,57 +140,33 @@ class WrapperTest(TestCase):
         T(sys.getrefcount(v) - 1,v_refc)
 
     def test_Wrapped_data_in_out(self):
-        """Wrapped data in/out wrapping"""
-        def T(got,expected = True):
-            self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
+        """Wrapped data in/out"""
 
-        # Tests both wrapping bound functions, and plain attributes at the same
-        # time, in both directions at the same time. Two test vectors are
-        # provided, the data in the outer context, and what it should be in the
-        # inner context. The unwrapped data is then wrapped again whe nit's
-        # passed back to the outer context, and checked that it matches.
+        def W(obj,expected_applied,expected_removed):
+            context_element = Element(id=Id('a'))
+            applied = context.wrapper._apply_remove_context(context_element,obj,1)
+            self.assert_(expected_applied == applied,
+                    'applied context, got: %s  expected: %s'
+                     % (applied,expected_applied))
+            removed = context.wrapper._apply_remove_context(context_element,obj,0)
+            self.assert_(expected_removed == removed,
+                    'removed context, got: %s  expected: %s'
+                     % (removed,expected_removed))
 
-        class skit(Element):
-            def d(self,v):
-                global bypass
-                self.v = bypass
-                bypass = v
-                return self.v
+        class skit(object):
+            def __init__(self,id):
+                self.id = Id(id)
+            def __eq__(self,other):
+                return self.id == other.id
 
-        def T(got,expected = True):
-            self.assert_(expected == got,'got: %s  expected: %s' % (repr(got),repr(expected)))
+        # tuples
+        W((),(),())
+        W((1,),(1,),(1,))
+        W((Id('b'),),(Id('a/b'),),(Id('../b'),))
+        W((skit('b'),),(skit('a/b'),),(skit('../b'),))
 
-        def W(elem,
-              data_in,
-              unwrapped,
-              equiv_in=None):
-            global bypass
-            if equiv_in is None:
-                equiv_in = data_in
-
-            bypass = unwrapped 
-            r = elem.d(data_in)
-
-            T(bypass,unwrapped)
-            T(r,elem.v)
-            T(r,data_in)
-
-
-        a = Element(id=Id('spam'))
-        b = skit(id=Id('ham'))
-
-        w = context.wrap(b,a)
-
-        W(w,0,0)
-        W(w,(),())
-        W(w,[],[])
-
-        W(w,[(1,),[['jam'],[()]]],
-            [(1,),[['jam'],[()]]])
-
-        W(w,Id('spam/ham'),Id('ham'))
-
-        W(w,(Id('spam/ham'),),(Id('ham'),))
-        W(w,[Id('spam/ham'),],[Id('ham'),])
-
-        W(w,[(Id('spam/ham'),)],[(Id('ham'),)])
+        # lists
+        W([],[],[])
+        W([1,],[1,],[1,])
+        W([Id('b'),],[Id('a/b'),],[Id('../b'),])
+        W([skit('b'),],[skit('a/b'),],[skit('../b'),])

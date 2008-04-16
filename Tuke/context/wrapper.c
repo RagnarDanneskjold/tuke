@@ -257,6 +257,17 @@ apply_remove_context(PyObject *context,PyObject *obj,int apply){
 }
 
 PyObject *
+_apply_remove_context(PyTypeObject *junk, PyObject *args){
+    PyObject *obj,*context;
+    int apply;
+
+    if (!PyArg_ParseTuple(args, "OOi", &context, &obj, &apply))
+        return NULL;
+
+    return apply_remove_context(context,obj,apply);
+}
+
+PyObject *
 wrap(PyTypeObject *junk, PyObject *args){
     PyObject *obj,*context;
 
@@ -457,6 +468,8 @@ PyTypeObject WrappedType = {
 static PyMethodDef methods[] = {
     {"wrap", (PyCFunction)wrap, METH_VARARGS,
      "Wrap an object."},
+    {"_apply_remove_context", (PyCFunction)_apply_remove_context, METH_VARARGS,
+     NULL},
     {NULL,NULL,0,NULL}
 };
 
