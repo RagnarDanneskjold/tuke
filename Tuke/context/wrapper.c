@@ -332,7 +332,7 @@ wrap(PyTypeObject *junk, PyObject *args){
 
 static PyObject *
 Wrapped_getattr(Wrapped *self,PyObject *name){
-    PyObject *r = NULL;
+    PyObject *r = NULL,*wr = NULL;
     printf("getattr %s %s ",PyString_AsString(PyObject_Repr((PyObject *)self)),PyString_AsString(PyObject_Repr(name)));
 
     r = PyObject_GetAttr(self->wrapped_obj,name);
@@ -342,7 +342,9 @@ Wrapped_getattr(Wrapped *self,PyObject *name){
     }
 
     printf("returning %s\n",PyString_AsString(PyObject_Repr(r)));
-    return xapply_context(self,r);
+    wr = xapply_context(self,r);
+    Py_DECREF(r);
+    return wr;
 }
 
 int
@@ -350,11 +352,9 @@ Wrapped_setattr(Wrapped *self,PyObject *name,PyObject *value){
     PyObject *unwrapped=NULL;
     int r;
 
-    Py_INCREF(value);
     unwrapped = xremove_context(self,value);
-    Py_INCREF(unwrapped);
     r = PyObject_SetAttr(self->wrapped_obj,name,unwrapped);
-    Py_DECREF(value);
+    Py_DECREF(unwrapped);
 
     return r;
 }

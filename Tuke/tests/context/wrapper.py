@@ -117,6 +117,12 @@ class WrapperTest(TestCase):
         def R(ex,fn):
             self.assertRaises(ex,fn)
 
+        class skit(object):
+            def __init__(self,id):
+                self.id = Id(id)
+            def __eq__(self,other):
+                return self.id == other.id
+
         a = Element(id=Id('a'))
         b = Element(id=Id('b'))
 
@@ -128,12 +134,13 @@ class WrapperTest(TestCase):
         n_refc = sys.getrefcount(n)
         R(AttributeError,lambda: getattr(w,n))
         T(sys.getrefcount(n),n_refc)
+        import gc
        
         n = "Abuse"
         n_refc = sys.getrefcount(n)
-        v = "vacuous, coffee-nosed, maloderous, pervert"
-        v_refc = sys.getrefcount(n)
-        setattr(w,n,"vacuous, coffee-nosed, maloderous, pervert")
+        v = skit('vacuous_coffee_nosed_maloderous_pervert')
+        v_refc = sys.getrefcount(v)
+        setattr(w,n,v)
         T(sys.getrefcount(n) - 1,n_refc)
         T(sys.getrefcount(v) - 1,v_refc)
 
