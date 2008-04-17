@@ -20,6 +20,25 @@ import gc
 class SourceTest(TestCase):
     def test_Source(self):
         """Source"""
+        from Tuke.context._source import Source
+        def T(got,expected = True):
+            self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
+
+        s = Source(1,2,3)
+        T(s.id,1)
+        T(s.transform,2)
+        T(s.parent,3)
+
+        s.id = 10
+        s.transform = 20
+        s.parent = 30
+        T(s.id,1)
+        T(s.transform,2)
+        T(s.parent,30)
+
+class oldSourceTest(TestCase):
+    def test_Source(self):
+        """Source"""
         def T(got,expected = True):
             self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
 

@@ -22,7 +22,8 @@ import sys, os, getopt
 from setuptools import setup, find_packages, Extension
 
 context_module = Extension('Tuke.context',
-    sources = ['Tuke/context/wrap_dict.c',
+    sources = ['Tuke/context/source.c',
+               'Tuke/context/wrap_dict.c',
                'Tuke/context/wrap_list.c',
                'Tuke/context/wrap_tuple.c',
                'Tuke/context/wrapper.c',
