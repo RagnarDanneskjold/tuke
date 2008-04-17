@@ -91,6 +91,38 @@ class WrapperTest(TestCase):
 
         self.assert_(context.wrapper._wrapped_cache.keys() == keys)
 
+    def test_cmp_Wrapped(self):
+        """cmp(Wrapped,other)"""
+        def T(got,expected = True):
+            self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
+
+        e = Element(id=Id('e'))
+
+        # FIXME: this is really only checking for memory leaks right now
+        a = object()
+        ar = sys.getrefcount(a)
+        b = object()
+        br = sys.getrefcount(b)
+
+        wa = context.wrap(a,e)
+        war = sys.getrefcount(wa)
+        wb = context.wrap(b,e)
+        wbr = sys.getrefcount(wb)
+
+        cmp(wa,wb)
+        cmp(wa,b)
+        cmp(a,b)
+
+        T(sys.getrefcount(a) - 1,ar)
+        T(sys.getrefcount(b) - 1,br)
+        T(sys.getrefcount(wa),war)
+        T(sys.getrefcount(wb),wbr)
+        del wb
+        del wa
+        gc.collect(2)
+        T(sys.getrefcount(a),ar)
+        T(sys.getrefcount(b),br)
+
     def test_circular_Wrapped_are_garbage_collected(self):
         """Wrapped objects with circular references are garbage collected"""
         import gc

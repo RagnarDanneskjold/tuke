@@ -398,7 +398,16 @@ Wrapped_call(Wrapped *self,PyObject *args,PyObject *kwargs){
 
 WRAP_UNARY(Wrapped_str, PyObject_Str,null_xapply_context)
 
-WRAP_BINARY(Wrapped_compare,PyObject_Compare,null_xapply_context,xremove_context)
+static int
+Wrapped_compare(Wrapped *self,PyObject *other){
+    int r;
+    PyObject *unwrapped;
+    unwrapped = xremove_context(self,other);
+    if (!unwrapped) return -2;
+    r = PyObject_Compare(self->wrapped_obj,unwrapped);
+    Py_DECREF(unwrapped);
+    return r;
+}
 
 static PyObject *
 Wrapped_repr(Wrapped *self){
