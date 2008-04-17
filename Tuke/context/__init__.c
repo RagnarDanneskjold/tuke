@@ -1,54 +1,62 @@
 // ### BOILERPLATE ###
 // Tuke - Electrical Design Automation toolset
 // Copyright (C) 2008 Peter Todd <pete@petertodd.org>
-// 
+//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ### BOILERPLATE ###
 
-#ifndef WRAPPER_H
-#define WRAPPER_H
+// Portions of this file are derived from weakrefobject.c from Python2.5 as
+// well as _zope_proxy_proxy.c from zope.proxy-3.4.0
 
 #include <Python.h>
 #include "structmember.h"
 
-typedef struct {
-    PyObject_HEAD
-} Wrappable;
+#include "source.h"
+#include "wrapper.h"
 
-extern PyTypeObject WrappableType;
+static PyMethodDef methods[] = {
+    //{"wrap", (PyCFunction)wrap, METH_VARARGS,
+    // "Wrap an object."},
+    {NULL,NULL,0,NULL}
+};
 
-typedef struct {
-    PyObject_HEAD
-} Translatable;
+#ifndef PyMODINIT_FUNC	// declarations for DLL import/export
+#define PyMODINIT_FUNC void
+#endif
+PyMODINIT_FUNC
+initcontext(void){
+    PyObject *m,*wrapper_module = NULL,*source_module = NULL;
 
-extern PyTypeObject TranslatableType;
-
-extern PyTypeObject WrappedType;
-
-typedef struct {
-    PyObject_HEAD
-    PyObject *wrapped_obj;
-    PyObject *wrapping_context;
-    int apply;
-    PyObject *in_weakreflist;
-} Wrapped;
+    m = Py_InitModule3("Tuke.context", methods,
+                       "Object context.");
+    if (m == NULL) goto bail;
 
 
-PyObject *
-apply_remove_context(PyObject *context,PyObject *obj,int raw_apply);
+    source_module = initsource();
+    if (!source_module) goto bail;
+    PyModule_AddObject(m, "_source",
+                       source_module);
 
-PyObject *initwrapper(void);
+    wrapper_module = initwrapper();
+    if (!wrapper_module) goto bail;
+    PyModule_AddObject(m, "wrapper",
+                       wrapper_module);
+
+bail:
+    return;
+//    Py_XDECREF(wrapper_module);
+}
 
 // Local Variables:
 // mode: C
@@ -57,4 +65,3 @@ PyObject *initwrapper(void);
 // indent-tabs-mode: nil
 // End:
 // vim: et:sw=4:sts=4:ts=4:cino=>4s,{s,\:s,+s,t0,g0,^-4,e-4,n-4,p4s,(0,=s:
-#endif 

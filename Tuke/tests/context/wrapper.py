@@ -13,7 +13,8 @@ from __future__ import with_statement
 from unittest import TestCase
 
 from Tuke import Element,Id
-import Tuke.context as context
+import Tuke.context
+from Tuke.context.wrapper import wrap,Wrapped,_apply_remove_context,_wrapped_cache
 
 import sys
 import gc
@@ -25,7 +26,7 @@ class WrapperTest(TestCase):
     def test_wrap_with_non_element_context(self):
         """wrap() checks that context is an Element instance"""
 
-        self.assertRaises(TypeError,lambda: context.wrap(None,None))
+        self.assertRaises(TypeError,lambda: wrap(None,None))
 
     def test_Wrapped_obj_context_refcounts(self):
         """Wrapped maintains correct ref counts for obj and context"""
@@ -38,7 +39,7 @@ class WrapperTest(TestCase):
         # Check ref counting behavior
         ref_orig_a = sys.getrefcount(a)
         ref_orig_b = sys.getrefcount(a)
-        w = context.wrap(b,a)
+        w = wrap(b,a)
         T(sys.getrefcount(a) - ref_orig_a,1)
         T(sys.getrefcount(b) - ref_orig_b,1)
 
@@ -54,9 +55,9 @@ class WrapperTest(TestCase):
         a = Element(id=Id('a'))
         b = Element(id=Id('b'))
 
-        w = context.wrap(b,a)
+        w = wrap(b,a)
 
-        T(isinstance(w,context.Wrapped))
+        T(isinstance(w,Wrapped))
         T(isinstance(w,Element))
 
     def test_stacked_wraps_cancel(self):
@@ -81,12 +82,12 @@ class WrapperTest(TestCase):
 
     def test_is_Wrapped(self):
         """Wrapped(foo) is Wrapped(foo)"""
-        keys = context.wrapper._wrapped_cache.keys()
+        keys = _wrapped_cache.keys()
 
         # These objects aren't supposed to be wrapped.
         def T(obj):
             a = Element(id=Id('a'))
-            self.assert_(context.wrap(obj,a) is obj)
+            self.assert_(wrap(obj,a) is obj)
         T(None)
         T(True)
         T(False)
@@ -106,10 +107,10 @@ class WrapperTest(TestCase):
         # These objects are supposed to be wrapped.
         def T(obj):
             a = Element(id=Id('a'))
-            self.assert_(context.wrap(obj,a) is context.wrap(obj,a))
+            self.assert_(wrap(obj,a) is wrap(obj,a))
         T(object())
 
-        self.assert_(context.wrapper._wrapped_cache.keys() == keys)
+        self.assert_(_wrapped_cache.keys() == keys)
 
     def test_cmp_Wrapped(self):
         """cmp(Wrapped,other)"""
@@ -147,19 +148,19 @@ class WrapperTest(TestCase):
         """Wrapped objects with circular references are garbage collected"""
         import gc
         gc.collect(2)
-        keys = context.wrapper._wrapped_cache.keys()
+        keys = _wrapped_cache.keys()
         a = Element(id=Id('a'))
 
         class foo(Element):
             pass
 
         b = foo(id=Id('b')) 
-        b.a = context.wrap(b,a)
+        b.a = wrap(b,a)
 
         del a
         del b
         gc.collect(2)
-        self.assert_(context.wrapper._wrapped_cache.keys() == keys)
+        self.assert_(_wrapped_cache.keys() == keys)
 
     def test_Wrapped_getset_attr(self):
         """(get|set)attr on Wrapped object"""
@@ -178,7 +179,7 @@ class WrapperTest(TestCase):
         a = Element(id=Id('a'))
         b = Element(id=Id('b'))
 
-        w = context.wrap(b,a)
+        w = wrap(b,a)
 
         R(AttributeError,lambda: w.VenezuelanBeaverCheese)
        
@@ -208,7 +209,7 @@ class WrapperTest(TestCase):
             def __hash__(self):
                 return 1930
         b = smoot()
-        w = context.wrap(b,a)
+        w = wrap(b,a)
 
         self.assert_(hash(b) == 1930)
         self.assert_(hash(w) == 1930)
@@ -225,9 +226,9 @@ class WrapperTest(TestCase):
 
         context_element = Element(id=Id('a'))
         def apply(obj):
-            return context.wrapper._apply_remove_context(context_element,obj,1)
+            return _apply_remove_context(context_element,obj,1)
         def remove(obj):
-            return context.wrapper._apply_remove_context(context_element,obj,0)
+            return _apply_remove_context(context_element,obj,0)
 
         class skit(object):
             def __init__(self,id):
@@ -250,7 +251,7 @@ class WrapperTest(TestCase):
                 bypass = other
                 return False
 
-        o = context.wrap(Ortelius_A005150(),context_element)
+        o = wrap(Ortelius_A005150(),context_element)
 
         # Wrapped_length 
         T(len(o),71 + 3)
@@ -308,7 +309,7 @@ class WrapperTest(TestCase):
     def test_Wrapped_non_mapping_sequence_raises_error(self):
         """Wrapped objects that don't support the mapping/sequence protocol raise errors"""
         a = Element(id=Id('a'))
-        w = context.wrap(object(),a)
+        w = wrap(object(),a)
         self.assertRaises(TypeError,lambda: len(w))
         self.assertRaises(TypeError,lambda: w[0])
         self.assertRaises(TypeError,lambda: w['a'])
@@ -321,9 +322,9 @@ class WrapperTest(TestCase):
             self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
         context_element = Element(id=Id('a'))
         def apply(obj):
-            return context.wrapper._apply_remove_context(context_element,obj,1)
+            return _apply_remove_context(context_element,obj,1)
         def remove(obj):
-            return context.wrapper._apply_remove_context(context_element,obj,0)
+            return _apply_remove_context(context_element,obj,0)
 
         class skit(object):
             def __init__(self,id):
@@ -342,21 +343,21 @@ class WrapperTest(TestCase):
         # apply a context
         b = myrange_or_the_highrange()
         r = []
-        for i in context.wrapper._apply_remove_context(context_element,b,1):
+        for i in _apply_remove_context(context_element,b,1):
             r += [i]
         T(r,[None,Id('a/b'),apply(skit('c'))])
 
         # remove a context
         b = myrange_or_the_highrange()
         r = []
-        for i in context.wrapper._apply_remove_context(context_element,b,0): 
+        for i in _apply_remove_context(context_element,b,0):
             r += [i]
         T(r,[None,Id('../b'),remove(skit('c'))])
 
     def test_Wrapped_non_iterable_raises_error(self):
         """Wrapped objects that don't support the iteration protocol raise errors"""
         a = Element(id=Id('a'))
-        w = context.wrap(object(),a)
+        w = wrap(object(),a)
         self.assertRaises(TypeError,lambda: iter(w))
 
     def test_Wrapped_data_in_out(self):
@@ -364,9 +365,9 @@ class WrapperTest(TestCase):
 
         context_element = Element(id=Id('a'))
         def apply(obj):
-            return context.wrapper._apply_remove_context(context_element,obj,1)
+            return _apply_remove_context(context_element,obj,1)
         def remove(obj):
-            return context.wrapper._apply_remove_context(context_element,obj,0)
+            return _apply_remove_context(context_element,obj,0)
 
         def W(obj,expected_applied,expected_removed):
             applied = apply(obj) 

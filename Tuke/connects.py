@@ -37,6 +37,7 @@ for implicit connections.
 
 import Tuke
 import Tuke.context
+import Tuke.source
 import weakref
 
 # Implicit connections are the most interesting feature to implement.  Elements
@@ -165,7 +166,7 @@ class Connects(set):
                     self.connects._set_implicit_connectivity(self.ref)
         ref._implicit_connectivity_key = implicit_reference_updater(self,ref)
         for e in change_report_stack:
-            Tuke.context.notify(e,e.parent,
+            Tuke.source.notify(e,e.parent,
                     ref._implicit_connectivity_key,ref._implicit_connectivity_key)
 
     def _make_ref(self,ref):

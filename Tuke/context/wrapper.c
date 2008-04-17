@@ -576,37 +576,31 @@ static PyMethodDef methods[] = {
     {NULL,NULL,0,NULL}
 };
 
-#ifndef PyMODINIT_FUNC	// declarations for DLL import/export
-#define PyMODINIT_FUNC void
-#endif
-PyMODINIT_FUNC
-initwrapper(void) 
-{
+PyObject *initwrapper(void){
     PyObject* m;
 
     wrapped_cache = PyDict_New();
     if (!wrapped_cache)
-        return;
+        return NULL;
 
     if (PyType_Ready(&WrappedType) < 0)
-        return;
+        return NULL;
 
     ContextProviderType.tp_new = PyType_GenericNew;
     if (PyType_Ready(&ContextProviderType) < 0)
-        return;
+        return NULL;
 
     WrappableType.tp_new = PyType_GenericNew;
     if (PyType_Ready(&WrappableType) < 0)
-        return;
+        return NULL;
 
     TranslatableType.tp_new = PyType_GenericNew;
     if (PyType_Ready(&TranslatableType) < 0)
-        return;
+        return NULL;
 
-    m = Py_InitModule3("wrapper", methods,
+    m = Py_InitModule3("Tuke.context.wrapper", methods,
                        "Object wrapping");
-    if (m == NULL)
-        return;
+    if (!m) return NULL;
 
     Py_INCREF(&WrappedType);
     PyModule_AddObject(m, "Wrapped", (PyObject *)&WrappedType);
@@ -614,6 +608,8 @@ initwrapper(void)
     PyModule_AddObject(m, "Wrappable", (PyObject *)&WrappableType);
     PyModule_AddObject(m, "Translatable", (PyObject *)&TranslatableType);
     PyModule_AddObject(m, "_wrapped_cache",wrapped_cache);
+
+    return m;
 }
 
 // Local Variables:

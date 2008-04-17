@@ -12,7 +12,7 @@ from __future__ import with_statement
 
 from unittest import TestCase
 
-import Tuke.context as context
+from Tuke.source import Source,notify
 
 import sys
 import gc
@@ -29,7 +29,7 @@ class SourceTest(TestCase):
 
         d = ct(42)
         class foo(object):
-            bar = context.Source(d)
+            bar = Source(d)
         T(foo.bar,d)
 
         # Make sure everything is transparent:
@@ -48,7 +48,7 @@ class SourceTest(TestCase):
         c = ct('a day without yesterday')
         def fn(*args):
             c.v = args
-        context.notify(f1,f1.bar,c,fn)
+        notify(f1,f1.bar,c,fn)
 
         T(c.v,'a day without yesterday')
 
@@ -61,7 +61,7 @@ class SourceTest(TestCase):
         c = ct('The Salmon of Doubt')
         def fn(*args):
             c.v = args
-        context.notify(f1,f1.bar,c,fn)
+        notify(f1,f1.bar,c,fn)
 
         T(c.v,'The Salmon of Doubt')
 
@@ -78,7 +78,7 @@ class SourceTest(TestCase):
         # makes sure they don't.
 
         class foo(object):
-            bar = context.Source(None)
+            bar = Source(None)
         f = foo()
 
         d = 'ISBN 3936122202'

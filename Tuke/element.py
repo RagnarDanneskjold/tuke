@@ -24,6 +24,7 @@ import weakref
 
 import Tuke
 import Tuke.context as context
+from Tuke.source import Source
 
 def versions_compatible(cur,other):
     """Compare two versions and return compatibility.
@@ -69,9 +70,9 @@ class Element(context.wrapper._ContextProvider):
     __defaults__ = {'id':None,'transform':None,'connects':None}
     __version__ = (0,0)
 
-    id = context.Source(Tuke.Id())
-    parent = context.Source(None)
-    transform = context.Source(None)
+    id = Source(Tuke.Id())
+    parent = Source(None)
+    transform = Source(None)
 
     def _required_and_default_kwargs(self):
         """Return the required and default kwargs as a tuple."""

@@ -2,17 +2,17 @@
 # ### BOILERPLATE ###
 # Tuke - Electrical Design Automation toolset
 # Copyright (C) 2008 Peter Todd <pete@petertodd.org>
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
@@ -21,14 +21,14 @@
 
 import weakref
 
-source_callbacks_by_obj = weakref.WeakKeyDictionary() 
+source_callbacks_by_obj = weakref.WeakKeyDictionary()
 
 class _empty(object):
     pass
 _initial_key = _empty()
 class Source(object):
     """Define a source of context information.
-    
+
     A source of context is simply an object attribute whose value, if changed,
     would change the context of another object. A simple example is the
     transform attribute of Elements, which if changed changes context-dependent
@@ -63,13 +63,13 @@ class Source(object):
 
     def __get__(self,obj,objtype):
         if obj is None:
-            return self.byobj[_initial_key] 
+            return self.byobj[_initial_key]
         else:
             try:
                 return self.byobj[obj]
             except KeyError:
-                self.byobj[obj] = self.byobj[_initial_key] 
-                return self.byobj[obj] 
+                self.byobj[obj] = self.byobj[_initial_key]
+                return self.byobj[obj]
 
         return None
     def __set__(self,obj,v):
@@ -106,7 +106,7 @@ def notify(obj,attr,callback_obj,callback):
     """Set a callback for any change of a context.source
 
     - `obj`: the object containing the attribute.
-    - `attr`: the attribute itself. 
+    - `attr`: the attribute itself.
     - `callback_obj`: passed to the callback.
     - `callback`: callback function in the form fn(callback_obj)
 
@@ -144,12 +144,12 @@ def notify(obj,attr,callback_obj,callback):
     except KeyError:
         source_callbacks_by_obj[obj] = {}
         attrs_of_obj = source_callbacks_by_obj[obj]
-    
+
     cb = None
     try:
         cb = attrs_of_obj[attr]
     except KeyError:
         cb = weakref.WeakKeyDictionary()
-        attrs_of_obj[attr] = cb 
+        attrs_of_obj[attr] = cb
 
     cb[callback_obj] = callback
