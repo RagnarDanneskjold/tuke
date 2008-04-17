@@ -118,7 +118,12 @@ class GeometrytransformTest(TestCase):
             expected = t
             self.assert_(repr(expected) == repr(got),'apply_context - got: %s  expected: %s' % (got,expected))
 
+        class e(object):
+            def __init__(self,transform):
+                self.transform = transform
+                self._transform_real = transform
 
-        T(Transformation(),Transformation(),Transformation())
-        T(Transformation(),Translation(V(1,1)),Translation(V(1,1)))
-        T(Translation(V(-1,-1)),Translation(V(1,1)),Transformation())
+
+        T(Transformation(),e(Transformation()),Transformation())
+        T(Transformation(),e(Translation(V(1,1))),Translation(V(1,1)))
+        T(Translation(V(-1,-1)),e(Translation(V(1,1))),Transformation())

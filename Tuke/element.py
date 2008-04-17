@@ -45,7 +45,7 @@ def versions_compatible(cur,other):
     except (TypeError, IndexError):
         raise ValueError, 'Invalid version: %s, %s' % (cur,other)
 
-class Element(context.wrapper._ContextProvider):
+class Element(context._source.Source):
     """Base element class.
     
     Everything is an Element, from a single pad on a pcb, to a whole circuit.
@@ -69,10 +69,6 @@ class Element(context.wrapper._ContextProvider):
     __required__ = ()
     __defaults__ = {'id':None,'transform':None,'connects':None}
     __version__ = (0,0)
-
-    id = Source(Tuke.Id())
-    parent = Source(None)
-    transform = Source(None)
 
     def _required_and_default_kwargs(self):
         """Return the required and default kwargs as a tuple."""
@@ -100,7 +96,13 @@ class Element(context.wrapper._ContextProvider):
                 kwargs[k] = getattr(self,k)
         return kwargs 
 
-    def __init__(self,**kwargs):
+    def __new__(cls,**kwargs):
+        from Tuke.geometry import Transformation
+        self = context._source.Source.__new__(cls,
+                Tuke.Id('.'),
+                Transformation(),
+                None)
+
         # Initialize from kwargs
         #
         # All key/value pairs in kwargs will be added to self, self.key = value
@@ -141,18 +143,20 @@ class Element(context.wrapper._ContextProvider):
         for cls in reversed(self.__class__.__mro__):
             if issubclass(cls,Element):
                 cls._init(self)
+        return context.wrapper.wrap(self,self)
 
     def _init(self):
         import Tuke
-        if not self.id:
+        # Note how _*_real is used here.
+        if not self._id_real:
             self.id = Tuke.Id.random()
         else:
-            self.id = Tuke.Id(self.id)
+            self.id = Tuke.Id(self._id_real)
 
-        if len(self.id) > 1:
+        if len(self._id_real) > 1:
             raise ValueError, 'Invalid Element Id \'%s\': more than one path component' % str(self.id)
 
-        if self.transform is None:
+        if self._transform_real is None:
             import Tuke.geometry
             self.transform = Tuke.geometry.Transformation()
 

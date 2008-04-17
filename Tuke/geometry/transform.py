@@ -31,6 +31,8 @@ geometry data before returning it.
 from Tuke import repr_helper
 from Tuke import Element,Id
 
+import Tuke.context as context
+
 from Tuke.geometry import V
 
 from Tuke.geometry.matrix_subclassing import OddShapeError,odd_shape_handler
@@ -40,7 +42,7 @@ from numpy.matlib import ones
 
 from math import sin,cos
 
-class Transformation(matrix):
+class Transformation(matrix,context.wrapper.Translatable):
     """Holder for geometry transformations.
     
     After applying a geometry transformation to a class instance a
@@ -116,10 +118,10 @@ class Transformation(matrix):
             return base * self
 
     def _apply_context(self,elem):
-        return elem * self
+        return elem._transform_real * self
 
     def _remove_context(self,elem):
-        return self * elem.I
+        return self * elem._transform_real.I
 
     @odd_shape_handler
     @repr_helper

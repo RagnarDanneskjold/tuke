@@ -240,6 +240,7 @@ class IdTest(TestCase):
         class e(object):
             def __init__(self,id):
                 self.id = Id(id)
+                self._id_real = Id(id)
 
         T(Id()._apply_context(e('ham')),Id('ham'))
         T(Id('eggs')._apply_context(e('ham')),Id('ham/eggs'))
@@ -252,6 +253,7 @@ class IdTest(TestCase):
         class e(object):
             def __init__(self,id):
                 self.id = id
+                self._id_real = id
 
         T(Id()._remove_context(e('spam')),Id('..'))
 
