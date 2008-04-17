@@ -104,7 +104,7 @@ PyTypeObject TranslatableType = {
     "Mixin to signify objects that support the (add|remove)_context protocol.", /* tp_doc */
 };
 
-PyDictObject *wrapped_cache;
+PyObject *wrapped_cache;
 
 static int
 Wrapped_traverse(Wrapped *self, visitproc visit, void *arg){
@@ -130,7 +130,7 @@ Wrapped_dealloc(Wrapped* self){
                                          (long)self->wrapped_obj,
                                          (long)self->wrapping_context,
                                          self->apply);
-    PyDict_DelItem((PyObject *)wrapped_cache,(PyObject *)key);
+    PyDict_DelItem(wrapped_cache,(PyObject *)key);
 
     Py_XDECREF(key);
 
@@ -227,7 +227,7 @@ apply_remove_context(PyObject *context,PyObject *obj,int apply){
         key = (PyTupleObject *)Py_BuildValue("(l,l,i)",(long)obj,(long)context,apply);
         if (!key) return NULL;
         
-        self = (PyObject *)PyDict_GetItem((PyObject *)wrapped_cache,
+        self = (PyObject *)PyDict_GetItem(wrapped_cache,
                                           (PyObject *)key);
         if (self){
             self = PyCObject_AsVoidPtr(self);
@@ -248,7 +248,7 @@ apply_remove_context(PyObject *context,PyObject *obj,int apply){
                 return NULL;
             }
 
-            if (PyDict_SetItem((PyObject *)wrapped_cache,(PyObject *)key,selfptr)){
+            if (PyDict_SetItem(wrapped_cache,(PyObject *)key,selfptr)){
                 Py_DECREF(key);
                 Py_DECREF(selfptr);
                 return NULL;
@@ -491,7 +491,7 @@ bail:
 
 static PyMappingMethods Wrapped_as_mapping = {
     (lenfunc)Wrapped_length,        /*mp_length*/
-    Wrapped_getitem,                /*mp_subscript*/
+    (binaryfunc)Wrapped_getitem,                /*mp_subscript*/
     (objobjargproc)Wrapped_ass_subscript, /*mp_ass_subscript*/
 };
 
@@ -517,16 +517,16 @@ PyTypeObject WrappedType = {
     0,                         /*tp_print*/
     0,                         /*tp_getattr*/
     0,                         /*tp_setattr*/
-    Wrapped_compare,           /*tp_compare*/
-    Wrapped_repr,              /*tp_repr*/
+    (cmpfunc)Wrapped_compare,           /*tp_compare*/
+    (reprfunc)Wrapped_repr,              /*tp_repr*/
     0,                         /*tp_as_number*/
     &Wrapped_as_sequence,      /*tp_as_sequence*/
     &Wrapped_as_mapping,       /*tp_as_mapping*/
-    Wrapped_hash,              /*tp_hash */
-    Wrapped_call,              /*tp_call*/
-    Wrapped_str,               /*tp_str*/
-    Wrapped_getattr,           /*tp_getattro*/
-    Wrapped_setattr,           /*tp_setattro*/
+    (hashfunc)Wrapped_hash,              /*tp_hash */
+    (ternaryfunc)Wrapped_call,              /*tp_call*/
+    (reprfunc)Wrapped_str,               /*tp_str*/
+    (getattrofunc)Wrapped_getattr,           /*tp_getattro*/
+    (setattrofunc)Wrapped_setattr,           /*tp_setattro*/
     0,                         /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /*tp_flags*/ // FIXME: should Py_TPFLAGS_CHECKTYPES be defined here?
     "Wrap object in a context",           /* tp_doc */
@@ -534,8 +534,8 @@ PyTypeObject WrappedType = {
     (inquiry)Wrapped_clear,             /* tp_clear */
     0,		               /* tp_richcompare */
     offsetof(Wrapped, in_weakreflist),  /* tp_weaklistoffset */
-    &Wrapped_iter,		               /* tp_iter */
-    &Wrapped_iternext,		               /* tp_iternext */
+    (getiterfunc)&Wrapped_iter,		               /* tp_iter */
+    (iternextfunc)&Wrapped_iternext,		               /* tp_iternext */
     0,             /* tp_methods */
     0,             /* tp_members */
     0,                         /* tp_getset */
@@ -594,7 +594,7 @@ initwrapper(void)
     PyModule_AddObject(m, "_ContextProvider", (PyObject *)&ContextProviderType);
     PyModule_AddObject(m, "Wrappable", (PyObject *)&WrappableType);
     PyModule_AddObject(m, "Translatable", (PyObject *)&TranslatableType);
-    PyModule_AddObject(m, "_wrapped_cache",(PyObject *)wrapped_cache);
+    PyModule_AddObject(m, "_wrapped_cache",wrapped_cache);
 }
 
 // Local Variables:
