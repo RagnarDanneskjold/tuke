@@ -194,11 +194,12 @@ class WrapperTest(TestCase):
         self.assert_(hash(w) == 1930)
 
     def test_Wrapped_as_mapping_sequence(self):
+        global bypass
         """Wrapped objects support the mapping/sequence protocol"""
-
         def T(got,expected = True):
             self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
         def B(got,expected,bypass_expected):
+            global bypass
             T(got,expected)
             T(bypass,bypass_expected)
 
@@ -238,6 +239,14 @@ class WrapperTest(TestCase):
         T(o[None],None)
         B(o[Id('b')],Id('b'),Id('../b'))
         B(o[skit('b')],skit('b'),remove(skit('b')))
+
+        # check for memory leaks
+        s1 = object()
+        s1r = sys.getrefcount(s1)
+        T(isinstance(o[s1],object))
+        bypass = None
+        gc.collect(2)
+        T(sys.getrefcount(s1),s1r)
 
         # getitem, got slice, as non-integer slice objects can't use the faster
         # integer slice optimization path.

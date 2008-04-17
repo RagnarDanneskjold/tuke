@@ -286,34 +286,6 @@ wrap(PyTypeObject *junk, PyObject *args){
 #define xapply_context(self,obj) apply_remove_context(((Wrapped *)self)->wrapping_context,obj,((Wrapped *)self)->apply) 
 #define xremove_context(self,obj) apply_remove_context(((Wrapped *)self)->wrapping_context,obj,!(((Wrapped *)self)->apply))
 
-#define null_xapply_context(self,obj) obj
-#define null_xremove_context(self,obj) obj
-
-#define WRAP_UNARY(method, generic, apply) \
-    static PyObject * \
-    method(PyObject *self) { \
-        return apply(self, \
-                     generic(((Wrapped *)self)->wrapped_obj)); \
-    }
-
-#define WRAP_BINARY(method, generic, apply, remove) \
-    static PyObject * \
-    method(PyObject *self, PyObject *args) { \
-        return apply(self, \
-                     generic(((Wrapped *)self)->wrapped_obj, \
-                             remove(self,args))); \
-    }
-
-#define WRAP_TERNARY(method, generic, apply, remove) \
-    static PyObject * \
-    method(PyObject *self, PyObject *args, PyObject *kwargs) { \
-        return apply(self, \
-                     generic(((Wrapped *)self)->wrapped_obj, \
-                             remove(self,args), \
-                             remove(self,kwargs))); \
-    }
-
-
 static PyObject *
 Wrapped_getattr(Wrapped *self,PyObject *name){
     PyObject *r = NULL,*wr = NULL;
@@ -478,7 +450,23 @@ static PySequenceMethods Wrapped_as_sequence = {
     (objobjproc)Wrapped_contains, /* sq_contains */
 };
 
-WRAP_BINARY(Wrapped_getitem,PyObject_GetItem,xapply_context,xremove_context)
+PyObject *
+Wrapped_getitem(Wrapped *self,PyObject *key){
+    PyObject *unwrapped_key = NULL,*r = NULL,*wr = NULL;
+
+    unwrapped_key = xremove_context(self,key);
+    if (!unwrapped_key) goto bail;
+
+    r = PyObject_GetItem(self->wrapped_obj,unwrapped_key);
+    if (!r) goto bail;
+
+    wr = xapply_context(self,r);
+
+bail:
+    Py_XDECREF(unwrapped_key);
+    Py_XDECREF(r);
+    return wr;
+}
 
 static int
 Wrapped_ass_subscript(Wrapped *self, PyObject *key, PyObject *value){
@@ -496,8 +484,8 @@ Wrapped_ass_subscript(Wrapped *self, PyObject *key, PyObject *value){
     }
 
 bail:
-    Py_DECREF(wkey);
-    Py_DECREF(wvalue);
+    Py_XDECREF(wkey);
+    Py_XDECREF(wvalue);
     return r;
 }
 
