@@ -160,10 +160,10 @@ PyObject *
 apply_remove_context(PyObject *context,PyObject *obj,int apply){
     PyObject *self;
 
-    // Lots of code does no checking before objects to us, so allow exceptions
-    // to propegate.
-    if (!context || !obj){
-        if (!PyErr_Occurred) PyErr_BadInternalCall();
+    if (!obj) return NULL;
+
+    if (!context){
+        PyErr_BadInternalCall();
         return NULL;
     }
 
