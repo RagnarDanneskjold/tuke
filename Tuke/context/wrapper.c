@@ -198,6 +198,14 @@ apply_remove_context(PyObject *context,PyObject *obj,int apply){
     else if (PyDict_Check(obj)){
         return wrap_dict(context,obj,apply);
     }
+    // Slices seem to act strangely when wrapped. Notably they seem to cause
+    // "RuntimeWarning: tp_compare didn't return -1 or -2 for exception"
+    // errors. Given that slice(Id('a'),Id('b')) is a *very* advanced usage,
+    // best to simply ignore this case for now.
+    else if (PySlice_Check(obj)){
+        Py_INCREF(obj);
+        return obj;
+    }
     // Translatable types have their context applied, but they can't be put in
     // the cache because they don't have a destructor that would remove them.
     else if (PyObject_IsInstance(obj,(PyObject *)&TranslatableType)){
