@@ -396,7 +396,10 @@ Wrapped_call(Wrapped *self,PyObject *args,PyObject *kwargs){
     return wr;
 }
 
-WRAP_UNARY(Wrapped_str, PyObject_Str,null_xapply_context)
+static PyObject *
+Wrapped_str(Wrapped *self){
+    return PyObject_Str(self->wrapped_obj);
+}
 
 static int
 Wrapped_compare(Wrapped *self,PyObject *other){
