@@ -93,7 +93,8 @@ class WrapperTest(TestCase):
 
     def test_circular_Wrapped_are_garbage_collected(self):
         """Wrapped objects with circular references are garbage collected"""
-
+        import gc
+        gc.collect(2)
         keys = context.wrapper._wrapped_cache.keys()
         a = Element(id=Id('a'))
 
@@ -105,7 +106,6 @@ class WrapperTest(TestCase):
 
         del a
         del b
-        import gc
         gc.collect(2)
         self.assert_(context.wrapper._wrapped_cache.keys() == keys)
 
