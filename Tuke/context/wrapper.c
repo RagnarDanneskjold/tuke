@@ -283,11 +283,12 @@ _apply_remove_context(PyTypeObject *junk, PyObject *args){
 PyObject *
 wrap(PyTypeObject *junk, PyObject *args){
     PyObject *obj,*context;
+    int apply = 1;
 
-    if (!PyArg_ParseTuple(args, "OO", &obj, &context))
+    if (!PyArg_ParseTuple(args, "OO|i", &obj, &context,&apply))
         return NULL; 
 
-    return apply_remove_context(context,obj,1);
+    return apply_remove_context(context,obj,apply);
 }
 
 
