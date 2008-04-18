@@ -342,7 +342,6 @@ Wrapped_call(Wrapped *self,PyObject *args,PyObject *kwargs){
         return NULL;
     }
 
-    Py_XINCREF(args);
     unwrapped_args = PyTuple_New(PyTuple_GET_SIZE(args));
     if (unwrapped_args == NULL) return NULL;
     for (i = 0; i < PyTuple_GET_SIZE(args); i++){
@@ -353,7 +352,6 @@ Wrapped_call(Wrapped *self,PyObject *args,PyObject *kwargs){
     }
 
     if (kwargs != NULL){
-        Py_XINCREF(kwargs);
         unwrapped_kwargs = PyDict_New();
         if (!unwrapped_kwargs) return NULL;
         PyObject *k,*v;
