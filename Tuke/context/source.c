@@ -28,6 +28,8 @@
 
 static void
 Source_dealloc(Source* self){
+    if (self->in_weakreflist != NULL)
+            PyObject_ClearWeakRefs((PyObject *) self);
     Py_XDECREF(self->id);
     Py_XDECREF(self->id_real);
     Py_XDECREF(self->transform);
