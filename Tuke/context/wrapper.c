@@ -259,11 +259,30 @@ wrap(PyTypeObject *junk, PyObject *args){
 
 // Elements have the following specially handled method attributes:
 //
+// __enter__(self) -> unwrapped self
+static PyObject *
+element_enter_method(Wrapped *self,PyObject *unused){
+    // The "bare" Element that the user expects to work with, is actually an
+    // element wrapped itself, so make sure we don't undo that last level of
+    // wrapping.
+    printf("special enter method %s\n",
+           PyString_AsString(PyObject_Repr(self->wrapped_obj)));
+    PyErr_SetString(PyExc_ValueError,"Element is not wrapped in a context.");
+    return NULL;
+    if (PyType_IsSubtype(self->wrapped_obj->ob_type,&WrappedType)){
+        Py_INCREF(((Wrapped *)(self->wrapped_obj))->wrapped_obj);
+        return ((Wrapped *)(self->wrapped_obj))->wrapped_obj;
+    } else {
+        printf("setting error\n");
+        PyErr_SetString(PyExc_ValueError,"Element is not wrapped in a context.");
+        return NULL;
+    }
+}
 
 // add(self,element) -> wrapped element
 static PyObject *
 element_add_method(Wrapped *self,PyObject *elem){
-    PyObject *r,*e,*p;
+    PyObject *r,*wr,*e,*p;
     // There may be multiple levels of wrapping, such as in the case,
     // a.b.add(), so we have to drill down each level until we reach bottom.
     //
@@ -278,12 +297,19 @@ element_add_method(Wrapped *self,PyObject *elem){
     }
     // Lowest level, e is now the actual Element object, which we *don't* want,
     // so call add() with p, the wrapped version of it.
+    Py_INCREF(p);
     r = PyObject_CallMethod(self->wrapped_obj,"add","(O)",p);
+    Py_DECREF(p);
     if (!r) return NULL;
-    return xapply_context(self,r);
+    Py_INCREF(r);
+    wr = xapply_context(self,r);
+    Py_DECREF(r);
+    return wr;
 }
 
 static PyMethodDef special_element_methods[] = {
+    {"__enter__", (PyCFunction)element_enter_method, METH_NOARGS,
+     "Context manager support"},
     {"add", (PyCFunction)element_add_method, METH_O,
      "Add Element as sub-element"},
     {NULL,NULL,0,NULL}
@@ -293,10 +319,18 @@ static PyObject *
 Wrapped_getattr(Wrapped *self,PyObject *name){
     PyObject *r = NULL,*wr = NULL;
     // Special-cased Element methods
+    printf("getattr %s %s\n",
+           PyString_AsString(PyObject_Repr(self)),
+           PyString_AsString(PyObject_Repr(name)));
     if (PyType_IsSubtype(self->wrapped_obj->ob_type,&SourceType)){
         r = Py_FindMethod(special_element_methods,(PyObject *)self,
                           PyString_AsString(name));
-        if (r) return r;
+        if (r) {
+            printf("special case method %s %s\n",
+                   PyString_AsString(PyObject_Repr(name)),
+                   PyString_AsString(PyObject_Repr(r)));
+            return r;
+        }
         PyErr_Clear();
     }
 

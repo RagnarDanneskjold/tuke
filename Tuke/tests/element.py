@@ -116,38 +116,20 @@ class ElementTest(TestCase):
 
         T(a,set(('_1','_2','_3')))
 
-    def testElement_isinstance(self):
-        """Element isinstance()"""
-
-        def T(x):
-            self.assert_(x)
-
-        a = Element(id='a')
-        T(isinstance(a,Element))
-        T(not isinstance(a,ElementRef))
-
-        a.add(Element(id='b'))
-        T(isinstance(a.b,Element))
-        T(isinstance(a.b,ElementRef))
-
     def testElement__getitem__(self):
         """Element[] lookups"""
-        def T(elem,key,expected):
+        def T(elem,key,expected_id):
             got = elem[key]
-            self.assert_(expected == got,'got: %s expected: %s' % (got,expected))
+            expected_id = Id(expected_id)
+            self.assert_(got.id == expected_id,'got: %s expected: %s' % (got.id,expected_id))
 
         def R(elem,key,partial_stack):
+            # partial_stack is not currently used, but
             err = None
-            try:
-                elem[key]
-            except ElementRefError, err:
-                self.assert_(err.partial_stack == partial_stack)
-            except KeyError:
-                if partial_stack:
-                    self.assert_(False)
+            self.assertRaises(KeyError,lambda:elem[key])
 
         a = Element(id='a')
-        T(a,'',ElementRef(a,''))
+        T(a,'','a')
         R(a,'foo',[])
         R(a,Id('foo'),[])
         R(a,'..',[a])
@@ -155,7 +137,7 @@ class ElementTest(TestCase):
         R(a,'../..',[a])
 
         b = a.add(Element(id='b'))
-        T(a,'b',b)
+        T(a,'b','a/b')
         with b as b2:
             R(a,'b/b',[a,b2])
             R(b2,'../c',[b2,a])

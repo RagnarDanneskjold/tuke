@@ -178,7 +178,7 @@ class Element(context._source.Source):
         """Iterate through sub-elements."""
 
         for i in self.__dict__.itervalues():
-            if isinstance(i,Tuke.ElementRefContainer):
+            if isinstance(i,Element):
                 yield i 
 
     def _element_id_to_dict_key(self,id):
@@ -191,7 +191,7 @@ class Element(context._source.Source):
 
         n = str(id)
         if hasattr(self,n) \
-           and not isinstance(getattr(self,n),Tuke.ElementRefContainer):
+           and not isinstance(getattr(self,n),Element):
             n = '_attr_collided_' + n
         return n
 
@@ -203,15 +203,27 @@ class Element(context._source.Source):
         """
         id = Tuke.Id(id)
 
-        r = None
-        if not id or id[0] == '..' or len(id) > 1:
-            r = Tuke.ElementRef(self,id)
-        else:
-            r = self.__dict__[self._element_id_to_dict_key(id[0])]
+        print 'getitem on %s for %s' % (self._id_real,id)
 
-        # Element[] should raise a KeyError immediately if the element doesn't exist, so force a dereference
-        r._deref()
-        return r
+        if not id:
+            return self
+        else:
+            r = None
+            if id[0] == '..':
+                if self.parent is not None:
+                    r = self.parent
+                else:
+                    raise KeyError("Element '%s' has no parent" % self._id_real)
+            else:
+                try:
+                    r = self.__dict__[self._element_id_to_dict_key(id[0])]
+                except KeyError:
+                    raise KeyError("'%s' is not a sub-Element of '%s'" %
+                                    (id,self._id_real))
+            if len(id) > 1:
+                return r[str(id[1:])]
+            else:
+                return r
 
     class IdCollisionError(IndexError):
         pass
@@ -242,7 +254,6 @@ class Element(context._source.Source):
             raise self.IdCollisionError,"'%s' already exists" % str(obj.id)
 
         obj.parent = self
-        obj = Tuke.ElementRefContainer(self,obj)
         setattr(self,n,obj)
 
         return obj
@@ -274,9 +285,11 @@ class Element(context._source.Source):
     class VersionError(ValueError):
         pass
 
-    def __enter__(self):
-        """Context manager support"""
-        return self
+    # Element.__enter__() is special-cased by the wrapper code and is fully
+    # implemented there. See wrapper.c for details.
+    #def __enter__(self):
+    #    """Context manager support"""
+    #    return self
     def __exit__(self,exc_type,exc_value,traceback):
         # reraise
         return False
@@ -296,7 +309,7 @@ class Element(context._source.Source):
         if not isinstance(self,ReprableByArgsElement) or full:
             subs = []
             for e in self: 
-                if isinstance(e,Tuke.ElementRefContainer):
+                if isinstance(e,Element):
                     subs.append(e)
             subs.sort(key=lambda e: e.id)
 
@@ -320,10 +333,6 @@ import Tuke
         self._serialize(r,'',root=True,full=full)
 
         return ''.join(r)
-
-
-    def _apply_context(self,base):
-        return ElementRef(self,base)
 
 class ReprableByArgsElement(Element):
     """Base class for Elements fully representable by their arguments."""
