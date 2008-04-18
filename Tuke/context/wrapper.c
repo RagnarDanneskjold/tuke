@@ -215,8 +215,10 @@ apply_remove_context(PyObject *context,PyObject *obj,int apply){
             return PyObject_CallMethod(obj,"_remove_context","O",context);
         }
     }
-    else if (!apply && PyObject_IsInstance(obj,(PyObject *)&WrappedType) &&
-             ((Wrapped *)obj)->wrapping_context == context){
+    // Check if an outer wrap will cancel out an inner wrap
+    else if (PyObject_IsInstance(obj,(PyObject *)&WrappedType) &&
+             ((Wrapped *)obj)->wrapping_context == context &&
+             ((Wrapped *)obj)->apply != apply){
         Py_INCREF(((Wrapped *)obj)->wrapped_obj);
         return ((Wrapped *)obj)->wrapped_obj;
     }

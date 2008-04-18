@@ -59,6 +59,26 @@ class WrapperTest(TestCase):
         T(isinstance(w,context.Wrapped))
         T(isinstance(w,Element))
 
+    def test_stacked_wraps_cancel(self):
+        """Opposite wraps cancel out"""
+        def T(got,expected = True):
+            self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
+
+        a = Element(id=Id('a'))
+        b = Element(id=Id('b'))
+
+        wb = context.wrap(b,a,True)
+        T(wb.id,'a/b')
+        wb2 = context.wrap(wb,a,False)
+        T(wb2.id,'b')
+        T(wb2 is b)
+
+        wb = context.wrap(b,a,False)
+        T(wb.id,'../b')
+        wb2 = context.wrap(wb,a,True)
+        T(wb2.id,'b')
+        T(wb2 is b)
+
     def test_is_Wrapped(self):
         """Wrapped(foo) is Wrapped(foo)"""
         keys = context.wrapper._wrapped_cache.keys()
