@@ -226,8 +226,10 @@ class Element(context._source.Source):
 
         Raises Element.IdCollisionError on id collission.
         """
-        if isinstance(obj,Tuke.ElementRef):
-            raise TypeError, 'Can only add bare Elements, IE, foo.add(foo.bar) is invalid.'
+
+        # NOTE: Element.add is special cased by the wrapper code. obj does not
+        # have the wrapping context removed from it like normal. See wrapper.c
+        # for details.
         if not isinstance(obj,Element):
             raise TypeError, "Can only add Elements to Elements, not %s" % type(obj)
 

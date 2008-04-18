@@ -257,9 +257,48 @@ wrap(PyTypeObject *junk, PyObject *args){
 #define xapply_context(self,obj) apply_remove_context(((Wrapped *)self)->wrapping_context,obj,((Wrapped *)self)->apply) 
 #define xremove_context(self,obj) apply_remove_context(((Wrapped *)self)->wrapping_context,obj,!(((Wrapped *)self)->apply))
 
+// Elements have the following specially handled method attributes:
+//
+
+// add(self,element) -> wrapped element
+static PyObject *
+element_add_method(Wrapped *self,PyObject *elem){
+    PyObject *r,*e,*p;
+    // There may be multiple levels of wrapping, such as in the case,
+    // a.b.add(), so we have to drill down each level until we reach bottom.
+    //
+    // a.b.c.add(a.b) will still fail however, as a.b has a parent, a
+    e = elem;
+    p = e;
+    while (PyType_IsSubtype(e->ob_type,&WrappedType)){
+        // Save what object wrapped e->wrapped_obj
+        p = e;
+        // Down a level
+        e = ((Wrapped *)e)->wrapped_obj;
+    }
+    // Lowest level, e is now the actual Element object, which we *don't* want,
+    // so call add() with p, the wrapped version of it.
+    r = PyObject_CallMethod(self->wrapped_obj,"add","(O)",p);
+    if (!r) return NULL;
+    return xapply_context(self,r);
+}
+
+static PyMethodDef special_element_methods[] = {
+    {"add", (PyCFunction)element_add_method, METH_O,
+     "Add Element as sub-element"},
+    {NULL,NULL,0,NULL}
+};
+
 static PyObject *
 Wrapped_getattr(Wrapped *self,PyObject *name){
     PyObject *r = NULL,*wr = NULL;
+    // Special-cased Element methods
+    if (PyType_IsSubtype(self->wrapped_obj->ob_type,&SourceType)){
+        r = Py_FindMethod(special_element_methods,(PyObject *)self,
+                          PyString_AsString(name));
+        if (r) return r;
+        PyErr_Clear();
+    }
 
     r = PyObject_GetAttr(self->wrapped_obj,name);
     if (r == NULL){
