@@ -122,6 +122,13 @@ Wrapped_clear(Wrapped *self){
 
 static void
 Wrapped_dealloc(Wrapped* self){
+    PyObject_GC_UnTrack(self);
+
+    // dealloc can be called with exceptions set, and the dict stuff we do
+    // below does not like that.
+    PyObject *ptype,*pvalue,*ptraceback;
+    PyErr_Fetch(&ptype,&pvalue,&ptraceback);
+
     PyTupleObject *key;
     if (self->in_weakreflist != NULL)
             PyObject_ClearWeakRefs((PyObject *) self);
@@ -130,19 +137,20 @@ Wrapped_dealloc(Wrapped* self){
                                          (long)self->wrapped_obj,
                                          (long)self->wrapping_context,
                                          self->apply);
-    PyDict_DelItem(wrapped_cache,(PyObject *)key);
+    int r = PyDict_DelItem(wrapped_cache,(PyObject *)key);
 
     Py_XDECREF(key);
 
     Wrapped_clear(self);
-    self->ob_type->tp_free((PyObject*)self);
+    PyObject_GC_Del(self);
+    PyErr_Restore(ptype,pvalue,ptraceback);
 }
 
 static PyObject *
 Wrapped_new(PyTypeObject *type, PyObject *obj, PyObject *context, int apply){
     Wrapped *self;
 
-    self = (Wrapped *)type->tp_alloc(type, 0);
+    self = PyObject_GC_New(Wrapped,&WrappedType);
     self->in_weakreflist = NULL;
 
     self->apply = apply;
@@ -153,6 +161,7 @@ Wrapped_new(PyTypeObject *type, PyObject *obj, PyObject *context, int apply){
     Py_INCREF(context);
     self->wrapping_context = context;
 
+    PyObject_GC_Track(self);
     return (PyObject *)self;
 }
 
@@ -556,6 +565,7 @@ PyTypeObject WrappedType = {
     0,      /* tp_init */
     0,                         /* tp_alloc */
     0,                         /* tp_new */
+    PyObject_GC_Del, /* tp_free */
 };
 
 static PyMethodDef methods[] = {
