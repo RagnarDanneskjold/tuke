@@ -26,13 +26,17 @@ wrap_tuple(PyObject *context,PyObject *obj,int apply){
     // a tuple is a matter of creating a new tuple, with wrapped inner
     // elements.
     PyObject *r = PyTuple_New(PyTuple_GET_SIZE(obj));
-    if (r == NULL) return NULL;
+    if (!r) return NULL;
 
     int i;
     for (i = 0; i < PyTuple_GET_SIZE(obj); i++){
         PyObject *w = NULL,*v;
         v = PyTuple_GET_ITEM(obj,i);
         w = apply_remove_context(context,v,apply);
+        if (!w){
+            Py_DECREF(r);
+            return NULL;
+        }
         PyTuple_SET_ITEM(r,i,w);
     }
     return r;

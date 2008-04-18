@@ -24,13 +24,17 @@ PyObject *
 wrap_list(PyObject *context,PyObject *obj,int apply){
     // Lists are not immutable, so this naive implementation breaks that.
     PyObject *r = PyList_New(PyList_GET_SIZE(obj));
-    if (r == NULL) return NULL;
+    if (!r) return NULL;
 
     int i;
     for (i = 0; i < PyList_GET_SIZE(obj); i++){
         PyObject *v,*w = NULL;
-        v = PyList_GET_ITEM(obj,i),
+        v = PyList_GET_ITEM(obj,i);
         w = apply_remove_context(context,v,apply);
+        if (!w){
+            Py_DECREF(r);
+            return NULL;
+        }
         PyList_SET_ITEM(r,i,w);
     }
     return r;

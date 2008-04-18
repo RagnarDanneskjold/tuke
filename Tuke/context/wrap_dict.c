@@ -24,19 +24,29 @@ PyObject *
 wrap_dict(PyObject *context,PyObject *obj,int apply){
     // Dicts are not immutable, so this naive implementation breaks that.
     PyObject *r = PyDict_New();
-    if (r == NULL) return NULL;
+    if (!r) return NULL;
 
-    PyObject *k,*v;
+    PyObject *k = NULL,*v = NULL;
     Py_ssize_t pos = 0;
     while (PyDict_Next(obj,&pos,&k,&v)){
         k = apply_remove_context(context,k,apply);
+        if (!k) goto bail;
         v = apply_remove_context(context,v,apply);
-        // FIXME: leaks on error
-        if (PyDict_SetItem(r,k,v)) return NULL;
-        Py_DECREF(v);
-        Py_DECREF(k);
+        if (!v) goto bail;
+
+        if (PyDict_SetItem(r,k,v)) goto bail;
+
+        // = NULL for the bail routine
+        Py_DECREF(v); v = NULL;
+        Py_DECREF(k); k = NULL;
     }
     return r;
+
+bail:
+    Py_XDECREF(v);
+    Py_XDECREF(k);
+    Py_XDECREF(r);
+    return NULL;
 }
 
 // Local Variables:
