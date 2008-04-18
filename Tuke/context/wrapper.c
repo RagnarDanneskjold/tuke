@@ -30,31 +30,6 @@
 
 #include "source.h"
 
-PyTypeObject WrappableType = {
-    PyObject_HEAD_INIT(NULL)
-    0,                         /*ob_size*/
-    "wrapper.Wrappable",             /*tp_name*/
-    sizeof(Wrappable),         /*tp_basicsize*/
-    0,                         /*tp_itemsize*/
-    0,                         /*tp_dealloc*/
-    0,                         /*tp_print*/
-    0,                         /*tp_getattr*/
-    0,                         /*tp_setattr*/
-    0,                         /*tp_compare*/
-    0,                         /*tp_repr*/
-    0,                         /*tp_as_number*/
-    0,                         /*tp_as_sequence*/
-    0,                         /*tp_as_mapping*/
-    0,                         /*tp_hash */
-    0,                         /*tp_call*/
-    0,                         /*tp_str*/
-    0,                         /*tp_getattro*/
-    0,                         /*tp_setattro*/
-    0,                         /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
-    "Mixin to signify objects that can be wrapped in contexts.", /* tp_doc */
-};
-
 PyTypeObject TranslatableType = {
     PyObject_HEAD_INIT(NULL)
     0,                         /*ob_size*/
@@ -562,10 +537,6 @@ PyObject *initwrapper(void){
     if (PyType_Ready(&WrappedType) < 0)
         return NULL;
 
-    WrappableType.tp_new = PyType_GenericNew;
-    if (PyType_Ready(&WrappableType) < 0)
-        return NULL;
-
     TranslatableType.tp_new = PyType_GenericNew;
     if (PyType_Ready(&TranslatableType) < 0)
         return NULL;
@@ -576,7 +547,6 @@ PyObject *initwrapper(void){
 
     Py_INCREF(&WrappedType);
     PyModule_AddObject(m, "Wrapped", (PyObject *)&WrappedType);
-    PyModule_AddObject(m, "Wrappable", (PyObject *)&WrappableType);
     PyModule_AddObject(m, "Translatable", (PyObject *)&TranslatableType);
     PyModule_AddObject(m, "_wrapped_cache",wrapped_cache);
 

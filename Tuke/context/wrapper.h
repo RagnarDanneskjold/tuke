@@ -24,12 +24,6 @@
 
 typedef struct {
     PyObject_HEAD
-} Wrappable;
-
-extern PyTypeObject WrappableType;
-
-typedef struct {
-    PyObject_HEAD
 } Translatable;
 
 extern PyTypeObject TranslatableType;
