@@ -12,121 +12,72 @@ from __future__ import with_statement
 
 from unittest import TestCase
 import Tuke
-from Tuke import Element,ElementRef,ElementRefError,Id,rndId
-
-from Tuke.geometry import Geometry,V,Transformation,Translation,translate,Rotation,rotate,scale,centerof
-
-from math import pi
+from Tuke import Element,ElementRef,Id,rndId
 
 class ElementRefTest(TestCase):
     """Perform tests of the elementref module"""
 
-    def testElementRef_wrap_data_in_out(self):
-        """ElementRef data in/out wrapping"""
+    def testElementRef(self):
+        """ElementRef"""
+        root = [None]
+        def T(ref,expected_id,expected_magic):
+            r = ElementRef(root[0],ref)
+            r2 = ElementRef(root[0],ref)
 
-        # This tests both wrapping bound functions, and plain attributes at the
-        # same time, in both directions at the same time. Two test vectors are
-        # provided, the data in the outer context, and the inner version.  The
-        # unwrapped data is then wrapped again when it's passed back to the
-        # outer context, and checked that it matches. 
+            # One elementref per base->id combo. 
+            self.assert_(r is r2)
 
-        class H:
-            # Hide data from the bit manglers
-            def __init__(self,hidden):
-                self._hidden = hidden
-            def __call__(self):
-                return self._hidden
+            r = r()
+            r2 = r2()
+            # Deref must return same object. 
+            self.assert_(r is r2)
 
-        def T(elem, # element
-              data_in, # data in
-              expected, # data expected in the wrapped context
-              equiv_in=None): # equivilent representation to data_in
-            if equiv_in is None:
-                equiv_in = data_in
-            got_fn = elem.fn(H(data_in),expected) 
-            got_attr = elem.attr
+            self.assert_(r.id == expected_id,
+                    'got id: %s  expected id: %s' % (r.id,expected_id))
+            self.assert_(r.magic == expected_magic,
+                    'got magic: %s  expected magic: %s' % (r.magic,expected_magic))
 
-            for i,o in (got_fn,got_attr):
-                o = o._hidden
-                self.assert_(expected == i and o == equiv_in,
-                        '\ngot_fn: %s\ngot_attr: %s\nexpected: %s\ndata_in: %s' %
-                                        ((got_fn[0],got_fn[1]._hidden),
-                                         (got_attr[0],got_attr[1]._hidden),
-                                         expected,data_in))
+        def R(ref):
+            r = ElementRef(root[0],ref)
+            self.assertRaises(KeyError,lambda: r())
 
+        a = Element(id=Id('a'))
+        a.magic = 0
 
-        class foo(Element):
-            def fn(self,vh,v):
-                self.attr = (vh(),H(v)) 
-                return self.attr 
-
-        a = Element(id='a')
-        a.add(foo(id='b'))
-
-        # Ids
-        T(a.b,Id('..'),Id())
-        T(a.b,Id('bar'),Id('b/bar'))
-        T(a.b,Id('../../'),Id('..'))
-        T(a.b,Id('../b/'),Id('b'),Id('.')) # note the equiv representation
-
-        # Ref's with common bases
-        T(a.b,ElementRef(a.b._deref(),'..'),a['.'])
-        T(a.b,ElementRef(a.b._deref(),'.'),a.b)
-
-        # Aliens
-        z = Element(id='z')
-        T(a.b,ElementRef(z,'.'),ElementRef(z,'.'))
-
-
-        # Geometry
-        def T(elem, # element
-              data_in, # data in
-              expected = True): # data expected out
-            got_fn = elem.fn(H(data_in),expected)
-            got_attr = elem.attr
-
-            expected = expected.round(5)
-            for i,o in (got_fn,got_attr):
-                i = i.round(5)
-                o = o._hidden.round(5)
-                self.assert_((expected == i).all() and (o == data_in).all(),
-                        '\ngot_fn: %s\ngot_attr: %s\nexpected: %s\ndata_in: %s' %
-                                        ((got_fn[0],got_fn[1]._hidden),
-                                         (got_attr[0],got_attr[1]._hidden),
-                                         expected,data_in))
-
-        # Vertexes
-        T(a.b,V(1,2),V(1,2))
-        with a.b as b:
-            translate(b,V(-2,3))
-        T(a.b,V(1,2),V(-1,5))
-
-        # Transformations
-        T(a.b,Translation(V(4,4)),Translation(V(4,4)))
-        translate(a,V(-4,-4))
-        T(a.b,Translation(V(4,4)),Translation(V(0,0)))
-
-        # Verify that .transforms are applied in the correct order
-        a = foo(id='a')
-        rotate(a,pi / 2)
-        b = foo(id='b')
-        translate(b,V(1,2))
+        b = Element(id=Id('b'))
+        b.magic = 1
         a.add(b)
 
-        T(a.b,V(1,2),V(4,-2))
-        T(a.b,Translation(V(1,2)),Rotation(pi / 2) * Translation(V(1,2)))
+        c = Element(id=Id('c'))
+        c.magic = 2
+        a.b.add(c)
 
-    def testElementRef__getitem__(self):
-        """ElementRef[] wrapping"""
-        def T(got,expected = True):
-            self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
+        z = Element(id=Id('z'))
+        z.magic = 3
+        z.add(a)
+        y = Element(id=Id('y'))
+        y.magic = 4
+        z.add(y)
 
-        a = Element(id='a')
-        a.add(Element(id='b'))
-        a.b.add(Element(id='c'))
-       
-        T(a[a.b.id],a.b)
-        T(a[a.b.c.id],a.b.c)
+        # Try different roots
+        for r in (a,a.b,a['.']):
+            root[0] = r
 
-        T(a.b[a.b.c.id],a.b.c)
-        T(a.b.c[a['.'].id],a['.'])
+            T(Id('a'),Id('a'),0)
+            T(a,Id('a'),0)
+            T(Id('a/b'),Id('a/b'),1)
+            T(a.b,Id('a/b'),1)
+            T(Id('a/b/c'),Id('a/b/c'),2)
+            T(a.b.c,Id('a/b/c'),2)
+
+            # ../
+
+            T(Id('.'),Id('.'),3)
+            T(Id('y'),Id('y'),4)
+
+
+            # Check exceptions.
+            R('..')
+            R('../../')
+            R('a/z')
+            R('a/b/c/d')

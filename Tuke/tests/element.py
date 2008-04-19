@@ -19,7 +19,7 @@ from unittest import TestCase
 import Tuke
 import Tuke.context
 import Tuke.source
-from Tuke import Element,ElementRef,ElementRefError,Id,rndId
+from Tuke import Element,ElementRef,Id,rndId
 
 from Tuke.geometry import Geometry,V,Transformation,Translation,translate,centerof
 

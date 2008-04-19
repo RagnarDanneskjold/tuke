@@ -17,159 +17,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from Tuke import Element,Id,non_evalable_repr_helper
-
-from Tuke.geometry import V,Transformation
-
-# Cache of ElementRefs.
-#
-# A WeakKeyDict, where the keys are the base Element objects, and the values
-# are WeakValueDictionaries, with the Id's as keys and the values being the
-# cached ElementRefs.
 import weakref
+
+from Tuke import Element,Id
+
 ElementRef_cache = weakref.WeakKeyDictionary()
 
-class ObjectWrapper(object):
-    """Wrap objects in an ElementRef context.
-
-    Such a wrapped object has all accesses to it translated to and front the
-    outer context. This is the base class that ElementRef and others depend on.
-
-    This class isn't usable on it's own though. It needs self._deref() and
-    self._get_ref_stack to be defined and working. As an ElementRef base class,
-    this is automatically true. If you want to make a ObjectWrapper for a
-    generic object, use the generic() class method.
-
-    """
-
-    def _unwrap_data_in(self,v):
-        """Unwrap incoming data.
-
-        This translates the context from self._base to self._deref()
-        """
-
-        if isinstance(v,Id):
-            return v.relto(self.id)
-        elif isinstance(v,ElementRef):
-            if self._base is v._base:
-                return ElementRef(self._deref(),v.id.relto(self.id))
-            else:
-                return v
-        elif isinstance(v,Transformation):
-            st = self._get_ref_stack()
-            t = st[0].transform
-            for e in st[1:-1]:
-                t = t * e.transform
-            return t.I * v
-        elif isinstance(v,V):
-            st = self._get_ref_stack()
-            t = st[0].transform
-            for e in st[1:]:
-                t = t * e.transform
-            return t.I(v)
-        elif isinstance(v,(tuple,list)):
-            return type(v)([self._wrap_data_in(i) for i in v])
-        else:
-            return v
-
-    def _wrap_data_out(self,r):
-        """Wrap outgoing data.
-        
-        This translates the context from self._deref() to self._base
-        """
-        import types
-
-        if isinstance(r,Id):
-            return self.id + r 
-        elif isinstance(r,ElementRef):
-            if r._base is self._deref():
-                return ElementRef(self._base,self.id + r.id)
-            else:
-                return r
-        elif isinstance(r,Transformation):
-            st = self._get_ref_stack()
-            t = st[0].transform
-            for e in st[1:-1]:
-                t = t * e.transform
-            return t * r
-        elif isinstance(r,V):
-            st = self._get_ref_stack()
-            t = st[0].transform
-            for e in st[1:]:
-                t = t * e.transform
-            return t(r)
-        elif isinstance(r,(tuple,list)):
-            return type(r)([self._wrap_data_out(i) for i in r])
-        elif isinstance(r,(types.GeneratorType)):
-            # Generator objects, for instance iterlayout() will use this. The
-            # above test is a bit limited though, iter((1,2,3)) is *not* a
-            # GeneratorType for instance.
-            class GeneratorWrapper(object):
-                def __init__(self,ref,r):
-                    self.ref = ref
-                    self.r = r
-                def __iter__(self):
-                    return self
-                def next(self):
-                    return self.ref._wrap_data_out(self.r.next())
-            return GeneratorWrapper(self,r)
-        elif isinstance(r,types.MethodType):
-            # Bound methods have their arguments and returned value wrapped.
-            # This is done by returning a callable object wrapping the method.
-            class MethodWrapper(object):
-                def __init__(self,ref,fn):
-                    self.ref = ref
-                    self.fn = fn
-                def __call__(self,*args,**kwargs):
-                    args = [self.ref._unwrap_data_in(i) for i in args]
-                    for k in kwargs.keys():
-                        kwargs[k] = self.ref._unwrap_data_in(kwargs[k])
-                    r = self.fn(*args,**kwargs)
-                    r = self.ref._wrap_data_out(r)
-                    return r
-            return MethodWrapper(self,r)
-        else:
-            return r
-
-    def __getattribute__(self_real,n):
-        self = lambda n: object.__getattribute__(self_real,n)
-        return self('_wrap_data_out')\
-                (getattr(self('_deref')(),n))
-
-    def __setattr__(self,n,v):
-        setattr(self._deref(),n,self._unwrap_data_in(v))
-
-    def __getitem__(self,k):
-        return self._wrap_data_out(
-                self._deref().__getitem__(
-                    self._unwrap_data_in(k)))
-
-    def __iter__(self):
-        for i in iter(self._deref()):
-            yield self._wrap_data_out(i) 
-
-
-class ElementRefError(KeyError):
-    """Referenced Element not found
-    
-    The stack of partially dereferenced Elements is available in partial_stack,
-    starting from base and ending at the last Element found.
-    """
-    def __init__(self,msg,partial_stack):
-        self.msg = msg
-
-        # Under some circumstances with ../ references a None can be added to
-        # the end of the stack, remove it.
-        if partial_stack[-1] is None:
-            partial_stack.pop()
-
-        self.partial_stack = partial_stack
-
-    def __str__(self):
-        return self.msg
-
-class ElementRef(ObjectWrapper):
-    """Reference an Element from a given context.
+class ElementRef(object):
+    """Weakly reference an Element from a given context.
 
     Why from a given context? Well, the context is what determines what the
     referenced Element is. For instance, in the context of 'a', 'b' is a
@@ -177,78 +32,41 @@ class ElementRef(ObjectWrapper):
     stores a reference to the Element providing the context, and the Id of the
     wrapped Element.
 
-    The second function of an ElementRef is to transform various parts of the
-    referened Element so as to be consistant from the referencing context. A
-    simple example is the Id. For instance if 'a' is referencing sub-element
-    'b' the ElementRef object a.b would have an .id of 'a/b' Similarly if b is
-    translated by (1,1), sub-elements of b should have their geometry
-    transformed as well, from a's perspective. Through bits of
-    __getattribute__-style magic this is achieved.
-
-    It's quite possible for the referenced Element to reference it's parent,
-    for instance '..' In that case the transformations applied are the inverse
-    of the context applied by the context.
-
-    ElementRefs are resolved at run-time, each attribute access triggers a
-    complete dereferencing/translation operation of the attribute. This also
-    means that an ElementRef does not increment the refcount of the referenced
-    Element. If a referenced Element isn't available, a ElementRefError will be
-    raised.
-
-    isinstance(ref,ElementRef) == True, and 
-    isinstance(ref,referenced element.__class__/base classes) == True
-
-    ElementRefs are context managers, and can be used with the with statement
-    as follows:
-
-    a = Element('a')
-    a.add(Element('b')
-    with a.b as b:
-        # do stuff with b, in the context of b
     """
-
-    # Since isinstance(e,Element) must work ElementRefs are implemented using
-    # __getattribute__ Except for __class__ accesses the logic is quite simple,
-    # if name is in ElementRef.__dict__, return self.name, otherwise,
-    # referenced.name Therefore the following names must be declared in the
-    # class context.
-    _base = None
-
-    # Id is a neat exception. It doesn't need wrapping, because, it's the bit
-    # of information that defines what wrapping needs to be done.
-    id = None
 
     # See Connects code for all the gory details. In short, since there is one,
     # and only one, ElementRef object for each base/ref combo each explicit
     # connection maps to one ElementRef object. This key is then used to help
-    # implement the *implicit* connectivity map, and is defined here for the
-    # above __getattribute__ magic reasons.
+    # implement the *implicit* connectivity map.
     _implicit_connectivity_key = None
 
-    def __new__(cls,base,id):
+    base = None
+    id = None
+
+    def __new__(cls,base,ref):
         """Create a new ElementRef
 
         base - Context providing Element 
-        id - Referenced Element Id
+        ref - Referenced Element, or Id
 
         A subtle point is that for any given base/id only one
         ElementRef object will be created, subsequent calls will return
-        the same object. This is required not just for performence reasons, but
-        to maintain the following invarient:
+        the same object. 
         
-        c2 = a.b.c
-        c2 is a.b.c
         """
 
-        id = Id(id)
+        id = None
+        try:
+            id = ref.id
+        except AttributeError:
+            id = Id(ref)
 
         try:
             return ElementRef_cache[base][id]
         except KeyError:
             self = object.__new__(cls)
 
-            assert(isinstance(base,Element))
-            self._base = base
+            self.base = base
             self.id = id
 
             try: 
@@ -260,76 +78,10 @@ class ElementRef(ObjectWrapper):
 
             return self
 
-    def _get_ref_stack(self):
-        """Get the stack of referenced elements, from base to ref"""
-        id = self.id
-        r = [self._base]
-        try:
-            while id:
-                if id[0] == '..':
-                    r.append(r[-1].parent)
-                else:
-                    r.append(r[-1].__dict__[r[-1]._element_id_to_dict_key(id[0])])
-                    if isinstance(r[-1],ElementRefContainer):
-                        r[-1] = object.__getattribute__(r[-1],'_elem')
-                id = id[1:]
-            # If id == '..' while will run out of id to check and r will have a
-            # None added to it due to the None parent, but this won't actually
-            # get checked by anything except the following.
-            if r[-1] is None:
-                raise KeyError
-            return r
-        except KeyError:
-            raise ElementRefError, \
-                ("'%s' not found in '%s'" % (str(self.id),str(self._base.id)), r)
-        except AttributeError:
-            raise ElementRefError, \
-                ("'%s' not found in '%s', ran out of parents at '%s'" %\
-                (str(self._base.id),str(self.id),
-                        str(self.id[0:\
-                            len(self.id) - len(id)])), r)
+    def __call__(self):
+        """Dereference
 
-    def _deref(self):
-        """Return referenced Element object."""
-        return self._get_ref_stack()[-1]
+        self.base[self.id]
 
-
-    def __getattribute__(self,n):
-        if n == '__class__':
-            return type('ElementRef',
-                        (ElementRef,self._deref().__class__),
-                        {})
-        elif n in ElementRef.__dict__ or n in ObjectWrapper.__dict__:
-            return object.__getattribute__(self,n)
-        else:
-            return super(ElementRef,self).__getattribute__(n)
-
-    def __setattr__(self,n,v):
-        if n in ElementRef.__dict__:
-            object.__setattr__(self,n,v)
-        else:
-            super(ElementRef,self).__setattr__(n,v)
-
-    def __enter__(self):
-        return self._deref()
-
-    @non_evalable_repr_helper
-    def __repr__(self):
-        return {'id':str(self.id),'base':str(self._base.id)}
-
-
-class ElementRefContainer(ElementRef):
-    """An ElementRef where the 'ref' is also the container for the Element
-    
-    Used to store sub-Elements of Elements.
-    """
-    def __new__(cls,base,elem):
-        self = super(ElementRefContainer,cls).__new__(cls,base,elem.id)
-
-        object.__setattr__(self,'_elem',elem)
-
-        return self
-
-    def _deref(self):
-        return object.__getattribute__(self,'_elem')
-
+        """
+        return self.base[self.id]
