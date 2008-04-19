@@ -68,15 +68,15 @@ class WrapperTest(TestCase):
         a = Element(id=Id('a'))
         b = Element(id=Id('b'))
 
-        wb = context.wrap(b,a,True)
+        wb = wrap(b,a,True)
         T(wb.id,'a/b')
-        wb2 = context.wrap(wb,a,False)
+        wb2 = wrap(wb,a,False)
         T(wb2.id,'b')
         T(wb2 is b)
 
-        wb = context.wrap(b,a,False)
+        wb = wrap(b,a,False)
         T(wb.id,'../b')
-        wb2 = context.wrap(wb,a,True)
+        wb2 = wrap(wb,a,True)
         T(wb2.id,'b')
         T(wb2 is b)
 
