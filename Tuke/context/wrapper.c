@@ -450,11 +450,6 @@ Wrapped_call(Wrapped *self,PyObject *args,PyObject *kwargs){
     return wr;
 }
 
-static PyObject *
-Wrapped_str(Wrapped *self){
-    return PyObject_Str(self->wrapped_obj);
-}
-
 static int
 Wrapped_compare(Wrapped *self,PyObject *other){
     int r;
@@ -467,16 +462,129 @@ Wrapped_compare(Wrapped *self,PyObject *other){
 }
 
 static PyObject *
-Wrapped_repr(Wrapped *self){
-    char buf[360];
-    PyOS_snprintf(buf,sizeof(buf),
-                  "<Wrapped at %p wrapping %.100s at %p with %.100s at %p>", self,
-                  self->wrapped_obj->ob_type->tp_name,
-                  self->wrapped_obj,
-                  self->wrapping_context->ob_type->tp_name,
-                  self->wrapping_context);
-    return PyString_FromString(buf);
+wrapped_str_repr_to_tuple(Wrapped *context,PyObject *obj,PyObject *r,int mode){
+    // Given a object, and a context, return a tuple of strings representing
+    // the (str|repr) of the object with the given context. The caller must
+    // then join the strings together.
+    //
+    // mode - 1 for str, 0 for repr
+    //
+    // One complication is that recursive chunks, IE, a __wrapped_repr__ that
+    // returns a tuple with objects that also use the protocol. The context
+    // must be applied only once, as the returned objects are all from the same
+    // context.
+    //
+    // r - chunks to date. The caller must set this to NULL, then a new tuple
+    // is created and added too by each recursive wrapped_str_repr_to_tuple
+    // call. Note that it's important for the caller to replace it's idea of r
+    // with the value returned, as the _PyTuple_Resize function may have to
+    // change r. On an exception, the innermost function DECREFs r.
+
+    PyObject *s = NULL,*chunks = NULL,*wobj = NULL;
+    if (!r){
+        r = PyTuple_New(0);
+        if (!r) goto bail;
+    }
+
+    char *method = mode ? "__wrapped_str__" : "__wrapped_repr__";
+    
+    chunks = PyObject_CallMethod(obj,method,NULL);
+    if (chunks){
+        // Object supports the __wrapped_(str|repr)__ protocol
+        if (!PyTuple_Check(chunks)){
+            PyErr_Format(PyExc_ValueError,
+                            "%s returned non-tuple (type %s)",
+                            method,
+                            chunks->ob_type->tp_name);
+            goto bail;
+        }
+        // add chunks to r
+        int i;
+        for (i = 0; i < PyTuple_GET_SIZE(chunks); i++){
+            r = wrapped_str_repr_to_tuple(context,
+                                          PyTuple_GET_ITEM(chunks,i),
+                                          r,mode);
+            if (!r) goto bail;
+        }
+    } else {
+        // Object does not support the __wrapped_(str|repr)__ protocol
+        PyErr_Clear();
+        wobj = xapply_context(context,obj);
+        if (!wobj) goto bail;
+
+        // Strings are always str()'d as repr('foo') == "'foo'" where we
+        // need "foo" This doesn't break rep(wrap('foo')) as 'foo' is returned
+        // unwrapped so the only way happens is through a recursive call of
+        // this function.
+        if (mode || PyString_CheckExact(wobj)){
+            s = PyObject_Str(wobj);
+        } else {
+            if (wobj->ob_type == &WrappedType){
+                char buf[360];
+                PyOS_snprintf(buf,sizeof(buf),
+                              "<Wrapped at %p wrapping %.100s "\
+                              "at %p with %.100s at %p>",
+                              context,
+                              context->wrapped_obj->ob_type->tp_name,
+                              context->wrapped_obj,
+                              context->wrapping_context->ob_type->tp_name,
+                              context->wrapping_context);
+                s = PyString_FromString(buf);
+            } else {
+                s = PyObject_Repr(wobj);
+            }
+        }
+        if (!s) goto bail;
+        if (_PyTuple_Resize(&r,PyTuple_GET_SIZE(r) + 1)) goto bail;
+        PyTuple_SET_ITEM(r,PyTuple_GET_SIZE(r) - 1,s);
+        s = NULL; // ref swallowed, don't want it DECREF'd at the bottom
+        
+        if (!r) goto bail;
+    }
+    goto normal_exit;
+bail:
+    Py_XDECREF(r);
+    r = NULL;
+normal_exit:
+    Py_XDECREF(chunks);
+    Py_XDECREF(wobj);
+    Py_XDECREF(s);
+    return r;
 }
+
+static PyObject *
+wrapped_str_repr(Wrapped *self,int mode){
+    PyObject *chunks = NULL,*empty = NULL;
+
+    chunks = wrapped_str_repr_to_tuple(self,self->wrapped_obj,NULL,mode);
+    if (!chunks) goto bail;
+
+    empty = PyString_FromString("");
+    if (!empty) goto bail;
+
+    PyObject *r;
+    r = PyObject_CallMethod(empty,"join","(O)",chunks);
+
+    goto normal_exit;
+bail:
+    r = NULL;
+normal_exit:
+    Py_XDECREF(chunks);
+    Py_XDECREF(empty);
+    return r;
+}
+
+
+static PyObject *
+Wrapped_str(Wrapped *self){
+    return wrapped_str_repr(self,1);
+}
+
+static PyObject *
+Wrapped_repr(Wrapped *self){
+    return wrapped_str_repr(self,0);
+}
+
 
 static long
 Wrapped_hash(Wrapped *self){
