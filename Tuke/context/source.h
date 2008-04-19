@@ -35,6 +35,7 @@ typedef struct {
     PyObject *in_weakreflist;
 } Source;
 
+PyObject *Source_new(PyTypeObject *type, PyObject *args, PyObject *kwargs);
 
 PyObject *initsource(void);
 

@@ -62,7 +62,7 @@ Source_clear(Source *self){
     return 0;
 }
 
-static PyObject *
+PyObject *
 Source_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
     Source *self;
     PyObject *id,*transform,*parent;

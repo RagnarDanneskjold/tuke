@@ -118,10 +118,10 @@ class Transformation(matrix,context.wrapper.Translatable):
             return base * self
 
     def _apply_context(self,elem):
-        return elem._transform_real * self
+        return elem.transform * self
 
     def _remove_context(self,elem):
-        return self * elem._transform_real.I
+        return self * elem.transform.I
 
     @odd_shape_handler
     @repr_helper

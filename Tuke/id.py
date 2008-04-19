@@ -179,10 +179,10 @@ class Id(context.wrapper.Translatable):
             return base + self
 
     def _apply_context(self,elem):
-        return elem._id_real + self
+        return elem.id + self
 
     def _remove_context(self,elem):
-        return self.relto(elem._id_real)
+        return self.relto(elem.id)
 
 def rndId():
     """Alias for Id.random()"""

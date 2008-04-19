@@ -184,11 +184,36 @@ apply_remove_context(PyObject *context,PyObject *obj,int apply){
     // Translatable types have their context applied, but they can't be put in
     // the cache because they don't have a destructor that would remove them.
     else if (PyObject_IsInstance(obj,(PyObject *)&TranslatableType)){
-        if (apply){
-            return PyObject_CallMethod(obj,"_apply_context","O",context);
+        PyObject *source_context,*r;
+        if (PyObject_IsInstance(context,(PyObject *)&WrappedType)){
+            Py_INCREF(context);
+            source_context = context;
         } else {
-            return PyObject_CallMethod(obj,"_remove_context","O",context);
+            // HACK! The innermost context, which is an actual Source instance
+            // as opposed to a Wrapped instance, has .id == Id('.') which
+            // breaks the (apply|remove)_context methods. So create a fake
+            // Source instance for it instead. 
+            source_context = Source_new(&SourceType,
+                                Py_BuildValue("(OOO)",
+                                    ((Source *)context)->id_real,
+                                    ((Source *)context)->transform_real,
+                                    ((Source *)context)->parent),
+                                NULL);
+            if (!source_context) return NULL;
         }
+        if (apply){
+/*#define repr(x) PyString_AsString(PyObject_Repr(x))
+            printf("_apply_context %s id=%s id_real=%s type=%s\n",
+                   repr(obj),
+                   repr(PyObject_GetAttrString(source_context,"id")),
+                   repr(PyObject_GetAttrString(source_context,"_id_real")),
+                   repr(context->ob_type));*/
+            r = PyObject_CallMethod(obj,"_apply_context","O",source_context);
+        } else {
+            r = PyObject_CallMethod(obj,"_remove_context","O",source_context);
+        }
+        Py_DECREF(source_context);
+        return r;
     }
     // Check if an outer wrap will cancel out an inner wrap
     else if (PyObject_IsInstance(obj,(PyObject *)&WrappedType) &&
@@ -334,16 +359,16 @@ static PyObject *
 Wrapped_getattr(Wrapped *self,PyObject *name){
     PyObject *r = NULL,*wr = NULL;
     // Special-cased Element methods
-    printf("getattr %s %s\n",
+/*    printf("getattr %s %s\n",
            PyString_AsString(PyObject_Repr(self)),
-           PyString_AsString(PyObject_Repr(name)));
+           PyString_AsString(PyObject_Repr(name)));*/
     if (PyType_IsSubtype(self->wrapped_obj->ob_type,&SourceType)){
         r = Py_FindMethod(special_element_methods,(PyObject *)self,
                           PyString_AsString(name));
         if (r) {
-            printf("special case method %s %s\n",
+/*            printf("special case method %s %s\n",
                    PyString_AsString(PyObject_Repr(name)),
-                   PyString_AsString(PyObject_Repr(r)));
+                   PyString_AsString(PyObject_Repr(r)));*/
             return r;
         }
         PyErr_Clear();
