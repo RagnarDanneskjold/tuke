@@ -64,10 +64,41 @@ Wrapped_traverse(Wrapped *self, visitproc visit, void *arg){
     return 0;
 }
 
+// There was a subtle bug in previous versions of these functions. The action
+// of removing the cached Wrapped instance from the wrapper_cache must happen
+// in Wrapped_clear, as once Wrapped_clear is finished, the self->wrapped_obj
+// and self->wrapping_context pointers are set to NULL, which causes the
+// DelItem to fail.
+
 static int
 Wrapped_clear(Wrapped *self){
-    Py_CLEAR(self->wrapped_obj);
-    Py_CLEAR(self->wrapping_context);
+    PyTupleObject *key;
+    PyObject *tmp_wrapped_obj,*tmp_wrapping_context;
+
+    tmp_wrapped_obj = self->wrapped_obj;
+    self->wrapped_obj = NULL;
+    tmp_wrapping_context = self->wrapping_context;
+    self->wrapping_context = NULL;
+
+    if (tmp_wrapped_obj && tmp_wrapping_context){
+        key = (PyTupleObject *)Py_BuildValue("(l,l,i)",
+                                             (long)tmp_wrapped_obj,
+                                             (long)tmp_wrapping_context,
+                                             self->apply);
+        // Is returning -1 correct? Seems to work, but the documentation isn't
+        // clear on what a inquiry function's return value is supposed to be.
+        // 
+        // In any case, leaks don't matter here, as the python interpreter
+        // bails if garbage collection routines raise exceptions.
+        if (!key) return -1;
+        if (PyDict_DelItem(wrapped_cache,(PyObject *)key))
+            return -1;
+        Py_DECREF(key);
+    }
+
+    Py_XDECREF(tmp_wrapped_obj);
+    Py_XDECREF(tmp_wrapping_context);
+
     return 0;
 }
 
@@ -75,26 +106,10 @@ static void
 Wrapped_dealloc(Wrapped* self){
     PyObject_GC_UnTrack(self);
 
-    // dealloc can be called with exceptions set, and the dict stuff we do
-    // below does not like that.
-    PyObject *ptype,*pvalue,*ptraceback;
-    PyErr_Fetch(&ptype,&pvalue,&ptraceback);
-
-    PyTupleObject *key;
     if (self->in_weakreflist != NULL)
             PyObject_ClearWeakRefs((PyObject *) self);
 
-    key = (PyTupleObject *)Py_BuildValue("(l,l,i)",
-                                         (long)self->wrapped_obj,
-                                         (long)self->wrapping_context,
-                                         self->apply);
-    int r = PyDict_DelItem(wrapped_cache,(PyObject *)key);
-
-    Py_XDECREF(key);
-
     Wrapped_clear(self);
-    PyObject_GC_Del(self);
-    PyErr_Restore(ptype,pvalue,ptraceback);
 }
 
 static PyObject *

@@ -26,6 +26,7 @@ extern PyTypeObject SourceType;
 
 typedef struct {
     PyObject_HEAD
+    PyObject *dict;
     PyObject *id;
     PyObject *id_real;
     PyObject *transform;

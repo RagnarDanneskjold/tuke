@@ -28,18 +28,21 @@
 
 static void
 Source_dealloc(Source* self){
+    PyObject_GC_UnTrack(self);
     if (self->in_weakreflist != NULL)
             PyObject_ClearWeakRefs((PyObject *) self);
+    Py_XDECREF(self->dict);
     Py_XDECREF(self->id);
     Py_XDECREF(self->id_real);
     Py_XDECREF(self->transform);
     Py_XDECREF(self->transform_real);
     Py_XDECREF(self->parent);
-    self->ob_type->tp_free((PyObject*)self);
+    PyObject_GC_Del(self);
 }
 
 static int
 Source_traverse(Source *self, visitproc visit, void *arg){
+    Py_VISIT(self->dict);
     Py_VISIT(self->id);
     Py_VISIT(self->id_real);
     Py_VISIT(self->transform);
@@ -50,6 +53,7 @@ Source_traverse(Source *self, visitproc visit, void *arg){
 
 static int
 Source_clear(Source *self){
+    Py_CLEAR(self->dict);
     Py_CLEAR(self->id);
     Py_CLEAR(self->id_real);
     Py_CLEAR(self->transform);
@@ -63,7 +67,11 @@ Source_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
     Source *self;
     PyObject *id,*transform,*parent;
 
-    self = (Source *)type->tp_alloc(type, 0);
+    self = PyObject_GC_New(Source,type);
+    self->in_weakreflist = NULL;
+
+    self->dict = PyDict_New();
+    if (!self->dict) return NULL;
 
     if (!PyArg_ParseTuple(args, "OOO", &id, &transform, &parent))
         return NULL;
@@ -74,6 +82,7 @@ Source_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
     Py_INCREF(transform); self->transform_real = transform;
     Py_INCREF(parent); self->parent = parent;
 
+    PyObject_GC_Track(self);
     return (PyObject *)self;
 }
 
@@ -141,10 +150,16 @@ static PyGetSetDef Source_getseters[] = {
     {NULL}
 };
 
+static PyMemberDef Source_members[] = {
+    {"__dict__", T_OBJECT_EX, offsetof(Source, dict), 0,
+     NULL},
+    {NULL}  /* Sentinel */
+};
+
 PyTypeObject SourceType = {
     PyObject_HEAD_INIT(&PyType_Type)
     0,                         /*ob_size*/
-    "Tuke.context.source.Source",             /*tp_name*/
+    "Tuke.context._source.Source",             /*tp_name*/
     sizeof(Source),             /*tp_basicsize*/
     0,                         /*tp_itemsize*/
     (destructor)Source_dealloc, /*tp_dealloc*/
@@ -171,16 +186,17 @@ PyTypeObject SourceType = {
     0,		               /* tp_iter */
     0,		               /* tp_iternext */
     0,             /* tp_methods */
-    0,             /* tp_members */
+    Source_members,             /* tp_members */
     Source_getseters,                         /* tp_getset */
     0,                         /* tp_base */
     0,                         /* tp_dict */
     0,                         /* tp_descr_get */
     0,                         /* tp_descr_set */
-    0,                         /* tp_dictoffset */
+    offsetof(Source, dict),    /* tp_dictoffset */
     0,      /* tp_init */
     0,                         /* tp_alloc */
     Source_new,                         /* tp_new */
+    PyObject_GC_Del, /* tp_del */
 };
 
 PyObject *
