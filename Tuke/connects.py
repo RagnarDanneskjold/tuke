@@ -38,6 +38,7 @@ for implicit connections.
 import Tuke
 import Tuke.context
 import Tuke.source
+import Tuke.repr_helper
 import weakref
 
 # Implicit connections are the most interesting feature to implement.  Elements
@@ -197,7 +198,7 @@ class Connects(set):
             self.add(e)
     base = property(_get_base,_set_base)
 
-    @Tuke.repr_helper
+    @Tuke.repr_helper.repr_helper
     def __repr__(self):
         ids = tuple([r.id for r in self])
         return ((sorted(ids),),

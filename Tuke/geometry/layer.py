@@ -17,7 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from Tuke import repr_helper
+import Tuke.repr_helper
 
 class Layer(str):
     """Layer identifiers.
@@ -85,6 +85,6 @@ class Layer(str):
 
         return True
 
-    @repr_helper
+    @Tuke.repr_helper.repr_helper
     def __repr__(self):
         return ((str(self),),None)
