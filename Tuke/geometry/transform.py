@@ -28,7 +28,7 @@ and updated as needed. The decorators then apply transformations to the
 geometry data before returning it.
 """
 
-from Tuke import repr_helper
+import Tuke.repr_helper
 from Tuke import Element,Id
 
 import Tuke.context as context
@@ -124,7 +124,7 @@ class Transformation(matrix,context.wrapper.Translatable):
         return self * elem.transform.I
 
     @odd_shape_handler
-    @repr_helper
+    @Tuke.repr_helper.repr_helper
     def __repr__(self):
         if self.shape != (3,3):
             raise OddShapeError

@@ -14,7 +14,7 @@ import shutil
 import common
 
 from unittest import TestCase
-from Tuke import repr_helper,non_evalable_repr_helper 
+import Tuke.repr_helper
 
 class repr_helperTest(TestCase):
     """Perform tests of repr_helper"""
@@ -28,7 +28,7 @@ class repr_helperTest(TestCase):
                 self.b = b
                 self.goo = goo
 
-            @repr_helper
+            @Tuke.repr_helper.repr_helper
             def __repr__(self):
                 return ((self.a,self.b),{'goo':self.goo})
 
@@ -42,7 +42,7 @@ class repr_helperTest(TestCase):
         class foo(object):
             def __init__(self,kw):
                 self.kw = kw
-            @non_evalable_repr_helper
+            @Tuke.repr_helper.non_evalable_repr_helper
             def __repr__(self):
                 return self.kw 
 
@@ -55,7 +55,7 @@ class repr_helperTest(TestCase):
         class foo(object):
             def __init__(self,kw):
                 self.kw = kw
-            @non_evalable_repr_helper
+            @Tuke.repr_helper.non_evalable_repr_helper
             def __repr__(self):
                 return self.kw
 

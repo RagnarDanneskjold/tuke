@@ -17,6 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
+import Tuke.repr_helper
 import weakref
 
 from Tuke import Element,Id
@@ -85,3 +86,7 @@ class ElementRef(object):
 
         """
         return self.base[self.id]
+
+    @Tuke.repr_helper.non_evalable_repr_helper
+    def __repr__(self):
+        return {'id':str(self.id),'base':str(self._base.id)}
