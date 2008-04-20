@@ -26,6 +26,8 @@ import Tuke
 import Tuke.context as context
 from Tuke.source import Source
 
+import Tuke.repr_helper
+
 def versions_compatible(cur,other):
     """Compare two versions and return compatibility.
 
@@ -294,7 +296,7 @@ class Element(context._source.Source):
         # reraise
         return False
 
-    @Tuke.repr_helper
+    @Tuke.repr_helper.repr_helper
     def __repr__(self):
         kwargs = self._repr_kwargs() 
         return ((),kwargs)

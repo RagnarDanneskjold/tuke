@@ -17,7 +17,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from Tuke import Element,Id,non_evalable_repr_helper
+import Tuke.repr_helper
+from Tuke import Element,Id
 
 from Tuke.geometry import V,Transformation
 
@@ -313,7 +314,7 @@ class ElementRef(ObjectWrapper):
     def __enter__(self):
         return self._deref()
 
-    @non_evalable_repr_helper
+    @Tuke.repr_helper.non_evalable_repr_helper
     def __repr__(self):
         return {'id':str(self.id),'base':str(self._base.id)}
 

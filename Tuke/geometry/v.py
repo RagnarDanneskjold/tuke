@@ -19,7 +19,7 @@
 
 from numpy import matrix
 
-from Tuke import repr_helper
+import Tuke.repr_helper
 
 from Tuke.geometry.matrix_subclassing import OddShapeError,odd_shape_handler
 
@@ -35,7 +35,7 @@ class V(matrix):
         return super(V,cls).__new__(cls,(float(x),float(y)))
 
     @odd_shape_handler
-    @repr_helper
+    @Tuke.repr_helper.repr_helper
     def __repr__(self):
         if self.shape != (1,2):
             raise OddShapeError 

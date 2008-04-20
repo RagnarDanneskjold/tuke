@@ -17,9 +17,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
-from Tuke import repr_helper
-
 import Tuke.context as context
+import Tuke.repr_helper
 
 import re
 
@@ -151,7 +150,7 @@ class Id(context.wrapper.Translatable):
             else:
                 return 1
 
-    @repr_helper
+    @Tuke.repr_helper.repr_helper
     def __repr__(self):
         s = str(self)
 
