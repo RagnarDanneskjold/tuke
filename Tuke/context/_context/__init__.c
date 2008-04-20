@@ -35,11 +35,11 @@ static PyMethodDef methods[] = {
 #define PyMODINIT_FUNC void
 #endif
 PyMODINIT_FUNC
-initcontext(void){
+init_context(void){
     PyObject *m,*wrapper_module = NULL,*source_module = NULL;
 
-    m = Py_InitModule3("Tuke.context", methods,
-                       "Object context.");
+    m = Py_InitModule3("Tuke.context._context", methods,
+                       "Object context, internal C extension.");
     if (m == NULL) goto bail;
 
 
