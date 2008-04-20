@@ -21,21 +21,25 @@ class repr_helperTest(TestCase):
 
     def testrepr_helper(self):
         """repr_helper decorator"""
+        def T(got,expected = True):
+            self.assert_(got == expected,'got: %s  expected: %s' % (got,expected))
 
         class foo:
-            def __init__(self,a,b,goo = 'green'):
+            def __init__(self,a,b,bar,goo = 'green',zoo = 'sydney'):
                 self.a = a
                 self.b = b
+                self.bar = bar
                 self.goo = goo
+                self.zoo = zoo
 
             @Tuke.repr_helper.repr_helper
             def __repr__(self):
-                return ((self.a,self.b),{'goo':self.goo})
+                return ((self.a,self.b,self.bar),{'goo':self.goo,'zoo':self.zoo})
 
         
-        f = foo(1,2)
+        f = foo(1,2,'werd')
 
-        self.assert_(repr(f) == 'Tuke.tests.repr_helper.foo(1,2,goo = \'green\')')
+        T(repr(f),"Tuke.tests.repr_helper.foo(1,2,'werd',goo='green',zoo='sydney')")
 
     def testnon_evalable_repr_helper(self):
         """non_evalable_repr_helper decorator"""

@@ -22,8 +22,11 @@ from __future__ import with_statement
 from collections import deque
 import weakref
 
+import Tuke.repr_helper
+
 import Tuke
 import Tuke.context as context
+import Tuke.context.wrapped_str_repr
 from Tuke.source import Source
 
 import Tuke.repr_helper
@@ -296,10 +299,11 @@ class Element(context._source.Source):
         # reraise
         return False
 
-    @Tuke.repr_helper.repr_helper
-    def __repr__(self):
+    @Tuke.repr_helper.wrapped_repr_helper
+    def __wrapped_repr__(self):
         kwargs = self._repr_kwargs() 
         return ((),kwargs)
+    __repr__ = Tuke.context.wrapped_str_repr.unwrapped_repr
 
     def _serialize(self,r,indent,root=False,full=False):
         r.append('%s%s = %s; ' % (indent,self.id,repr(self)))

@@ -17,6 +17,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
+from Tuke.context.wrapped_str_repr import unwrapped_repr
+from collections import deque
+
 def shortest_class_name(cls):
     """Returns the shortest class name for cls"""
 
@@ -50,15 +53,8 @@ def shortest_class_name(cls):
 
     return module_name + '.' + class_name 
 
-
-def repr_helper(fn):
-    """Decorator to make writin __repr__ functions easier.
-
-    Writing a __repr__ function designed to produce output that can be passed
-    to eval() is relatively involved, with subtle issues like what is the full
-    name of the class. This decorator allows the __repr__ function to simply
-    return a (args,kwargs) tuple instead, the decorator will handle the rest.
-    """
+def wrapped_repr_helper(fn):
+    """Decorator to make writing __wrapped_repr__ functions easier."""
 
     def f(self):
         (args,kwargs) = fn(self)
@@ -68,15 +64,57 @@ def repr_helper(fn):
         if not kwargs:
             kwargs = {}
 
-        # positional arguments are easy, just repr each one
-        args = [repr(a) for a in args] 
+        r = deque() 
 
-        # keyword arguments get transformed into name = value syntax
-        kwargs = ['%s = %s' % (n,repr(v)) for (n,v) in sorted(kwargs.iteritems())]
+        # str objects are special cased, and get str-ed, not repr-ed, so we
+        # need to add quotes manually.
+        def quote_str(obj):
+            if obj.__class__ == str:
+                return ("'",obj,"'")
+            else:
+                return (obj,)
 
-        args_str = ','.join(args + kwargs)
+        # positional arguments are easy, just insert a ',' between each one
+        if args:
+            for a in args:
+                r.extend(quote_str(a))
+                r.append(',')
+            r.pop()
 
-        return '%s(%s)' % (shortest_class_name(self.__class__),args_str)
+        # Keyword arguments get transformed into name=value syntax sorted by
+        # name.
+        if kwargs:
+            if r:
+                r.append(',')
+            for n,v in sorted(kwargs.iteritems()):
+                r.append(n)
+                r.append('=')
+                r.extend(quote_str(v))
+                r.append(',')
+            r.pop()
+
+        r.appendleft('(')
+        r.appendleft(shortest_class_name(self.__class__))
+        r.append(')')
+        return tuple(r) 
+
+    return f
+
+def repr_helper(fn):
+    """Decorator to make writing __repr__ functions easier.
+
+    Writing a __repr__ function designed to produce output that can be passed
+    to eval() is relatively involved, with subtle issues like what is the full
+    name of the class. This decorator allows the __repr__ function to simply
+    return a (args,kwargs) tuple instead, the decorator will handle the rest.
+    """
+    fn = wrapped_repr_helper(fn)
+    def f(self):
+        # Isn't this a fun little bit of sticky glue?
+        class shim:
+            def __wrapped_repr__(shim_self):
+                return fn(self)
+        return unwrapped_repr(shim())
 
     return f
 

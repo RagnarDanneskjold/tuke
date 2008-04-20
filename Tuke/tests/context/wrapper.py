@@ -360,6 +360,66 @@ class WrapperTest(TestCase):
         w = wrap(object(),a)
         self.assertRaises(TypeError,lambda: iter(w))
 
+    def test_Wrapped_repr_str(self):
+        """repr(Wrapped) and __wrapped_repr__ special"""
+        global bypass
+
+        a = Element(id=Id('a'))
+
+        class skit(object):
+            def __wrapped_repr__(self):
+                return bypass
+            def __wrapped_str__(self):
+                return bypass
+
+        w = wrap(skit(),a)
+
+        bypass = None
+        self.assertRaises(ValueError,lambda: repr(w))
+
+        def T(chunks,expectedr,expecteds = None):
+            if expecteds is None:
+                expecteds = expectedr
+            global bypass
+            bypass = chunks
+            gotr = repr(w)
+            gots = str(w)
+            self.assert_(expectedr == gotr,
+                    'got repr: %s  expected: %s' % (gotr,expectedr))
+            self.assert_(expecteds == gots,
+                    'got str: %s  expected: %s' % (gots,expecteds))
+
+        T((),'')
+        T((None,),repr(None))
+        T((1506,' nix',' nix'),"1506 nix nix")
+        T((Id('.'),),repr(Id('a')),'a')
+        T((Id('a'),),repr(Id('a/a')),'a/a')
+
+        class foo:
+            def __wrapped_repr__(self):
+                return (Id('foo'),)
+            def __wrapped_str__(self):
+                return (Id('foo'),)
+
+        class bar:
+            def __wrapped_repr__(self):
+                return (Id('bar'),',',foo())
+            def __wrapped_str__(self):
+                return (Id('bar'),',',foo())
+
+        class far:
+            def __wrapped_repr__(self):
+                return (Id('far'),',',bar())
+            def __wrapped_str__(self):
+                return (Id('far'),',',bar())
+
+        T((far(),),
+                "Tuke.Id('a/far'),Tuke.Id('a/bar'),Tuke.Id('a/foo')",
+                "a/far,a/bar,a/foo")
+
+        # FIXME: recursive, and crashes
+        # T((skit(),),repr(Id('.')))
+
     def test_Wrapped_data_in_out(self):
         """Wrapped data in/out"""
 
