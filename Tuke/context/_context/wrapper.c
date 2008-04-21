@@ -297,49 +297,36 @@ wrap(PyTypeObject *junk, PyObject *args){
 #define xapply_context(self,obj) apply_remove_context(((Wrapped *)self)->wrapping_context,obj,((Wrapped *)self)->apply) 
 #define xremove_context(self,obj) apply_remove_context(((Wrapped *)self)->wrapping_context,obj,!(((Wrapped *)self)->apply))
 
+static PyObject *
+unwrap_wrapped_element(PyObject *e){
+    // Unwrap all wrappers from an Element except for the standard wrapping of
+    // an element in itself.
+    PyObject *p = e;
+    while (e->ob_type == &WrappedType){
+        p = e;
+        e = ((Wrapped *)e)->wrapped_obj;
+    }
+    return p;
+}
+
 // Elements have the following specially handled method attributes:
 //
 // __enter__(self) -> unwrapped self
 static PyObject *
-element_enter_method(Wrapped *self,PyObject *unused){
-    // The "bare" Element that the user expects to work with, is actually an
-    // element wrapped itself, so make sure we don't undo that last level of
-    // wrapping.
-    printf("special enter method %s\n",
-           PyString_AsString(PyObject_Repr(self->wrapped_obj)));
-    PyErr_SetString(PyExc_ValueError,"Element is not wrapped in a context.");
-    return NULL;
-    if (PyType_IsSubtype(self->wrapped_obj->ob_type,&WrappedType)){
-        Py_INCREF(((Wrapped *)(self->wrapped_obj))->wrapped_obj);
-        return ((Wrapped *)(self->wrapped_obj))->wrapped_obj;
-    } else {
-        printf("setting error\n");
-        PyErr_SetString(PyExc_ValueError,"Element is not wrapped in a context.");
-        return NULL;
-    }
+element_enter_method(PyObject *self,PyObject *unused){
+    self = unwrap_wrapped_element(self);
+    Py_INCREF(self);
+    return self;
 }
 
 // add(self,element) -> wrapped element
 static PyObject *
 element_add_method(Wrapped *self,PyObject *elem){
-    PyObject *r,*wr,*e,*p;
-    // There may be multiple levels of wrapping, such as in the case,
-    // a.b.add(), so we have to drill down each level until we reach bottom.
-    //
-    // a.b.c.add(a.b) will still fail however, as a.b has a parent, a
-    e = elem;
-    p = e;
-    while (PyType_IsSubtype(e->ob_type,&WrappedType)){
-        // Save what object wrapped e->wrapped_obj
-        p = e;
-        // Down a level
-        e = ((Wrapped *)e)->wrapped_obj;
-    }
-    // Lowest level, e is now the actual Element object, which we *don't* want,
-    // so call add() with p, the wrapped version of it.
-    Py_INCREF(p);
-    r = PyObject_CallMethod(self->wrapped_obj,"add","(O)",p);
-    Py_DECREF(p);
+    PyObject *r,*wr;
+    elem = unwrap_wrapped_element(elem);
+    Py_INCREF(elem);
+    r = PyObject_CallMethod(self->wrapped_obj,"add","(O)",elem);
+    Py_DECREF(elem);
     if (!r) return NULL;
     Py_INCREF(r);
     wr = xapply_context(self,r);
