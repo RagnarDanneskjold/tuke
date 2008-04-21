@@ -22,7 +22,7 @@ class SchComponentTest(TestCase):
     """Perform tests of the sch.Component class"""
 
     def testComponent(self):
-        """Basic tests"""
+        """Basic tests of Component"""
 
         def T(got,expected):
             self.assert_(got == expected,'\ngot: %s\nexpected: %s' % (repr(got),repr(expected)))

@@ -22,6 +22,6 @@ class GeometryHoleTest(TestCase):
     """Perform tests of the geometry.Hole class"""
 
     def testGeometryHole(self):
-        """Basic tests"""
+        """Hole()"""
 
         a = Hole(dia=1)

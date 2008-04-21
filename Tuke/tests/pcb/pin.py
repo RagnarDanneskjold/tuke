@@ -21,7 +21,7 @@ class PcbFootprintPinTest(TestCase):
     """Perform tests of the pcb.footprint.Pin class"""
 
     def testPcbFootprintPin(self):
-        """Basic tests"""
+        """Pin()"""
 
         a = Pin(dia=1,
                 thickness=1,
