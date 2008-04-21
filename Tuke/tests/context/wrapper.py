@@ -162,8 +162,8 @@ class WrapperTest(TestCase):
         gc.collect(2)
         self.assert_(_wrapped_cache.keys() == keys)
 
-    def test_Wrapped_getset_attr(self):
-        """(get|set)attr on Wrapped object"""
+    def test_Wrapped_getsetdel_attr(self):
+        """(get|set|del)attr on Wrapped object"""
         def T(got,expected = True):
             self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
 
@@ -178,28 +178,34 @@ class WrapperTest(TestCase):
 
         a = Element(id=Id('a'))
         b = Element(id=Id('b'))
-
         w = wrap(b,a)
 
-        R(AttributeError,lambda: w.VenezuelanBeaverCheese)
-       
+        # A fail getattr should raise an exception, but not change reference
+        # counts.
         n = "NorweiganJarlsburg"
         n_refc = sys.getrefcount(n)
         R(AttributeError,lambda: getattr(w,n))
         T(sys.getrefcount(n),n_refc)
-        import gc
        
         n = "Abuse"
         n_refc = sys.getrefcount(n)
         v = skit('vacuous_coffee_nosed_maloderous_pervert')
         v_refc = sys.getrefcount(v)
+
+        # setattr should add a reference to the name and value.
         setattr(w,n,v)
         T(sys.getrefcount(n) - 1,n_refc)
         T(sys.getrefcount(v) - 1,v_refc)
 
+        # getattr should not effect anything.
         T(w.Abuse,v) 
         T(sys.getrefcount(n) - 1,n_refc)
         T(sys.getrefcount(v) - 1,v_refc)
+
+        # delattr should decref name and value
+        delattr(w,n)
+        T(sys.getrefcount(n),n_refc)
+        T(sys.getrefcount(v),v_refc)
 
     def test_Wrapped_hash(self):
         """hash(Wrapped)"""

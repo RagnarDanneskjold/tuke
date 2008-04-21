@@ -389,9 +389,15 @@ Wrapped_setattr(Wrapped *self,PyObject *name,PyObject *value){
     PyObject *unwrapped=NULL;
     int r;
 
-    unwrapped = xremove_context(self,value);
+    // delattr is implemented as setattr with a NULL value.
+    if (value){
+        unwrapped = xremove_context(self,value);
+        if (!unwrapped) return -1;
+    } else {
+        unwrapped = NULL;
+    }
     r = PyObject_SetAttr(self->wrapped_obj,name,unwrapped);
-    Py_DECREF(unwrapped);
+    Py_XDECREF(unwrapped);
 
     return r;
 }
