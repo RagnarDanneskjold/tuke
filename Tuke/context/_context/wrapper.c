@@ -522,23 +522,23 @@ wrapped_str_repr_to_tuple(Wrapped *context,PyObject *obj,PyObject *r,int mode){
         // need "foo" This doesn't break rep(wrap('foo')) as 'foo' is returned
         // unwrapped so the only way happens is through a recursive call of
         // this function.
-        if (mode || PyString_CheckExact(wobj)){
+        if (PyString_CheckExact(wobj)){
+            s = PyObject_Str(wobj);
+        } else if (wobj->ob_type == &WrappedType){
+            char buf[360];
+            PyOS_snprintf(buf,sizeof(buf),
+                          "<Wrapped at %p wrapping %.100s "\
+                          "at %p with %.100s at %p>",
+                          context,
+                          context->wrapped_obj->ob_type->tp_name,
+                          context->wrapped_obj,
+                          context->wrapping_context->ob_type->tp_name,
+                          context->wrapping_context);
+            s = PyString_FromString(buf);
+        } else if (mode) {
             s = PyObject_Str(wobj);
         } else {
-            if (wobj->ob_type == &WrappedType){
-                char buf[360];
-                PyOS_snprintf(buf,sizeof(buf),
-                              "<Wrapped at %p wrapping %.100s "\
-                              "at %p with %.100s at %p>",
-                              context,
-                              context->wrapped_obj->ob_type->tp_name,
-                              context->wrapped_obj,
-                              context->wrapping_context->ob_type->tp_name,
-                              context->wrapping_context);
-                s = PyString_FromString(buf);
-            } else {
-                s = PyObject_Repr(wobj);
-            }
+            s = PyObject_Repr(wobj);
         }
         if (!s) goto bail;
         if (_PyTuple_Resize(&r,PyTuple_GET_SIZE(r) + 1)) goto bail;

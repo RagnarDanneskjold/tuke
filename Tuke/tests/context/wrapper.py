@@ -221,8 +221,8 @@ class WrapperTest(TestCase):
         self.assert_(hash(w) == 1930)
 
     def test_Wrapped_as_mapping_sequence(self):
-        global bypass
         """Wrapped objects support the mapping/sequence protocol"""
+        global bypass
         def T(got,expected = True):
             self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
         def B(got,expected,bypass_expected):
@@ -367,7 +367,22 @@ class WrapperTest(TestCase):
         self.assertRaises(TypeError,lambda: iter(w))
 
     def test_Wrapped_repr_str(self):
-        """repr(Wrapped) and __wrapped_repr__ special"""
+        """(str|repr)(Wrapped)"""
+        class skit(object):
+            def __repr__(self):
+                return "repr" 
+            def __str__(self):
+                return "str" 
+
+        context = Element(id=Id('a'))
+        s = skit()
+        w = wrap(s,context)
+
+        self.assert_(str(w),'str') 
+        self.assert_(repr(w)) 
+
+    def test_Wrapped_repr_str_special(self):
+        """__wrapped_(str|repr)__ special"""
         global bypass
 
         a = Element(id=Id('a'))
