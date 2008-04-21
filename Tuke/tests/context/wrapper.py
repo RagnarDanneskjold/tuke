@@ -125,9 +125,9 @@ class WrapperTest(TestCase):
         b = object()
         br = sys.getrefcount(b)
 
-        wa = context.wrap(a,e)
+        wa = wrap(a,e)
         war = sys.getrefcount(wa)
-        wb = context.wrap(b,e)
+        wb = wrap(b,e)
         wbr = sys.getrefcount(wb)
 
         cmp(wa,wb)
