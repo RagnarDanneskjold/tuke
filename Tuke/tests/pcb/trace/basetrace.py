@@ -18,7 +18,7 @@ class PcbTraceBaseTraceTest(TestCase):
     """Perform tests of the pcb.footprint.Pin class"""
 
     def testBaseTrace(self):
-        """Basic tests"""
+        """Basic tests of BaseTrace"""
 
         def T(got,expected = True):
             self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))

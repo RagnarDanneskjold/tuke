@@ -22,7 +22,7 @@ class PcbFootprintPadTest(TestCase):
     """Perform tests of the pcb.footprint.Pad class"""
 
     def testPcbFootprintPad(self):
-        """Basic tests"""
+        """Pad()"""
 
         a = Pad(a=(0,0),b=(1,1),
                 thickness=0.5,

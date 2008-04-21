@@ -22,6 +22,6 @@ class GeometryPolygonTest(TestCase):
     """Perform tests of the geometry.Polygon class"""
 
     def testGeometryPolygon(self):
-        """Basic tests"""
+        """Polygon()"""
 
         a = Polygon(ext=((0,0),(1,1),(1,0)),layer='front.solder')
