@@ -99,17 +99,17 @@ PyTypeObject CFunctionType = {
 
 
 // Test code
-PyObject *test_func(void *closure,PyObject *args,PyObject *kwargs){
+PyObject *CFunction_test_func(void *closure,PyObject *args,PyObject *kwargs){
    Py_INCREF(*((PyObject **)closure));
 
    Py_RETURN_TRUE;
 }
-void test_func_dealloc(void *closure){
+void CFunction_test_func_dealloc(void *closure){
     Py_DECREF(*((PyObject **)closure));
     PyMem_Free(closure);
 }
 
-PyObject *test(PyObject *ignored){
+PyObject *CFunction_test(PyObject *ignored){
     CFunction *f = NULL;
     PyObject *r = NULL;
     PyObject *obj = PyString_FromString(
@@ -122,7 +122,9 @@ science.");
     objp = PyMem_Malloc(sizeof(PyObject *));
     *objp = obj;
     Py_INCREF(obj);
-    f = (CFunction *)CFunction_new(test_func,test_func_dealloc,objp);
+    f = (CFunction *)CFunction_new(CFunction_test_func,
+                                   CFunction_test_func_dealloc,
+                                   objp);
     if (!f) goto bail;
 
     int i;
@@ -163,7 +165,7 @@ bail:
 
 
 static PyMethodDef methods[] = {
-    {"test", (PyCFunction)test, METH_NOARGS,
+    {"test", (PyCFunction)CFunction_test, METH_NOARGS,
      NULL},
     {NULL,NULL,0,NULL}
 };
