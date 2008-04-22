@@ -22,6 +22,7 @@
 #include <Python.h>
 #include "structmember.h"
 
+#include "cfunction.h"
 #include "source.h"
 #include "wrapper.h"
 
@@ -36,12 +37,20 @@ static PyMethodDef methods[] = {
 #endif
 PyMODINIT_FUNC
 init_context(void){
-    PyObject *m,*wrapper_module = NULL,*source_module = NULL;
+    PyObject *m,
+             *cfunction_module = NULL,
+             *source_module = NULL,
+             *wrapper_module = NULL;
 
     m = Py_InitModule3("Tuke.context._context", methods,
                        "Object context, internal C extension.");
     if (m == NULL) goto bail;
 
+
+    cfunction_module = initcfunction();
+    if (!cfunction_module) goto bail;
+    PyModule_AddObject(m, "_cfunction",
+                       cfunction_module);
 
     source_module = initsource();
     if (!source_module) goto bail;
