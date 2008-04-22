@@ -24,6 +24,7 @@
 
 #include "cfunction.h"
 #include "source.h"
+#include "weakset.h"
 #include "wrapper.h"
 
 static PyMethodDef methods[] = {
@@ -40,6 +41,7 @@ init_context(void){
     PyObject *m,
              *cfunction_module = NULL,
              *source_module = NULL,
+             *weakset_module = NULL,
              *wrapper_module = NULL;
 
     m = Py_InitModule3("Tuke.context._context", methods,
@@ -56,6 +58,11 @@ init_context(void){
     if (!source_module) goto bail;
     PyModule_AddObject(m, "_source",
                        source_module);
+
+    weakset_module = initweakset();
+    if (!weakset_module) goto bail;
+    PyModule_AddObject(m, "_weakset",
+                       weakset_module);
 
     wrapper_module = initwrapper();
     if (!wrapper_module) goto bail;

@@ -24,6 +24,7 @@ from setuptools import setup, find_packages, Extension
 _context_module = Extension('Tuke.context._context',
     sources = ['Tuke/context/_context/cfunction.c',
                'Tuke/context/_context/source.c',
+               'Tuke/context/_context/weakset.c',
                'Tuke/context/_context/wrap_dict.c',
                'Tuke/context/_context/wrap_list.c',
                'Tuke/context/_context/wrap_tuple.c',

@@ -27,6 +27,7 @@ from Tuke.tests.connects import *
 from Tuke.tests.repr_helper import *
 
 from Tuke.tests.context._context._cfunction import *
+from Tuke.tests.context._context._weakset import *
 from Tuke.tests.context.source import *
 from Tuke.tests.context.wrapped_str_repr import *
 from Tuke.tests.context.wrapper import *
