@@ -28,12 +28,17 @@ typedef struct {
     PyObject_HEAD
     PyObject *in_weakreflist;
     PyObject *(*f)(void *closure,PyObject *args,PyObject *kwargs);
+    void (*fd)(void *closure);
     void *closure;
 } CFunction;
 
+// Create a new CFunction, a callable object that will call function pointer f
+// when called with closure. When the object is deallocated, function pointer
+// fd is called if it is not NULL. 
 PyObject *CFunction_new(PyObject *(*f)(void *closure,
                                        PyObject *args,
                                        PyObject *kwargs),
+                        void (*fd)(void *closure),
                         void *closure);
 
 PyObject *initcfunction(void);

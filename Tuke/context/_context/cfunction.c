@@ -29,6 +29,7 @@
 PyObject *CFunction_new(PyObject *(*f)(void *closure,
                                        PyObject *args,
                                        PyObject *kwargs),
+                        void (*fd)(void *closure),
                         void *closure){
     CFunction *self;
     self = (CFunction *)CFunctionType.tp_alloc(&CFunctionType, 0);
@@ -36,11 +37,14 @@ PyObject *CFunction_new(PyObject *(*f)(void *closure,
     self->in_weakreflist = NULL;
 
     self->f = f;
+    self->fd = fd;
     self->closure = closure;
     return (PyObject *)self;
 }
 
 void CFunction_dealloc(CFunction *self){
+    if (self->fd)
+        self->fd(self->closure);
     if (self->in_weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
     self->ob_type->tp_free((PyObject*)self);
@@ -96,9 +100,13 @@ PyTypeObject CFunctionType = {
 
 // Test code
 PyObject *test_func(void *closure,PyObject *args,PyObject *kwargs){
-   Py_INCREF((PyObject *)closure);
+   Py_INCREF(*((PyObject **)closure));
 
    Py_RETURN_TRUE;
+}
+void test_func_dealloc(void *closure){
+    Py_DECREF(*((PyObject **)closure));
+    PyMem_Free(closure);
 }
 
 PyObject *test(PyObject *ignored){
@@ -108,20 +116,33 @@ PyObject *test(PyObject *ignored){
 "The cockatrice, which no one ever saw, was born by accident at the end of the \
 twelfth century and died in the middle of the seventeenth, a victim of the new \
 science.");
+    PyObject **objp = NULL;
     if (!obj) goto bail;
 
-    f = (CFunction *)CFunction_new(test_func,obj);
+    objp = PyMem_Malloc(sizeof(PyObject *));
+    *objp = obj;
+    Py_INCREF(obj);
+    f = (CFunction *)CFunction_new(test_func,test_func_dealloc,objp);
     if (!f) goto bail;
 
-    r = PyObject_CallObject((PyObject *)f,NULL);
-    if (!r) goto bail;
+    int i;
+    for (i = 0; i < 10; i++){
+        r = PyObject_CallObject((PyObject *)f,NULL);
+        if (!r) goto bail;
+        if (obj->ob_refcnt != 3){
+            PyErr_SetString(PyExc_AssertionError,
+                            "obj->ob_refcnt != 3");
+            goto bail;
+        }
+        Py_DECREF(obj);
+    }
 
-    if (obj->ob_refcnt != 2){
+    Py_DECREF(f); f = NULL;
+    if (obj->ob_refcnt != 1){
         PyErr_SetString(PyExc_AssertionError,
-                        "obj->ob_refcnt != 2");
+                        "obj->ob_refcnt != 1 after dealloc");
         goto bail;
     }
-    Py_DECREF(obj);
 
     if (r != Py_True){
         PyErr_SetString(PyExc_AssertionError,
