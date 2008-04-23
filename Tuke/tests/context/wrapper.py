@@ -14,7 +14,7 @@ from unittest import TestCase
 
 from Tuke import Element,Id
 import Tuke.context
-from Tuke.context.wrapper import wrap,Wrapped,_apply_remove_context,_wrapped_cache
+from Tuke.context.wrapper import wrap,Wrapped,_apply_remove_context,_wrapped_cache,unwrap
 
 import sys
 import gc
@@ -526,3 +526,14 @@ class WrapperTest(TestCase):
         # Wrapped object as key
         f = lambda:None
         W({f:Id('b')},{apply(f):Id('a/b')},{remove(f):Id('../b')}) 
+
+    def test_unwrap(self):
+        """unwrap()"""
+        def T(got,expected = True):
+            self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
+
+        a = Element(id=Id('a'))
+        u = unwrap(a)
+        T(u.id,Id('.'))
+        u = unwrap(u)
+        T(u.id,Id('.'))

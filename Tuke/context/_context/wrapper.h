@@ -42,6 +42,8 @@ typedef struct {
 PyObject *
 apply_remove_context(PyObject *context,PyObject *obj,int raw_apply);
 
+PyObject *fully_unwrap_wrapped(PyObject *o);
+
 PyObject *initwrapper(void);
 
 // Local Variables:

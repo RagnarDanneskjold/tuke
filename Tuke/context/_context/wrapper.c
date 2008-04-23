@@ -318,6 +318,21 @@ unwrap_wrapped_element(PyObject *e){
     return p;
 }
 
+PyObject *
+fully_unwrap_wrapped(PyObject *o){
+    // Fully unwrap a wrapped object
+    while (o->ob_type == &WrappedType)
+        o = ((Wrapped *)o)->wrapped_obj;
+    return o;
+}
+
+static PyObject *
+py_fully_unwrap_wrapped(PyObject *self,PyObject *o){
+    o = fully_unwrap_wrapped(o);
+    Py_INCREF(o);
+    return o;
+}
+
 
 // Element Special Methods
 // #######################
@@ -781,6 +796,8 @@ static PyMethodDef methods[] = {
      "Wrap an object."},
     {"_apply_remove_context", (PyCFunction)_apply_remove_context, METH_VARARGS,
      NULL},
+    {"unwrap", (PyCFunction)py_fully_unwrap_wrapped, METH_O,
+     "Fully unwrap a wrapped object."},
     {NULL,NULL,0,NULL}
 };
 

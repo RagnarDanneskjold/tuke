@@ -286,12 +286,6 @@ callback_entry_destroyer_destroyer(void *closure){
     Py_DECREF((PyObject *)closure);
 }
 
-PyObject *
-unwrap(PyObject *o){ 
-    while (o->ob_type == &WrappedType)
-        o = ((Wrapped *)o)->wrapped_obj;
-    return o;
-}
 
 static PyObject *
 notify(PyObject *junk,PyObject *args,PyObject *kwargs){
@@ -337,7 +331,7 @@ notify(PyObject *junk,PyObject *args,PyObject *kwargs){
 
 
     // self may be wrapped, unwrap fully 
-    self = unwrap(self);
+    self = fully_unwrap_wrapped(self);
 
     selfref = PyWeakref_NewRef(self,NULL);
     if (!selfref) goto bail; // shouldn't happen
