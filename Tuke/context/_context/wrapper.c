@@ -57,6 +57,8 @@ PyTypeObject TranslatableType = {
 
 PyObject *wrapped_cache;
 
+int unwrapped_method(PyMethodDef *ml);
+
 static int
 Wrapped_traverse(Wrapped *self, visitproc visit, void *arg){
     Py_VISIT(self->wrapped_obj);
@@ -222,6 +224,12 @@ apply_remove_context(PyObject *context,PyObject *obj,int apply){
         Py_INCREF(((Wrapped *)obj)->wrapped_obj);
         return ((Wrapped *)obj)->wrapped_obj;
     }
+    // See special element methods below for description.
+    else if (PyCFunction_Check(obj) &&
+             unwrapped_method(((PyCFunctionObject *)obj)->m_ml)){
+        Py_INCREF(obj);
+        return obj;
+    }
     // Everything else gets wrapped with some sort of wrapping object.
     else{
         // Return an existing Wrapped object if possible.
@@ -309,17 +317,22 @@ unwrap_wrapped_element(PyObject *e){
     return p;
 }
 
-// Elements have the following specially handled method attributes:
-//
-// __enter__(self) -> unwrapped self
-static PyObject *
-element_enter_method(PyObject *self,PyObject *unused){
-    self = unwrap_wrapped_element(self);
-    Py_INCREF(self);
-    return self;
-}
 
-// add(self,element) -> wrapped element
+// Element Special Methods
+// #######################
+//
+// Take the following:
+//
+// wc = a.b.add(c)
+//
+// The desired behavior, is for c to be added to b, which will return c wrapped
+// in b, then that will be again wrapped in a, returning in wc.id == 'a/b/c'
+//
+// This is not possible with straight Python though, as the b.add instance
+// method will be wrapped with the context of a, and therefor c will end up
+// being wrapped in the context of a before it ever gets to the add instance
+// method of b. So we simply define a hack, that fully unwraps c before giving
+// it to the instance method:
 static PyObject *
 element_add_method(Wrapped *self,PyObject *elem){
     PyObject *r,*wr;
@@ -334,6 +347,25 @@ element_add_method(Wrapped *self,PyObject *elem){
     return wr;
 }
 
+// __enter__() method. 
+//
+// with a.b.c as c:
+//     do stuff
+//
+// The desired behavior is for c.__enter__() to be called, which will return a
+// fully unwrapped c. Again, with straight Python, c would be wrapped in b and
+// a, no good. As a return value though, we can't simply unwrap, as the
+// wrapping happens *outside* of the function. So instead that particular
+// method gets handled specially and has code in the apply_remove_context
+// function that detects if a CFunction object matches the, and if so, doesn't
+// wrap it. Specificly see the unwrapped_method() function below, and it's call
+// in apply_remove_context() above. 
+static PyObject *
+element_enter_method(PyObject *self,PyObject *unused){
+    Py_INCREF(self);
+    return self;
+}
+
 static PyMethodDef special_element_methods[] = {
     {"__enter__", (PyCFunction)element_enter_method, METH_NOARGS,
      "Context manager support"},
@@ -341,6 +373,10 @@ static PyMethodDef special_element_methods[] = {
      "Add Element as sub-element"},
     {NULL,NULL,0,NULL}
 };
+
+int unwrapped_method(PyMethodDef *ml){
+    return (ml->ml_meth == (PyCFunction)element_enter_method);
+}
 
 static PyObject *
 Wrapped_getattr(Wrapped *self,PyObject *name){
@@ -352,12 +388,7 @@ Wrapped_getattr(Wrapped *self,PyObject *name){
     if (PyType_IsSubtype(self->wrapped_obj->ob_type,&SourceType)){
         r = Py_FindMethod(special_element_methods,(PyObject *)self,
                           PyString_AsString(name));
-        if (r) {
-/*            printf("special case method %s %s\n",
-                   PyString_AsString(PyObject_Repr(name)),
-                   PyString_AsString(PyObject_Repr(r)));*/
-            return r;
-        }
+        if (r) return r;
         PyErr_Clear();
     }
 
