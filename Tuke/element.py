@@ -207,8 +207,6 @@ class Element(context.source.Source):
         """
         id = Tuke.Id(id)
 
-        print 'getitem on %s for %s' % (self._id_real,id)
-
         if not id:
             return self
         else:

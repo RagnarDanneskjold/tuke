@@ -211,12 +211,6 @@ apply_remove_context(PyObject *context,PyObject *obj,int apply){
             if (!source_context) return NULL;
         }
         if (apply){
-/*#define repr(x) PyString_AsString(PyObject_Repr(x))
-            printf("_apply_context %s id=%s id_real=%s type=%s\n",
-                   repr(obj),
-                   repr(PyObject_GetAttrString(source_context,"id")),
-                   repr(PyObject_GetAttrString(source_context,"_id_real")),
-                   repr(context->ob_type));*/
             r = PyObject_CallMethod(obj,"_apply_context","O",source_context);
         } else {
             r = PyObject_CallMethod(obj,"_remove_context","O",source_context);
@@ -389,9 +383,6 @@ static PyObject *
 Wrapped_getattr(Wrapped *self,PyObject *name){
     PyObject *r = NULL,*wr = NULL;
     // Special-cased Element methods
-/*    printf("getattr %s %s\n",
-           PyString_AsString(PyObject_Repr(self)),
-           PyString_AsString(PyObject_Repr(name)));*/
     if (PyType_IsSubtype(self->wrapped_obj->ob_type,&SourceType)){
         r = Py_FindMethod(special_element_methods,(PyObject *)self,
                           PyString_AsString(name));
