@@ -50,7 +50,7 @@ def versions_compatible(cur,other):
     except (TypeError, IndexError):
         raise ValueError, 'Invalid version: %s, %s' % (cur,other)
 
-class Element(context._source.Source):
+class Element(context.source.Source):
     """Base element class.
     
     Everything is an Element, from a single pad on a pcb, to a whole circuit.
@@ -103,7 +103,7 @@ class Element(context._source.Source):
 
     def __new__(cls,**kwargs):
         from Tuke.geometry import Transformation
-        self = context._source.Source.__new__(cls,
+        self = context.source.Source.__new__(cls,
                 Tuke.Id('.'),
                 Transformation(),
                 None)

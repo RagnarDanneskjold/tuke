@@ -159,7 +159,7 @@ static PyMemberDef Source_members[] = {
 PyTypeObject SourceType = {
     PyObject_HEAD_INIT(&PyType_Type)
     0,                         /*ob_size*/
-    "Tuke.context._source.Source",             /*tp_name*/
+    "Tuke.context.source.Source",             /*tp_name*/
     sizeof(Source),             /*tp_basicsize*/
     0,                         /*tp_itemsize*/
     (destructor)Source_dealloc, /*tp_dealloc*/

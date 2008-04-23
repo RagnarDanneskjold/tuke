@@ -56,7 +56,7 @@ init_context(void){
 
     source_module = initsource();
     if (!source_module) goto bail;
-    PyModule_AddObject(m, "_source",
+    PyModule_AddObject(m, "source",
                        source_module);
 
     weakset_module = initweakset();
