@@ -502,15 +502,29 @@ wrapped_str_repr_to_tuple(Wrapped *context,PyObject *obj,PyObject *r,int mode){
     // with the value returned, as the _PyTuple_Resize function may have to
     // change r. On an exception, the innermost function DECREFs r.
 
-    PyObject *s = NULL,*chunks = NULL,*wobj = NULL;
+    PyObject *s = NULL,
+             *chunks = NULL,
+             *wobj = NULL,
+             *func = NULL;
     if (!r){
         r = PyTuple_New(0);
         if (!r) goto bail;
     }
 
     char *method = mode ? "__wrapped_str__" : "__wrapped_repr__";
-    
-    chunks = PyObject_CallMethod(obj,method,NULL);
+
+    func = PyObject_GetAttrString(obj,method);
+    if (!func){
+        if (!PyErr_ExceptionMatches(PyExc_AttributeError)) goto bail;
+        PyErr_Clear();
+        chunks = NULL;
+    } else if (!PyCallable_Check(func)){
+        chunks = NULL;
+    } else {
+        chunks = PyObject_CallMethod(obj,method,NULL);
+        if (!chunks) goto bail;
+    }
+
     if (chunks){
         // Object supports the __wrapped_(str|repr)__ protocol
         if (!PyTuple_Check(chunks)){
@@ -530,7 +544,6 @@ wrapped_str_repr_to_tuple(Wrapped *context,PyObject *obj,PyObject *r,int mode){
         }
     } else {
         // Object does not support the __wrapped_(str|repr)__ protocol
-        PyErr_Clear();
         wobj = xapply_context(context,obj);
         if (!wobj) goto bail;
 
@@ -571,6 +584,7 @@ normal_exit:
     Py_XDECREF(chunks);
     Py_XDECREF(wobj);
     Py_XDECREF(s);
+    Py_XDECREF(func);
     return r;
 }
 

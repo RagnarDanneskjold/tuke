@@ -441,6 +441,44 @@ class WrapperTest(TestCase):
         # FIXME: recursive, and crashes
         # T((skit(),),repr(Id('.')))
 
+    def test_Wrapped_repr_str_special_exceptions(self):
+        """__wrapped_(str|repr)__ special exceptions"""
+        global bypass
+
+        a = Element(id=Id('a'))
+
+        class skit(object):
+            def __wrapped_repr__(self):
+                raise bypass
+            def __wrapped_str__(self):
+                raise bypass
+
+        w = wrap(skit(),a)
+
+        bypass = AssertionError
+        self.assertRaises(AssertionError,lambda:repr(w))
+        self.assertRaises(AssertionError,lambda:str(w))
+
+    def test_Wrapped_repr_str_special_noncallable(self):
+        """Non-callable __wrapped_(str|repr)__ special"""
+        def T(got,expected = True):
+            self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
+
+        a = Element(id=Id('a'))
+
+        class skit(object):
+            __wrapped_str__ = None
+            __wrapped_repr__ = None
+            def __str__(self):
+                return "Suffragium asotas"
+            def __repr__(self):
+                return "Refuge for the dissipated."
+
+        w = wrap(skit(),a)
+
+        T(str(w) != "Suffragium asotas")
+        T(repr(w) != "Refuge for the dissipated.")
+
     def test_Wrapped_data_in_out(self):
         """Wrapped data in/out"""
 
