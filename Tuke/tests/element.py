@@ -48,7 +48,7 @@ class ElementTest(TestCase):
         Tuke.source.notify(b,b.parent,b,c)
 
         a.add(b)
-        T(b.parent,a)
+        T(a.b.parent.id,a.id)
         T(called,[b])
 
     def testElementAddReturnsWrapped(self):
@@ -94,8 +94,9 @@ class ElementTest(TestCase):
         T(TypeError,'asdf')
         T(TypeError,2)
 
-        # Check for wrapped subelements
-        T(TypeError,Element().add(Element()))
+        # Check for wrapped subelements, IE, added element already has a
+        # parent.
+        T(ValueError,Element().add(Element()))
 
     def testElementInteration(self):
         """Element interation"""
@@ -143,15 +144,15 @@ class ElementTest(TestCase):
             R(b2,'../c',[b2,a])
 
         c = a.add(Element(id='c'))
-        T(a,'c',c)
+        T(a,'c','a/c')
 
         d = a.b.add(Element(id='d'))
-        T(a,'b',b)
-        T(a,'b/d',d)
+        T(a,'b','a/b')
+        T(a,'b/d','a/b/d')
 
-        T(b,'..',a['.'])
-        T(b,'../b',b)
-        T(b,'../b/d',d)
+        T(b,'..',a['.'].id)
+        T(b,'../b',b.id)
+        T(b,'../b/d',d.id)
 
         e = Element(id='e')
         e2 = a.add(e)
