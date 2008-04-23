@@ -25,6 +25,64 @@
 #include "structmember.h"
 
 #include "source.h"
+#include "cfunction.h"
+#include "wrapper.h"
+
+PyObject *source_callbacks = NULL;
+PyObject *transform_str,*parent_str;
+
+static int
+notify_member_callbacks(PyObject *self,PyObject *attr){
+    int r,pos;
+    PyObject *selfref = NULL,
+             *callbacks_by_obj = NULL,
+             *callbacks_for_attr = NULL,
+             *cb_copy = NULL,
+             *key = NULL,*value = NULL;
+
+    selfref = PyWeakref_NewRef(self,NULL);
+    if (!selfref) goto bail; // shouldn't happen
+
+    // Either of the next two gets may fail, that just means that no callbacks
+    // were found.
+    callbacks_by_obj = PyDict_GetItem(source_callbacks,selfref);
+    if (!callbacks_by_obj) goto done;
+
+    callbacks_for_attr = PyDict_GetItem(callbacks_by_obj,attr);
+    if (!callbacks_for_attr) goto done;
+
+
+    // The callbacks may create more callbacks, so first clear the callbacks
+    // list. 
+    cb_copy = callbacks_for_attr;
+    Py_INCREF(cb_copy);
+    callbacks_for_attr = PyDict_New();
+    if (!callbacks_for_attr) goto bail;
+    if (PyDict_SetItem(callbacks_by_obj,attr,callbacks_for_attr)) goto bail;
+    
+    pos = 0;
+    while (PyDict_Next(cb_copy,&pos,&key,&value)){
+        if (PyWeakref_GET_OBJECT(key) != Py_None){
+            value = PyObject_CallFunction(value,"(O)",PyWeakref_GET_OBJECT(key));
+            if (!value) {
+                goto bail;
+            } else {
+                Py_DECREF(value);
+            }
+        }
+    }
+
+done:
+    r = 0;
+    goto cleanup;
+bail:
+    r = -1;
+cleanup:
+    Py_XDECREF(selfref);
+    Py_XDECREF(callbacks_for_attr);
+    return r;
+}
+
 
 static void
 Source_dealloc(Source* self){
@@ -53,6 +111,14 @@ Source_traverse(Source *self, visitproc visit, void *arg){
 
 static int
 Source_clear(Source *self){
+    PyObject *selfref = PyWeakref_NewRef((PyObject *)self,NULL); 
+    if (!selfref) return -1;
+    if (PyDict_DelItem(source_callbacks,selfref)){
+        // It's possible for Source_clear to be called more than once.
+        PyErr_Clear();
+    }
+    Py_DECREF(selfref);
+
     Py_CLEAR(self->dict);
     Py_CLEAR(self->id);
     Py_CLEAR(self->id_real);
@@ -93,22 +159,25 @@ Source_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
         return self->name; \
     }
 
-#define SETTER(name) \
+#define SETTER(name,namestr) \
     static int \
     Source_set_##name(Source *self, PyObject *value, void *closure){\
+        if (namestr && notify_member_callbacks((PyObject *)self,namestr)) \
+            return -1; \
         Py_DECREF(self->name##_real); \
         Py_INCREF(value); \
         self->name##_real = value; \
         return 0; \
     }
 
-#define DEF_GET_SET(name) \
-    SETTER(name) \
+#define DEF_GET_SET(name,namestr) \
+    SETTER(name,namestr) \
     GETTER(name) \
     GETTER(name##_real)
 
-DEF_GET_SET(id)
-DEF_GET_SET(transform)
+
+DEF_GET_SET(id,NULL)
+DEF_GET_SET(transform,transform_str)
 
 
 // Parent is not masked
@@ -120,6 +189,7 @@ Source_get_parent(Source *self, void *closure){
 
 static int
 Source_set_parent(Source *self, PyObject *value, void *closure){
+    if (notify_member_callbacks((PyObject *)self,parent_str)) return -1;
     Py_DECREF(self->parent);
     Py_INCREF(value);
     self->parent = value;
@@ -199,9 +269,118 @@ PyTypeObject SourceType = {
     PyObject_GC_Del, /* tp_del */
 };
 
+static PyObject *
+callback_entry_destroyer(void *closure,PyObject *args,PyObject *kwargs){
+    PyObject *callbacks = (PyObject *)closure;
+    PyObject *key;
+
+    if (!PyArg_ParseTuple(args, "O",&key)) return NULL;
+
+    if (PyDict_DelItem(callbacks,key)){
+        PyErr_Clear();
+    }
+
+    Py_RETURN_NONE;
+}
+static void
+callback_entry_destroyer_destroyer(void *closure){
+    Py_DECREF((PyObject *)closure);
+}
+
 PyObject *
+unwrap(PyObject *o){ 
+    while (o->ob_type == &WrappedType)
+        o = ((Wrapped *)o)->wrapped_obj;
+    return o;
+}
+
+static PyObject *
 notify(PyObject *junk,PyObject *args,PyObject *kwargs){
-    return NULL;
+    PyObject *r;
+
+    // Arguments, borrowed references
+    PyObject *self,
+             *attr,
+             *callback_callable,
+             *callback_self;
+
+    // References created by us, DECREFed at the end.
+    PyObject *selfref = NULL,
+             *callback_selfref = NULL,
+             *callbacks_by_attr = NULL,
+             *callbacks_for_attr = NULL,
+             *cb_destroyer = NULL;
+
+    if (!PyArg_ParseTuple(args, "OOOO", 
+                          &self, &attr, 
+                          &callback_self, &callback_callable))
+        return NULL;
+
+    if (!PyString_CheckExact(attr)){
+        PyErr_Format(PyExc_TypeError,
+                     "attribute must be string, not %s",
+                     attr->ob_type->tp_name);
+        goto bail;
+    }
+    if (!PyCallable_Check(callback_callable)){
+        PyErr_Format(PyExc_TypeError,
+                     "callback must be callable, not %s",
+                     callback_callable->ob_type->tp_name);
+        goto bail;
+    }
+    if (!(attr == transform_str ||
+           attr == parent_str)){
+        PyErr_Format(PyExc_ValueError,
+                     "%s is not a valid attribute to notify on.",
+                     PyString_AsString(attr));
+        goto bail;
+    }
+
+
+    // self may be wrapped, unwrap fully 
+    self = unwrap(self);
+
+    selfref = PyWeakref_NewRef(self,NULL);
+    if (!selfref) goto bail; // shouldn't happen
+
+    // The following are both created on demand:
+    callbacks_by_attr = PyDict_GetItem(source_callbacks,selfref);
+    if (!callbacks_by_attr){
+        callbacks_by_attr = PyDict_New();
+        if (PyDict_SetItem(source_callbacks,selfref,callbacks_by_attr))
+            goto bail;
+    }
+    callbacks_for_attr = PyDict_GetItem(callbacks_by_attr,attr);
+    if (!callbacks_for_attr){
+        callbacks_for_attr = PyDict_New();
+        if (PyDict_SetItem(callbacks_by_attr,attr,callbacks_for_attr))
+            goto bail;
+    }
+
+    // callback_self has a reference made too it. The callback, passed to
+    // NewRef, then has the job of removing the callback entry if callback_self
+    // is destroyed.
+    Py_INCREF(callbacks_for_attr);
+    cb_destroyer = CFunction_new(callback_entry_destroyer,
+                                 callback_entry_destroyer_destroyer,
+                                 callbacks_for_attr);
+    callback_selfref = PyWeakref_NewRef(callback_self,cb_destroyer);
+    if (!callback_selfref) goto bail;
+
+    // And put it into the callback list
+    if (PyDict_SetItem(callbacks_for_attr,callback_selfref,callback_callable))
+        goto bail;
+
+    Py_INCREF(Py_None);
+    r = Py_None;
+    goto cleanup;
+bail:
+    r = NULL;
+cleanup:
+    Py_XDECREF(selfref);
+    Py_XDECREF(callback_selfref);
+    Py_XDECREF(cb_destroyer);
+    return r;
 }
 
 static PyMethodDef methods[] = {
@@ -216,7 +395,13 @@ PyObject *initsource(void){
     if (PyType_Ready(&SourceType) < 0)
         return NULL;
 
-    m = Py_InitModule3("Tuke.context._source", methods,
+    source_callbacks = PyDict_New();
+    if (!source_callbacks) return NULL;
+
+    transform_str = PyString_InternFromString("transform");
+    parent_str = PyString_InternFromString("parent");
+
+    m = Py_InitModule3("Tuke.context._context.source", methods,
                        "Context source");
     if (!m) return NULL;
 

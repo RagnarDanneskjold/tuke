@@ -12,7 +12,9 @@ from __future__ import with_statement
 
 from unittest import TestCase
 
-from Tuke.source import Source,notify
+from Tuke import Id,Element
+from Tuke.geometry import Transformation,translate,Translation,V
+from Tuke.context.source import Source,notify
 
 import sys
 import gc
@@ -20,7 +22,7 @@ import gc
 class SourceTest(TestCase):
     def test_Source(self):
         """Source"""
-        from Tuke.context._source import Source
+        from Tuke.context.source import Source
         def T(got,expected = True):
             self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
 
@@ -36,77 +38,52 @@ class SourceTest(TestCase):
         T(s.transform,2)
         T(s.parent,30)
 
-class oldSourceTest(TestCase):
-    def test_Source(self):
-        """Source"""
+    def test_Source_notify_raises(self):
+        """Source notify raises exceptions on bad arguments"""
+
+        class foo:
+            pass
+
+        a = Element(id=Id('a'))
+        self.assertRaises(TypeError,
+                lambda: notify(a,None,foo(),lambda:None))
+        self.assertRaises(ValueError,lambda: notify(a,
+            "Dr. Williams' Pink Pills for Pale People",foo(),lambda:None))
+        self.assertRaises(TypeError,lambda: notify(a,'transform',object(),lambda:None))
+        self.assertRaises(TypeError,lambda: notify(a,'transform',foo(),None))
+
+    def test_Source_notify(self):
+        """Source notify"""
         def T(got,expected = True):
             self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
 
-        class ct(object):
-            def __init__(self,v):
-                self.v = v
+        a = Element(id=Id('a'))
 
-        d = ct(42)
-        class foo(object):
-            bar = Source(d)
-        T(foo.bar,d)
+        # Callable with a single value that is incremented on each call
+        class v:
+            def __init__(self):
+                self.v = 0
+            def __call__(self,closure):
+                self.v += 1
+                self.closure = closure 
 
-        # Make sure everything is transparent:
-        f1 = foo()
-        f2 = foo()
-        T(f1.bar is d)
-        T(f2.bar is d)
+        # Simple triggering of callbacks 
+        vparent = v()
+        notify(a,'parent',vparent,vparent)
+        vtransform = v()
+        notify(a,'transform',vtransform,vtransform)
 
-        n = ct('Evidence of a Baker')
-        f1.bar = n 
-        T(f1.bar is n)
-        T(f2.bar is d)
-        T(foo.bar is d)
+        translate(a,V(1,1))
+        T(vparent.v,0)
+        T(vtransform.v,1)
+        T(vtransform.closure,vtransform)
 
-        # Test a callback:
-        c = ct('a day without yesterday')
-        def fn(*args):
-            c.v = args
-        notify(f1,f1.bar,c,fn)
+        z = Element(id=Id('z'))
+        z.add(a)
+        T(vparent.v,1)
+        T(vparent.v,1)
+        T(vtransform.v,1)
+        T(vtransform.closure,vtransform)
 
-        T(c.v,'a day without yesterday')
-
-        f1.bar = 'Creation'
-
-        T(c.v,(c,))
-
-        # A callback set before the first time the value was set
-        f1 = foo()
-        c = ct('The Salmon of Doubt')
-        def fn(*args):
-            c.v = args
-        notify(f1,f1.bar,c,fn)
-
-        T(c.v,'The Salmon of Doubt')
-
-        f1.bar = 'Creation'
-
-        T(c.v,(c,))
-
-    def test_Source_for_memory_leaks(self):
-        """Source does not leak memory"""
-        def T(got,expected = True):
-            self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
-
-        # The way callbacks are implemented could potentially leak memory, this
-        # makes sure they don't.
-
-        class foo(object):
-            bar = Source(None)
-        f = foo()
-
-        d = 'ISBN 3936122202'
-        baseline_ref_count = sys.getrefcount(d)
-
-        f.bar = d
-        f.bar = None
-        T(sys.getrefcount(d),baseline_ref_count)
-
-        f.bar = d
-        del f
-        T(sys.getrefcount(d),baseline_ref_count)
+        del a
+        del z
