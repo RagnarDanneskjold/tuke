@@ -37,7 +37,6 @@ for implicit connections.
 
 import Tuke
 import Tuke.context
-import Tuke.source
 import Tuke.repr_helper
 import weakref
 
@@ -167,7 +166,7 @@ class Connects(set):
                     self.connects._set_implicit_connectivity(self.ref)
         ref._implicit_connectivity_key = implicit_reference_updater(self,ref)
         for e in change_report_stack:
-            Tuke.source.notify(e,e.parent,
+            Tuke.context.source.notify(e,e.parent,
                     ref._implicit_connectivity_key,ref._implicit_connectivity_key)
 
     def _make_ref(self,ref):

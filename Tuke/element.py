@@ -27,7 +27,6 @@ import Tuke.repr_helper
 import Tuke
 import Tuke.context as context
 import Tuke.context.wrapped_str_repr
-from Tuke.source import Source
 
 import Tuke.repr_helper
 

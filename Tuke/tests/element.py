@@ -18,7 +18,6 @@ import common
 from unittest import TestCase
 import Tuke
 import Tuke.context
-import Tuke.source
 from Tuke import Element,ElementRef,Id,rndId
 
 from Tuke.geometry import Geometry,V,Transformation,Translation,translate,centerof
@@ -45,7 +44,7 @@ class ElementTest(TestCase):
         called = [] 
         def c(elem):
             called.append(elem)
-        Tuke.source.notify(b,b.parent,b,c)
+        Tuke.context.source.notify(b,'parent',b,c)
 
         a.add(b)
         T(a.b.parent.id,a.id)
