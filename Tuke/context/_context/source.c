@@ -133,7 +133,7 @@ Source_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
     Source *self;
     PyObject *id,*transform,*parent;
 
-    self = PyObject_GC_New(Source,type);
+    self =  (Source *)type->tp_alloc(type, 0);
     self->in_weakreflist = NULL;
 
     self->dict = PyDict_New();
@@ -148,7 +148,6 @@ Source_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
     Py_INCREF(transform); self->transform_real = transform;
     Py_INCREF(parent); self->parent = parent;
 
-    PyObject_GC_Track(self);
     return (PyObject *)self;
 }
 
