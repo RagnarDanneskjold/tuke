@@ -83,6 +83,11 @@ Wrapped_clear(Wrapped *self){
     self->wrapping_context = NULL;
 
     if (tmp_wrapped_obj && tmp_wrapping_context){
+        // Dealloc can be called with exceptions set, and the dict code below
+        // doesn't like that.
+        PyObject *ptype,*pvalue,*ptraceback;
+        PyErr_Fetch(&ptype,&pvalue,&ptraceback);
+
         key = (PyTupleObject *)Py_BuildValue("(l,l,i)",
                                              (long)tmp_wrapped_obj,
                                              (long)tmp_wrapping_context,
@@ -93,9 +98,11 @@ Wrapped_clear(Wrapped *self){
         // In any case, leaks don't matter here, as the python interpreter
         // bails if garbage collection routines raise exceptions.
         if (!key) return -1;
-        if (PyDict_DelItem(wrapped_cache,(PyObject *)key))
+        if (PyDict_DelItem(wrapped_cache,(PyObject *)key)){
             return -1;
+        }
         Py_DECREF(key);
+        PyErr_Restore(ptype,pvalue,ptraceback);
     }
 
     Py_XDECREF(tmp_wrapped_obj);
