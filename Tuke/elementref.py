@@ -19,6 +19,7 @@
 
 import Tuke.repr_helper
 import weakref
+import Tuke.context.wrapped_str_repr
 
 from Tuke import Element,Id
 
@@ -87,6 +88,7 @@ class ElementRef(object):
         """
         return self.base[self.id]
 
-    @Tuke.repr_helper.non_evalable_repr_helper
-    def __repr__(self):
-        return {'id':str(self.id),'base':str(self._base.id)}
+    @Tuke.repr_helper.wrapped_non_evalable_repr_helper
+    def __wrapped_repr__(self):
+        return {'id':self.id,'base':self.base.id}
+    __repr__ = Tuke.context.wrapped_str_repr.unwrapped_repr

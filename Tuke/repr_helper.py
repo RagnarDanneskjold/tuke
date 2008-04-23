@@ -118,6 +118,30 @@ def repr_helper(fn):
 
     return f
 
+def wrapped_non_evalable_repr_helper(fn):
+    """Decorator to make writing non-evalable __wrapped_repr__ functions easier."""
+    def f(self):
+        kw = fn(self)
+
+        # Think, recursion...
+        rpr = object.__repr__(self)
+
+        if not kw:
+            return (rpr,)
+        else:
+            r = deque()
+            r.append(rpr[:-1])
+            r.append(', ')
+            for n,v in sorted(kw.iteritems()):
+                r.append(n)
+                r.append('=')
+                r.append(v)
+                r.append(',')
+            r.pop()
+            r.append('>')
+            return tuple(r)
+    return f
+
 def non_evalable_repr_helper(fn):
     """Decorator for __repr__ functions that return non-eval()able strings.
 
@@ -133,17 +157,12 @@ def non_evalable_repr_helper(fn):
 
     Note that old-style classes are not supported.
     """
-
+    fn = wrapped_non_evalable_repr_helper(fn)
     def f(self):
-        kw = fn(self)
+        # Isn't this a fun little bit of sticky glue?
+        class shim:
+            def __wrapped_repr__(shim_self):
+                return fn(self)
+        return unwrapped_repr(shim())
 
-        # Think, recursion...
-        rpr = object.__repr__(self)
-
-        if not kw:
-            return rpr
-        else:
-            return rpr[:-1] + ', ' \
-                   + ', '.join(['%s=%s' % (n,repr(v)) for n,v in sorted(kw.iteritems())]) \
-                   + '>'
     return f
