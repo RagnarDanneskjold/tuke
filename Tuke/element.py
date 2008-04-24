@@ -169,6 +169,7 @@ class Element(context.source.Source):
             self.connects = Tuke.Connects()
         self.connects.base = self
 
+        self._notify_callbacks = {}
 
     # Some notes on the sub-elements implementation:
     #
@@ -257,9 +258,73 @@ class Element(context.source.Source):
             raise self.IdCollisionError,"'%s' already exists" % str(obj.id)
 
         obj.parent = self
+        obj._call_notify_callbacks(Tuke.Id('.'))
         setattr(self,n,obj)
 
+        self._call_notify_callbacks(obj.id)
+
         return obj
+
+    def _call_notify_callbacks(self,filter):
+        try:
+            cb = self._notify_callbacks[filter]
+        except KeyError:
+            return
+
+        del self._notify_callbacks[filter]
+        for c in cb:
+            c = c()
+            if c is not None:
+                c()
+
+    def notify(self,filter,callback):
+        """Notify on topology changes.
+
+        filter - Path to filter by, must be a single path segment, either
+                 referring to a sub-element, or referring to the parent, Id('..')
+
+        callback - The callback. A weakref if callable is made, a reference to
+                   callable must be kept elsewhere.
+
+        The callbacks are one-shot, after they are called they are removed. The
+        callback may call notify again however.
+
+        """
+        if not filter:
+            raise ValueError(
+                    "Filter '%s' invalid" % repr(filter))
+        if len(filter) != 1:
+            raise ValueError(
+                    "Filter must have exactly one path segment, not '%s'" %
+                    repr(filter))
+        if not callable(callback):
+            raise TypeError(
+                    "'%s' is not callable" % repr(callback))
+
+        # A WeakValueDictionary could be used here, except that we need to
+        # store multiple callbacks for a given filter key. Hence this dict of
+        # sets, where if all the weakrefs in the set go away, the set does too.
+        def mkremover(filter):
+            self_ref = weakref.ref(self)
+            def r(callback_ref):
+                self = self_ref()
+                if self is not None:
+                    self._notify_callbacks[filter].remove(callback_ref)
+                    if not self._notify_callbacks[filter]:
+                        del self._notify_callbacks[filter]
+            return r
+        remover = mkremover(filter)
+
+        # The unwrap is a subtle, but very important point. The callback may be
+        # wrapped, if it is, then the only reference to the *wrapper* object is
+        # here, and will be immediately garbage collected even though the
+        # unwrapped callback is still alive.
+        callback_ref = weakref.ref(unwrap(callback),remover)
+
+        try:
+            self._notify_callbacks[filter].add(callback_ref)
+        except KeyError:
+            self._notify_callbacks[filter] = set((callback_ref,))
 
     def iterlayout(self,layer_mask = None):
         """Iterate through layout.

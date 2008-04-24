@@ -12,12 +12,14 @@ from __future__ import with_statement
 
 import os
 import shutil
+import weakref
 
 import common
 
 from unittest import TestCase
 import Tuke
 import Tuke.context
+from Tuke.context.wrapper import unwrap
 from Tuke import Element,ElementRef,Id,rndId
 
 from Tuke.geometry import Geometry,V,Transformation,Translation,translate,centerof
@@ -32,7 +34,6 @@ class ElementTest(TestCase):
 
     def testElementParent(self):
         """Element.parent"""
-
         def T(got,expected = True):
             self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
 
@@ -49,6 +50,62 @@ class ElementTest(TestCase):
         a.add(b)
         T(a.b.parent.id,a.id)
         T(called,[b])
+
+    def testElement_notify(self):
+        """Element.notify()"""
+        def T(got,expected = True):
+            self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
+
+        a = Element(id=Id('a'))
+
+        class cb:
+            def __init__(self):
+                self.count = 0
+            def __call__(self):
+                self.count += 1
+
+        self.assertRaises(ValueError,lambda:a.notify(Id('a'),lambda:None))
+        self.assertRaises(ValueError,lambda:a.notify(Id('z/y'),lambda:None))
+        self.assertRaises(TypeError,lambda:a.notify(Id('.'),None))
+
+        # Test callback adding and deletion
+        cb1 = cb()
+        a.notify(Id('a/b'),cb1)
+        T(unwrap(a)._notify_callbacks[Id('b')],set((weakref.ref(cb1),)))
+        cb2 = cb()
+        a.notify(Id('a/b'),cb2)
+        T(unwrap(a)._notify_callbacks[Id('b')],
+                set((weakref.ref(cb1),
+                     weakref.ref(cb2))))
+
+        del cb1
+        T(unwrap(a)._notify_callbacks[Id('b')],set((weakref.ref(cb2),)))
+        del cb2
+        T(not unwrap(a)._notify_callbacks.has_key(Id('b')))
+
+        # Test that callbacks are actually called
+
+        # Called for adding an object
+        cb1 = cb()
+        a.notify(Id('a/b'),cb1)
+        cb2 = cb()
+        a.notify(Id('a/b'),cb2)
+
+        b = Element(id=Id('b'))
+        cbp = cb()
+        b.notify(Id('.'),cbp)
+
+        a.add(b)
+
+        T(cb1.count,1)
+        T(cb2.count,1)
+        T(cbp.count,1)
+        T(not unwrap(a)._notify_callbacks.has_key(Id('b')))
+        T(not unwrap(b)._notify_callbacks.has_key(Id('..')))
+
+        # Test for removing an object, just a check that there is no .remove
+        # for now.
+        T(not hasattr(a,'remove'))
 
     def testElementCommonParent(self):
         """Element._common_parent and related functions"""
