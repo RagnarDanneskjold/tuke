@@ -50,6 +50,30 @@ class ElementTest(TestCase):
         T(a.b.parent.id,a.id)
         T(called,[b])
 
+    def testElementCommonParent(self):
+        """Element._common_parent and related functions"""
+        def T(got,expected = True):
+            self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
+
+        a = Element(id=Id('a'))
+        b = Element(id=Id('b'))
+
+        T(a.have_common_parent(a))
+        T(b.have_common_parent(b))
+
+        T(not a.have_common_parent(b))
+        T(not b.have_common_parent(a))
+
+        a.add(b)
+        T(a.have_common_parent(b))
+        T(b.have_common_parent(a))
+
+        a.add(Element(id=Id('z')))
+        a.b.add(Element(id=Id('c')))
+
+        T(a.z.have_common_parent(a.b.c))
+        T(not Element().have_common_parent(a.b.c))
+
     def testElementAddReturnsWrapped(self):
         """Element.add(obj) returns wrapped obj"""
 

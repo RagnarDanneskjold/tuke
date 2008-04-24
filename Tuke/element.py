@@ -29,6 +29,7 @@ import Tuke.context as context
 import Tuke.context.wrapped_str_repr
 
 import Tuke.repr_helper
+from Tuke.context.wrapper import unwrap
 
 def versions_compatible(cur,other):
     """Compare two versions and return compatibility.
@@ -283,6 +284,39 @@ class Element(context.source.Source):
                 for l in s.iterlayout(layer_mask):
                     yield l
 
+    def _common_parent(self,b):
+        a = unwrap(self)
+        b = unwrap(b)
+
+        ap = set()
+        bp = set()
+
+        while ((not ap.intersection(bp))) and \
+               (a is not None or b is not None):
+            if a is not None:
+                ap.add(a)
+                a = unwrap(a.parent)
+            if b is not None:
+                bp.add(b)
+                b = unwrap(b.parent)
+        p = ap.intersection(bp)
+        if p:
+            assert(len(p) == 1)
+            return p.pop()
+        else:
+            return None
+
+    def have_common_parent(self,b):
+        """Determine if self and b have a common parent.
+
+        For the purposes of the calculation, self and b are considered to be
+        parents of themselves, given the graph a->b->c->d
+        a.have_common_parent(a.b.c.d) would return True.
+        """
+        if self._common_parent(b) is not None:
+            return True
+        else:
+            return False
 
     class VersionError(ValueError):
         pass
