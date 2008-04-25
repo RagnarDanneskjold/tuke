@@ -8,8 +8,7 @@
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
 # PURPOSE.
 
-import os
-import shutil
+import gc
 
 import common
 
@@ -27,24 +26,23 @@ class ConnectsTest(TestCase):
         def R(ex,fn):
             self.assertRaises(ex,fn)
 
-        a = Element(id='a')
-        T(a.connects,set())
+        a = Element(id=Id('a'))
+        T(set(a.connects),set())
 
-        b = Element(id='b')
-        R(TypeError,lambda: a.connects.add(b))
+        b = Element(id=Id('b'))
+        R(ValueError,lambda: a.connects.add(b))
 
         a.add(b)
-        a.add(Element(id='c'))
+        a.add(Element(id=Id('c')))
 
         a.connects.add(a.b)
 
         T(a.b in a.connects)
-        T(Id('b') in a.connects)
-        T('b' in a.connects)
-        T(not ('c' in a.connects))
+        T(Id('a/b') in a.connects)
+        T(not (Id('c') in a.connects))
         T(not (a.c in a.connects))
 
-        R(TypeError,lambda: b in a.connects)
+        R(ValueError,lambda: Element() in a.connects)
 
     def testConnectsImplicit(self):
         """Implicit connections"""
@@ -53,52 +51,64 @@ class ConnectsTest(TestCase):
         def R(ex,fn):
             self.assertRaises(ex,fn)
 
+        # Implicit connections use a lot of weakref magic. That said, they
+        # should function fine with, and without, the garbage collector
+        # enabled.
+        #
+        # That said, until Element.remove is implemented, this can't be a
+        # problem anyway.
+        for i,gc_enabled in enumerate((False,False,False,True,True)):
+            if gc_enabled:
+                gc.enable()
+            else:
+                gc.disable()
 
-        # Basics
-        a = Element(id='a')
-        a.add(Element(id='b'))
+            # Basics
+            a = Element(id=Id('a'))
+            a.add(Element(id=Id('b')))
 
-        T(not a.b.connects.to('..'))
-        a.connects.add(a.b)
+            T(not a.b.connects.to(a))
+            a.connects.add(a.b)
 
-        T(a.connects.to(a.b))
-        T(a.b.connects.to('..'))
+            T(a.connects.to(a.b))
+            T(a.b.connects.to(a))
 
+            # Parent change
+            c = Element(id=Id('c'))
+            c.connects.add(Id('.'))
+            c.connects.add(Id('b'))
 
-        # Parent change
-        c = Element(id='c')
-        c.connects.add('..')
-        c.connects.add('../b')
+            T(c.connects.to(Id('.')))
+            T(c.connects.to(Id('b')))
+            a.add(c)
+            T(a.c.connects.to(a))
+            T(a.c.connects.to(a.b))
 
-        T(c.connects.to('..'))
-        T(c.connects.to('../b'))
-        a.add(c)
-        T(c.connects.to('..'))
-        T(c.connects.to('../b'))
+            T(a.connects.to(a.c))
+            T(a.b.connects.to(a.c))
 
-        T(a.connects.to(a.c))
-        T(a.b.connects.to('../c'))
+            # More complex parent changing
+            a = Element(id=Id('a'))
+            b = Element(id=Id('b'))
+            c = Element(id=Id('c'))
 
-        # More complex parent changing
-        a = Element(id='a')
-        b = Element(id='b')
-        c = Element(id='c')
+            c.connects.add(Id('../'))
 
-        c.connects.add('../../')
+            b.add(c)
+            a.add(b)
+            T(a.connects.to(Id('a/b/c')))
 
-        b.add(c)
-        a.add(b)
-        T(a.connects.to('b/c'))
+        T(gc.isenabled())
 
     def testConnectsReprEvalRepr(self):
         """repr(eval(repr(Connects))) round trip"""
         def T(got,expected = True):
             self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
 
-        a = Element(id='a')
-        a.add(Element(id='b'))
-        a.b.add(Element(id='c'))
-        a.connects.add('..')
+        a = Element(id=Id('a'))
+        a.add(Element(id=Id('b')))
+        a.b.add(Element(id=Id('c')))
+        a.connects.add(Id('.'))
         a.connects.add(a.b)
         a.connects.add(a.b.c)
 
@@ -112,5 +122,5 @@ class ConnectsTest(TestCase):
 
         # This is a real test, if this fails, we need to make sure that
         # Connects handles the case where a Element parent is removed.
-        a = Element(id='a')
+        a = Element(id=Id('a'))
         self.assert_(not hasattr(a,'remove'))

@@ -167,7 +167,7 @@ class Element(context.source.Source):
 
         if self.connects is None:
             self.connects = Tuke.Connects()
-        self.connects.base = self
+        self.connects.parent = self
 
         self._notify_callbacks = {}
 

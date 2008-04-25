@@ -30,99 +30,192 @@ may be left dangling if there is no actual Element at the location that it's
 ElementRef is pointing to. Implicit connections simply don't exist until the
 corresponding explicit connection is made.
 
-Connectivity is stored per Element, but cached globally for speed and to allow
-for implicit connections.
-
 """
+
+from __future__ import with_statement
 
 import Tuke
 import Tuke.context
+import Tuke.context.wrapped_str_repr
 import Tuke.repr_helper
 import weakref
 
-# Implicit connections are the most interesting feature to implement.  Elements
-# are always relative. For example a Component might have an explicit
-# connection to '../vcc' If that Component is moved from one parent to another,
-# those explicit connections now map to different Elements. This means that the
-# implicit connection cache has to get updated.  To deal with that, the parent
-# change hooks are used so that changes to the Element graph can be detected
-# and the associated implicit connections updated.
+from Tuke.context.wrapper import unwrap
+
+def _make_ref(base,ref):
+    """Given an Id, or Element, return an Id
+
+    base - Base Element
+
+    If ref is an Element, makes sure that base and ref share a parent.
+
+    """
+    try:
+        if not base.have_common_parent(ref):
+            raise ValueError(
+                    "No common parents, Element is on a different tree.")
+        ref = ref.id
+    except AttributeError:
+        if not isinstance(ref,Tuke.Id):
+            raise TypeError(
+                "Expected an Id, Element, not %s" % type(ref))
+    return ref
+
+
+# Explicit connectivity is pretty easy to store, the Connects class is simply a
+# set subclass and each explicit connection is simply stored essentially as an
+# Id.
 #
-# The global connections cache is implemented as a WeakKeyDict of WeakKeyDicts,
-# in the form:
+# Implicit connectivity is harder. Firstly implicit connectivity can change due
+# to topology changes, either making, or in the future when Element.remove() is
+# supported, breaking implicit connections. Secondly while the implicit
+# connectivity info must be stored in the Elements that are being implicitly
+# connected to for speed, if the Element.connects creating that connection is
+# deleted, that info must automatically be removed. This is also tricky, as we
+# can't use any __dealloc__ hooks.
 #
-# _implicitly_connected[a.connects][b.connects] = b
-#
-# Where a in an Element and b is a Element. The above would state that a is
-# implicitly connected to b, and therefore b is the ElementRef who's
-# dereferenced Element is *explicitly* connected to a. _i_c[a.c][b.c._i_c_k]
-# evaluates to the actual Element that a is implicitly connected too.
-#
-# The key is the usage of WeakKeyDicts. Consider what happens if a goes away.
-# It gets garbage collected, and suddenly that second level WeakKeyDict gets
-# deleted as well, automaticly getting rid off all those implicit connections.
-# If b is deleted, the result is similar.
-_implicitly_connected = weakref.WeakKeyDictionary()
+# The solution here uses the Element.notify() mechanism heavilly, setting up
+# callbacks along every Element in the explicit connection chain. The
+# _elemref class then acts to maintain and process those callbacks. Connects
+# is then a set of _elemrefs. At any point the whole shebang can be deleted,
+# and the weakref callback mechanism used in notify will clean up everything.
+
+class _elemref(Tuke.Id):
+    """Connects explicit connection.
+
+    Holds both the Id reference, and maintains/creates the implicit connection.
+
+    """
+
+    def __init__(self,connects,ref):
+        ref = _make_ref(connects._parent,ref)
+
+        Tuke.Id.__init__(self,ref)
+
+        self.connects = connects
+        self._compute_implicit_callbacks()
+
+    def _make_invalidator_callback(self):
+        """Make an invalidator callback callable object.
+
+        Each _elemref has a single invalidator callback associated with it,
+        which, when called, triggers a re-compute of the implicit callbacks.
+        This function simply makes a new one.
+        """
+        def invalidator(ref):
+            self._compute_implicit_callbacks()
+        return invalidator
+
+    def _compute_implicit_callbacks(self):
+        """Recompute the implicit callbacks chain.
+
+        Starts fresh. The design here is to simply start fresh after each
+        topology change. Given that most connects are going to be one or two
+        levels deep, this is simpler, and probably more efficient, than a more
+        complex "find what level changed" algorithm.
+
+        """
+        class Invalidator:
+            def __init__(self,ref):
+                self.ref = weakref.ref(ref)
+                self.valid = True
+            def __call__(self):
+                if self.valid:
+                    # One shot
+                    self.valid = False
+
+                    # Should only work if the original _elemref is alive.
+                    ref = self.ref()
+                    if ref is not None:
+                        ref._compute_implicit_callbacks()
+
+        # Old invalidator is deleted, garbage collection will take care of the
+        # rest.
+        self._invalidator_callable = Invalidator(self)
+
+        # Walk from our parent element, to the destination, setting callbacks
+        # along the way. While we're at it, the reverse path is being
+        # calculated in p, for insertion into the target's implicitly connected
+        # dict.
+        e = unwrap(self.connects._parent)
+        p = Tuke.Id('.')
+        for i in self._id + (None,):
+            if i is not None:
+                e.notify(Tuke.Id(i),self._invalidator_callable)
+
+                if i == '..':
+                    p = e._id_real + p
+                else:
+                    p = Tuke.Id('..') + p
+            try:
+                e = unwrap(e[Tuke.Id(i)])
+            except KeyError:
+                # Didn't reach the last Element referenced in the path;
+                # implicit connection doesn't exist because explicit connection
+                # is dangling.
+                break
+            except TypeError:
+                # Did reach the last Element referenced in the path. The
+                # calculated reverse path is inserted as the key in
+                # _implicitly_connected, the invalidator_callable is used as a
+                # magic cookie. This is a WeakValueDict, so when the cookie
+                # goes away, the entry does too.
+                #
+                # Note that gc-lag could turn this simple construct into a
+                # problem when Element.remove is implemented.
+                e.connects._implicitly_connected[p] = self._invalidator_callable
+                break
+
+
 
 class Connects(set):
     """Per-Element connectivity info.
    
-    The Set of Elements an Element is connected too. The elements in the set
-    are stored as ElementRefs, and may or may not be resolvable to actual
-    elements.
+    The set of Elements an Element is connected too. Stored as a collection of
+    bare Id's, which the parent element can evaluate to find the actual
+    referring Element.
 
-    Utility functions are provided to access the global information on
-    connected elements, such as finding the set of all Elements that an Element
-    is connected too.
     """
 
-    def __new__(cls,iterable = (),base = None):
+    def __new__(cls,iterable = (),parent = None):
         """Create connectivity info
 
         iterable - Optional iterable of Ids to add.
-        base - Base element, may be set after initialization
+        parent - Parent element, may be set after initialization
         """
         self = set.__new__(cls) 
 
-        assert isinstance(base,(Tuke.Element,type(None)))
+        assert isinstance(parent,(Tuke.Element,type(None)))
 
-        _implicitly_connected[self] = weakref.WeakKeyDictionary() 
+        self._implicitly_connected = weakref.WeakValueDictionary()
 
         for i in iterable:
             super(cls,self).add(i)
 
-        if base is not None:
-            self.base = base
+        self._parent = parent
         return self
 
 
     def add(self,ref):
-        """Add an explicit connection.
-
-        ref - Element or Id
-        """
-
-        ref = self._make_ref(ref)
+        """Add an explicit connection."""
+        ref = _elemref(self,ref)
         super(self.__class__,self).add(ref)
 
-        self._set_implicit_connectivity(ref)
-
-    def to(self,other):
+    def to(self,ref):
         """True if self is connected to other, explicity or implicitly."""
-
-        ref = self._make_ref(other)
+        ref = _make_ref(self._parent,ref)
 
         if ref in self:
             return True
         else:
-            try:
-                return _implicitly_connected[ref.connects][self]
-            except (Tuke.ElementRefError, KeyError):
+            if ref in self._implicitly_connected:
+                return True
+            else:
                 return False
 
-    def __contains__(self,other):
+    def __contains__(self,ref):
         """True if there is an explicit connection from self to other"""
-        ref = self._make_ref(other)
+        ref = _make_ref(self._parent,ref)
         return super(self.__class__,self).__contains__(ref)
 
 
@@ -130,75 +223,24 @@ class Connects(set):
 
     def __hash__(self):
         # Sets, which we are a subclass of, are not hashable, however we depend
-        # on using Connects objects as keys in WeakKeyDicts.
+        # on using Connects objects as keys in WeakKeyDicts. For those purposes
+        # treating the Connect as a magic cookie is fine.
         return id(self)
 
-    def _set_implicit_connectivity(self,ref):
-        """Set implicit connectivity between self and what ref points to."""
-        if ref._base is not None:
 
-            change_report_stack = None
-            try:
-                _implicitly_connected[self][ref.connects] = True
-                change_report_stack = ref._get_ref_stack()
-            except Tuke.ElementRefError,err:
-                # Looks like ref isn't fully accessible, however, we should
-                # still use the partially dereferenced stack to figure out what
-                # parent changes we should trigger a reset of connectivity on,
-                # as any of them could have their parent set, and then have
-                # connectivity restored.
-                change_report_stack = err.partial_stack
-
-
-        # The implicit_reference_updater object gets put into many Elements
-        # callback list, but only gets called by one Element. The key, no pun
-        # intended, is that the callbacks are WeakKeyDicts, and by removing the
-        # one reference to the object in ref, the garbage collector will take
-        # care of the rest.
-        class implicit_reference_updater(object):
-            def __init__(self,connects,ref):
-                self.connects = connects
-                self.ref = ref
-                self.enabled = True
-            def __call__(self,*args,**kwargs):
-                if self.enabled: # in case that gc isn't fast enough
-                    self.enabled = False
-                    self.connects._set_implicit_connectivity(self.ref)
-        ref._implicit_connectivity_key = implicit_reference_updater(self,ref)
-        for e in change_report_stack:
-            Tuke.context.source.notify(e,e.parent,
-                    ref._implicit_connectivity_key,ref._implicit_connectivity_key)
-
-    def _make_ref(self,ref):
-        # This is actually kinda clever. We're storing ElementRefs, and one
-        # ElementRef is another ElementRef if their base and reference are
-        # equal... So, test for that, and simply return the ref!
-        try:
-            if not (ref._base == self._base):
-                raise ValueError, \
-                    "Base Elements must match, got %s, need %s" % \
-                            (ref._base,self._base)
-
-            return ref
-        except AttributeError:
-            try:
-                return Tuke.ElementRef(self._base,Tuke.Id(ref))
-            except TypeError:
-                raise TypeError, "Expected an Id, string, or ElementRef, not %s" % type(ref)
-        
-
-    def _get_base(self):
-        return self._base
-    def _set_base(self,v):
-        self._base = v
+    def _get_parent(self):
+        return self._parent
+    def _set_parent(self,v):
+        self._parent = v
         old = tuple(self)
         self.clear()
         for e in old:
             self.add(e)
-    base = property(_get_base,_set_base)
+    parent = property(_get_parent,_set_parent)
 
-    @Tuke.repr_helper.repr_helper
-    def __repr__(self):
-        ids = tuple([r.id for r in self])
+    @Tuke.repr_helper.wrapped_repr_helper
+    def __wrapped_repr__(self):
+        ids = [Tuke.Id(i) for i in self]
         return ((sorted(ids),),
                 {})
+    __repr__ = Tuke.context.wrapped_str_repr.unwrapped_repr
