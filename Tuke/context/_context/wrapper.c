@@ -445,13 +445,6 @@ Wrapped_call(Wrapped *self,PyObject *args,PyObject *kwargs){
     // **kwargs, otherwise we'd have an unhandled edge case for those expat
     // C++-programmers.
 
-    // Pretty sure this can only be called in wrapped mode, so insure that
-    // assumption is correct.
-    if (self->apply != 1){
-        PyErr_SetString(PyExc_RuntimeError,"Wrapped_call while self->apply != 1");
-        return NULL;
-    }
-
     unwrapped_args = PyTuple_New(PyTuple_GET_SIZE(args));
     if (unwrapped_args == NULL) return NULL;
     for (i = 0; i < PyTuple_GET_SIZE(args); i++){

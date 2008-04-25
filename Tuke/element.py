@@ -407,6 +407,7 @@ class Element(context.source.Source):
     __repr__ = Tuke.context.wrapped_str_repr.unwrapped_repr
 
     def _serialize(self,r,indent,root=False,full=False):
+        self = context.wrapper.wrap(self,self)
         r.append('%s%s = %s; ' % (indent,self.id,repr(self)))
         if not root:
             r.append('_.add(%s)\n' % (self.id))
@@ -423,8 +424,7 @@ class Element(context.source.Source):
             if subs:
                 r.append('%swith %s as _:\n' % (indent,self.id))
                 for e in subs:
-                    with e as e:
-                        e._serialize(r,indent + '    ')
+                    e._serialize(r,indent + '    ')
 
     def serialize(self,full=False):
         """Serialize the Element and it's sub-Elements."""
