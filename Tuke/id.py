@@ -32,7 +32,7 @@ class Id(context.wrapper.Translatable):
     foo, a sub-element.
     """
 
-    __slots__ = ('_id')
+    __slots__ = ('_id',)
 
     def __init__(self,s = ''):
         """Create a new Id from s
