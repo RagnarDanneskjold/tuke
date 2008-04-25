@@ -414,7 +414,7 @@ class Element(context.source.Source):
                   f,
                   full=False,
                   indent=None,
-                  root=None):
+                  level=0):
         """Serialize the Element and it's sub-Elements."""
 
         if indent is None:
@@ -424,7 +424,7 @@ import Tuke
 
 """)
             indent = []
-            self.serialize(f,full,indent=[],root=True)
+            self.serialize(f,full,indent=[],level=0)
         else:
             def out(s):
                 for i in indent:
@@ -451,10 +451,10 @@ import Tuke
                     f.write('%s=%s' % (n,repr(v)))
 
             f.write('); ')
-            if not root:
-                f.write('_.add(%s)\n' % (self._id_real))
+            if level > 0:
+                f.write('__%d.add(%s)\n' % (level,self._id_real))
             else:
-                f.write('__root = %s\n' % (self._id_real))
+                f.write('__%d = %s\n' % (level,self._id_real))
             indent.pop()
 
             if not isinstance(self,ReprableByArgsElement) or full:
@@ -465,13 +465,11 @@ import Tuke
                 subs.sort(key=lambda e: e.id)
 
                 if subs:
-                    out('with %s as _:\n' % self._id_real)
+                    out('with %s as __%d:\n' % (self._id_real,level + 1))
                     for e in subs:
                         unwrap(e).serialize(f,full,
                                             indent=indent + ['    ',],
-                                            root=False)
-
-        #return ''.join(r)
+                                            level=level + 1)
 
 class ReprableByArgsElement(Element):
     """Base class for Elements fully representable by their arguments."""
