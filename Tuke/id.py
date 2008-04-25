@@ -122,7 +122,7 @@ class Id(context.wrapper.Translatable):
 
     def __str__(self):
         if self._id:
-            return reduce(lambda a,b: a + '/' + b,self._id)
+            return '/'.join(self._id)
         else:
             return '.'
 
