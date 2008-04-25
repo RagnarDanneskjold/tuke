@@ -46,8 +46,10 @@ class Pin(ReprableByArgsElement):
 
         self.add(Hole(dia=self.dia,id=Id()))
 
-        self.add(gen_pad_shape(self.dia + (self.thickness * 2),id='pad',layer='top.pad'))
-        self.add(gen_pad_shape(self.mask,id='mask',layer='top.mask'))
-        self.add(gen_pad_shape(self.mask + (self.clearance * 2),id='clearance',layer='top.clearance'))
+        self.add(gen_pad_shape(self.dia + (self.thickness * 2),
+                               id=Id('pad'),layer='top.pad'))
+        self.add(gen_pad_shape(self.mask,id=Id('mask'),layer='top.mask'))
+        self.add(gen_pad_shape(self.mask + (self.clearance * 2),
+                               id=Id('clearance'),layer='top.clearance'))
 
-        self.connects.add('pad')
+        self.connects.add(Id('pad'))

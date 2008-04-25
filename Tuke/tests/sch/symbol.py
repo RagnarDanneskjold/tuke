@@ -34,9 +34,9 @@ class SchSymbolTest(TestCase):
                 c = Pin(id='c')
                 self.create_linked_pins((a,b,c,'d'))
 
-        f = foo()
+        f = foo(id=Id('f'))
 
-        T(f.a.connects.to(Id('../footprint/_1')))
-        T(f.b.connects.to(Id('../footprint/_2')))
-        T(f.c.connects.to(Id('../footprint/_3')))
-        T(f.d.connects.to(Id('../footprint/_4')))
+        T(f.a.connects.to(Id('f/footprint/_1')))
+        T(f.b.connects.to(Id('f/footprint/_2')))
+        T(f.c.connects.to(Id('f/footprint/_3')))
+        T(f.d.connects.to(Id('f/footprint/_4')))

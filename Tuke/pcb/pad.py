@@ -33,11 +33,13 @@ class Pad(ReprableByArgsElement):
     __required__ = ('a','b','thickness','clearance','mask')
 
     def _init(self):
-        self.add(self.from_ab(self.thickness,id='pad',layer='top.pad'))
-        self.add(self.from_ab(self.thickness + (self.clearance * 2),id='clearance',layer='top.clearance'))
-        self.add(self.from_ab(self.mask,id='mask',layer='top.mask'))
+        self.add(self.from_ab(self.thickness,id=Id('pad'),layer='top.pad'))
+        self.add(self.from_ab(self.thickness + (self.clearance * 2),
+                              id=Id('clearance'),
+                              layer='top.clearance'))
+        self.add(self.from_ab(self.mask,id=Id('mask'),layer='top.mask'))
 
-        self.connects.add('pad')
+        self.connects.add(Id('pad'))
 
     def from_ab(self,thickness,id,layer=None):
         """Returns a box generated from a,b with a given thickness.

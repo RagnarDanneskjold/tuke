@@ -40,4 +40,4 @@ class Symbol(Component):
             if not isinstance(p,Pin):
                 p = Pin(id=p)
             self.add(p)
-            p.connects.add('../footprint/_%d' % (i + 1))
+            p.connects.add(Id('footprint/_%d' % (i + 1)))
