@@ -94,11 +94,16 @@ class Element(context.source.Source):
         """
         req,df = self._required_and_default_kwargs()
 
+        # Find changed defaults
         kwargs = {}
         for k,v in df.items():
             if getattr(self,k) is not v:
                 req.add(k)
                 kwargs[k] = getattr(self,k)
+
+        # Add in required
+        for r in req:
+            kwargs[r] = getattr(self,r)
         return kwargs 
 
     def __new__(cls,**kwargs):
@@ -165,11 +170,10 @@ class Element(context.source.Source):
             import Tuke.geometry
             self.transform = Tuke.geometry.Transformation()
 
+        self._notify_callbacks = {}
         if self.connects is None:
             self.connects = Tuke.Connects()
         self.connects.parent = self
-
-        self._notify_callbacks = {}
 
     # Some notes on the sub-elements implementation:
     #
@@ -406,40 +410,68 @@ class Element(context.source.Source):
         return ((),kwargs)
     __repr__ = Tuke.context.wrapped_str_repr.unwrapped_repr
 
-    def _serialize(self,r,indent,root=False,full=False):
-        self = context.wrapper.wrap(self,self)
-        r.append('%s%s = %s; ' % (indent,self.id,repr(self)))
-        if not root:
-            r.append('_.add(%s)\n' % (self.id))
-        else:
-            r.append('__root = %s\n' % (self.id))
-
-        if not isinstance(self,ReprableByArgsElement) or full:
-            subs = []
-            for e in self: 
-                if isinstance(e,Element):
-                    subs.append(e)
-            subs.sort(key=lambda e: e.id)
-
-            if subs:
-                r.append('%swith %s as _:\n' % (indent,self.id))
-                for e in subs:
-                    e._serialize(r,indent + '    ')
-
-    def serialize(self,full=False):
+    def serialize(self,
+                  f,
+                  full=False,
+                  indent=None,
+                  root=None):
         """Serialize the Element and it's sub-Elements."""
 
-        r = deque()
-
-        r.append("""\
+        if indent is None:
+            f.write("""\
 from __future__ import with_statement
 import Tuke
 
 """)
+            indent = []
+            self.serialize(f,full,indent=[],root=True)
+        else:
+            def out(s):
+                for i in indent:
+                    f.write(i)
+                f.write(s)
 
-        self._serialize(r,'',root=True,full=full)
+            from Tuke.repr_helper import shortest_class_name
+            cname = shortest_class_name(self.__class__)
+            s = '%s = %s(' % (self._id_real,cname)
+            out(s)
+            indent.append(' ' * len(s))
 
-        return ''.join(r)
+            kw = self._repr_kwargs()
+            kw['id'] = self._id_real
+            kw['transform'] = self._transform_real
+
+            first = True
+            for n,v in kw.iteritems():
+                if not first:
+                    f.write(',\n')
+                    out('%s=%s' % (n,repr(v)))
+                else:
+                    first = False
+                    f.write('%s=%s' % (n,repr(v)))
+
+            f.write('); ')
+            if not root:
+                f.write('_.add(%s)\n' % (self._id_real))
+            else:
+                f.write('__root = %s\n' % (self._id_real))
+            indent.pop()
+
+            if not isinstance(self,ReprableByArgsElement) or full:
+                subs = []
+                for e in self: 
+                    if isinstance(e,Element):
+                        subs.append(e)
+                subs.sort(key=lambda e: e.id)
+
+                if subs:
+                    out('with %s as _:\n' % self._id_real)
+                    for e in subs:
+                        unwrap(e).serialize(f,full,
+                                            indent=indent + ['    ',],
+                                            root=False)
+
+        #return ''.join(r)
 
 class ReprableByArgsElement(Element):
     """Base class for Elements fully representable by their arguments."""

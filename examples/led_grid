@@ -32,6 +32,8 @@ stdout.
 
 import iam_tuke_example
 
+import sys
+
 from Tuke import rndId
 from Tuke.units import *
 from LedGrid import Led,LedGrid
@@ -44,4 +46,4 @@ if __name__ == "__main__":
 
     grid = LedGrid(rows=rows,cols=cols,spacing=0.5 * IN, id=rndId())
 
-    print grid.serialize(full=True),
+    grid.serialize(sys.stdout,full=True),

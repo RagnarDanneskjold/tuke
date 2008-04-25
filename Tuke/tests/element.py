@@ -10,8 +10,7 @@
 
 from __future__ import with_statement
 
-import os
-import shutil
+import sys
 import weakref
 
 import common
@@ -410,6 +409,6 @@ class ElementTest(TestCase):
         f1 = Footprint(file=common.tmpd + '/plcc4-rgb-led')
         f2 = Footprint(file=common.tmpd + '/supercap_20mm')
       
-        print f1.serialize(full=True)
-        print f2.serialize(full=True)
+        print f1.serialize(sys.stdout,full=True)
+        print f2.serialize(sys.stdout,full=True)
         # FIXME: more needed here...
