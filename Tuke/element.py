@@ -309,9 +309,14 @@ class Element(context.source.Source):
             def r(callback_ref):
                 self = self_ref()
                 if self is not None:
-                    self._notify_callbacks[filter].remove(callback_ref)
-                    if not self._notify_callbacks[filter]:
-                        del self._notify_callbacks[filter]
+                    # The garbage collector may call us after notify_callbacks
+                    # has been reset, to catch any KeyErrors
+                    try:
+                        self._notify_callbacks[filter].remove(callback_ref)
+                        if not self._notify_callbacks[filter]:
+                            del self._notify_callbacks[filter]
+                    except KeyError:
+                        pass
             return r
         remover = mkremover(filter)
 
