@@ -217,7 +217,7 @@ class Element(context.source.Source):
             return self
         else:
             r = None
-            if id[0] == '..':
+            if id[0] == Tuke.Id('..'):
                 if self.parent is not None:
                     r = self.parent
                 else:

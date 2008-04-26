@@ -55,7 +55,7 @@ class Id(tuple,context.wrapper.Translatable):
         """
 
         if isinstance(s,Id):
-            return tuple.__new__(cls,tuple.__iter__(s)) 
+            return s 
 
         try:
             id = s.split('/')
@@ -96,8 +96,6 @@ class Id(tuple,context.wrapper.Translatable):
         Id('a/b/c').relto('a') == 'b/c'
         Id('../b/c').relto('a') == '../../b/c'
         """
-        base = Id(base)
-
         # Discard common prefixes
         i = 0
         while i < len(self) and i < len(base) and self[i] == base[i]:
@@ -111,10 +109,6 @@ class Id(tuple,context.wrapper.Translatable):
         
 
     def __add__(self,b):
-        # Why the Id(b)? That's to allow b to be anything that's acceptable by
-        # Id(), yet, if it isn't, to properly raise a TypeError
-        b = Id(b)
-
         n = normalize(tuple.__add__(self,b))
 
         return tuple.__new__(Id,n) 
@@ -126,7 +120,6 @@ class Id(tuple,context.wrapper.Translatable):
             return '.'
 
     def __eq__(self,b):
-        b = Id(b)
         return tuple.__eq__(self,b)
 
     def __ne__(self,b):

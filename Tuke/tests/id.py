@@ -66,7 +66,7 @@ class IdTest(TestCase):
         self.assert_(str(Id('..') + Id('bar')) == '../bar')
 
         # Adding strings to Id's
-        self.assert_(Id('foo') + 'bar' == Id('foo/bar'))
+        self.assert_(Id('foo') + Id('bar') == Id('foo/bar'))
 
     def testIdValidityChecking(self):
         """Id checks for invalid ids"""
@@ -92,8 +92,9 @@ class IdTest(TestCase):
         F('12')
         
     def testIdrelto(self):
-        def T(id,base,expected = True):
-            got = Id(id).relto(base)
+        def T(id,base,expected):
+            expected = Id(expected)
+            got = Id(id).relto(Id(base))
             self.assert_(got == expected,'got: %s expected: %s' % (got,expected))
 
         # One or the other empty
@@ -176,19 +177,19 @@ class IdTest(TestCase):
         T(isinstance(a[0],Id))
         T(isinstance(a[0:3],Id))
 
-        T(a[0] == 'aa')
-        T(a[1] == 'b')
-        T(a[2] == 'c')
-        T(a[3] == 'd')
+        T(a[0] == Id('aa'))
+        T(a[1] == Id('b'))
+        T(a[2] == Id('c'))
+        T(a[3] == Id('d'))
 
-        T(a[-1] == 'd')
+        T(a[-1] == Id('d'))
 
         self.assertRaises(IndexError,a.__getitem__,4) 
 
-        T(a[0:2] == 'aa/b')
-        T(a[2:0] == '.')
-        T(a[2:0:-1] == 'c/b') # useless? who knows
-        T(a[-2:] == 'c/d')
+        T(a[0:2] == Id('aa/b'))
+        T(a[2:0] == Id('.'))
+        T(a[2:0:-1] == Id('c/b')) # useless? who knows
+        T(a[-2:] == Id('c/d'))
 
     def testId__cmp__(self):
         """Id comparisons"""
@@ -261,8 +262,8 @@ class IdTest(TestCase):
 
         class e(object):
             def __init__(self,id):
-                self.id = id
-                self._id_real = id
+                self.id = Id(id)
+                self._id_real = Id(id)
 
         T(Id()._remove_context(e('spam')),Id('..'))
 

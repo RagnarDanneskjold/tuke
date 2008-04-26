@@ -77,7 +77,7 @@ class ElementRefTest(TestCase):
 
 
             # Check exceptions.
-            R('..')
-            R('../../')
-            R('a/z')
-            R('a/b/c/d')
+            R(Id('..'))
+            R(Id('../../'))
+            R(Id('a/z'))
+            R(Id('a/b/c/d'))

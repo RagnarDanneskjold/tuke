@@ -69,15 +69,15 @@ class WrapperTest(TestCase):
         b = Element(id=Id('b'))
 
         wb = wrap(b,a,True)
-        T(wb.id,'a/b')
+        T(wb.id,Id('a/b'))
         wb2 = wrap(wb,a,False)
-        T(wb2.id,'b')
+        T(wb2.id,Id('b'))
         T(wb2 is b)
 
         wb = wrap(b,a,False)
-        T(wb.id,'../b')
+        T(wb.id,Id('../b'))
         wb2 = wrap(wb,a,True)
-        T(wb2.id,'b')
+        T(wb2.id,Id('b'))
         T(wb2 is b)
 
     def test_is_Wrapped(self):
