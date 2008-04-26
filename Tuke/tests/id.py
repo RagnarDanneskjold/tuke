@@ -68,6 +68,32 @@ class IdTest(TestCase):
         # Adding strings to Id's
         self.assert_(Id('foo') + Id('bar') == Id('foo/bar'))
 
+    def testId_subclassing(self):
+        """Subclasses of Id work"""
+
+        class foo(Id):
+            def __new__(cls,s):
+                return Id.__new__(cls,'foo' + s)
+
+        f = foo('lish')
+        self.assert_(isinstance(f,Id))
+        self.assert_(isinstance(f,foo))
+        self.assert_(f == Id('foolish'))
+        self.assert_(str(f) == 'foolish')
+
+        class foo(Id):
+            def __new__(cls,s,bar):
+                self = Id.__new__(cls,s)
+                self.bar = bar
+                return self
+
+        f = foo(Id('bar'),'bar')
+        self.assert_(isinstance(f,Id))
+        self.assert_(isinstance(f,foo))
+        self.assert_(f == Id('bar'))
+        self.assert_(str(f) == 'bar')
+        self.assert_(f.bar == 'bar')
+
     def testIdValidityChecking(self):
         """Id checks for invalid ids"""
 

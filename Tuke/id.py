@@ -55,7 +55,12 @@ class Id(tuple,context.wrapper.Translatable):
         """
 
         if isinstance(s,Id):
-            return s 
+            # Skip normalization if possible.
+            if cls is Id:
+                return s
+            else:
+                # So Id subclasses work
+                return tuple.__new__(cls,tuple.__iter__(s))
 
         try:
             id = s.split('/')
