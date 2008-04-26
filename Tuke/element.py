@@ -442,7 +442,7 @@ import Tuke
             kw['transform'] = self._transform_real
 
             first = True
-            for n,v in kw.iteritems():
+            for n,v in sorted(kw.iteritems()):
                 if not first:
                     f.write(',\n')
                     out('%s=%s' % (n,repr(v)))
