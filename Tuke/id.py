@@ -24,7 +24,23 @@ import re
 
 valid_id_re = re.compile('^([_A-Za-z][_A-Za-z0-9]*|\.|\.\.)$')
 
-class Id(context.wrapper.Translatable):
+def normalize(self):
+    r = []
+
+    for i in self:
+        if i == '..':
+            if r and r[-1] != '..':
+                r.pop()
+            else:
+                r.append(i)
+        elif i in ('.',''):
+            continue
+        else:
+            r.append(i)
+
+    return r
+
+class Id(tuple,context.wrapper.Translatable):
     """Element identifiers.
     
     Id's are identifiers with a path. The path is relative, so for instance
@@ -32,28 +48,28 @@ class Id(context.wrapper.Translatable):
     foo, a sub-element.
     """
 
-    __slots__ = ('_id',)
-
-    def __init__(self,s = ''):
+    def __new__(cls,s = ''):
         """Create a new Id from s
 
         s may be a string or another Id
         """
 
         if isinstance(s,Id):
-            s = str(s)
+            return tuple.__new__(cls,tuple.__iter__(s)) 
 
-        if not isinstance(s,str):
+        try:
+            id = s.split('/')
+        except AttributeError:
             raise TypeError, "%s is not an Id or a string: %s" % (type(s),s)
 
-        self._id = s.split('/')
-
-        self.normalize()
+        id = normalize(id)
 
         # Has to be last, as '/'.split('/') == ('','')
-        for p in self._id:
+        for p in id:
             if not valid_id_re.match(p):
                 raise ValueError, "'%s' is not a valid Id" % s
+
+        return tuple.__new__(cls,id)
 
     @classmethod
     def random(cls,bits = 64):
@@ -66,23 +82,8 @@ class Id(context.wrapper.Translatable):
         
         s = '_' + hex(random.randint(0,2 ** bits))[2:-1].zfill(bits / 4).lower()
 
-        return cls(s)
+        return tuple.__new__(cls,(s,)) 
 
-    def normalize(self):
-        _id = []
-
-        for i in self._id:
-            if i == '..':
-                if _id and _id[-1] != '..':
-                    _id.pop()
-                else:
-                    _id.append(i)
-            elif i in ('.',''):
-                continue
-            else:
-                _id.append(i)
-
-        self._id = tuple(_id)
 
     def relto(self,base):
         """Returns self relative to base.
@@ -110,65 +111,72 @@ class Id(context.wrapper.Translatable):
         
 
     def __add__(self,b):
-        n = Id()
-
         # Why the Id(b)? That's to allow b to be anything that's acceptable by
         # Id(), yet, if it isn't, to properly raise a TypeError
-        n._id = self._id + Id(b)._id
+        b = Id(b)
 
-        n.normalize()
+        n = normalize(tuple.__add__(self,b))
 
-        return n 
+        return tuple.__new__(Id,n) 
 
     def __str__(self):
-        if self._id:
-            return '/'.join(self._id)
+        if self:
+            return '/'.join(tuple.__iter__(self))
         else:
             return '.'
 
     def __eq__(self,b):
         b = Id(b)
-        return self._id == b._id
+        return tuple.__eq__(self,b)
 
     def __ne__(self,b):
         return not self.__eq__(b)
 
-    def __len__(self):
-        return len(self._id)
-
-    def __cmp__(self,other):
-        """Compare
-
-        This is done in terms of higher or lower in the hierarchy, with equal
-        hierarchies being compared alphabetically."""
-
+    def __gt__(self,other):
         if len(self) == len(other):
-            return cmp(self._id,other._id)
+            return tuple.__gt__(self,other)
+        elif len(self) > len(other):
+            return True
         else:
-            if len(self) < len(other):
-                return -1
-            else:
-                return 1
+            return False
 
-    @Tuke.repr_helper.repr_helper
-    def __repr__(self):
-        s = str(self)
+    def __lt__(self,other):
+        if len(self) == len(other):
+            return tuple.__lt__(self,other)
+        elif len(self) < len(other):
+            return True
+        else:
+            return False
 
-        return ((s,),None) 
+    def __ge__(self,other):
+        if len(self) == len(other):
+            return tuple.__gt__(self,other)
+        elif len(self) > len(other):
+            return True
+        else:
+            return False
 
-    def __getitem__(self,s):
-        e = self._id.__getitem__(s)
+    def __le__(self,other):
+        if len(self) == len(other):
+            return tuple.__lt__(self,other)
+        elif len(self) < len(other):
+            return True
+        else:
+            return False
 
-        # In the Id[0] case, e is bare, however the following code is assuming
-        # that e is a tuple. Fix.
-        if not isinstance(e,tuple):
-            e = (e,)
+    def __getslice__(self,l,u):
+        return tuple.__new__(Id,
+                             tuple.__getslice__(self,l,u))
 
-        # Convert to an Id to return
-        return Id('/'.join(e))
+    def __getitem__(self,i):
+        r = tuple.__getitem__(self,i)
+        if isinstance(r,str):
+            r = (r,)
+        return tuple.__new__(Id,r)
 
-    def __hash__(self):
-        return hash(self._id)
+    def __iter__(self):
+        for i in tuple.__iter__(self):
+            yield tuple.__new__(Id,(i,))
 
     def _build_context(self,base,reverse):
         assert len(self) == 1
@@ -182,6 +190,12 @@ class Id(context.wrapper.Translatable):
 
     def _remove_context(self,elem):
         return self.relto(elem.id)
+
+    @Tuke.repr_helper.repr_helper
+    def __repr__(self):
+        s = str(self)
+
+        return ((s,),None) 
 
 def rndId():
     """Alias for Id.random()"""

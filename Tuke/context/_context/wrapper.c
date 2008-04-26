@@ -158,41 +158,9 @@ apply_remove_context(PyObject *context,PyObject *obj,int apply){
         return NULL;
     }
 
-    // Basic types don't get wrapped at all.
-    if (obj == Py_None ||
-        PyBool_Check(obj) ||
-        PyInt_Check(obj) ||
-        PyLong_Check(obj) ||
-        PyFloat_Check(obj) || 
-        PyComplex_Check(obj) ||
-        PyType_Check(obj) ||
-        PyString_Check(obj) ||
-        PyUnicode_Check(obj) ||
-        PyFile_Check(obj)){
-
-        Py_INCREF(obj);
-        return obj;
-    }
-    else if (PyTuple_Check(obj)){
-        return wrap_tuple(context,obj,apply);
-    }
-    else if (PyList_Check(obj)){
-        return wrap_list(context,obj,apply);
-    }
-    else if (PyDict_Check(obj)){
-        return wrap_dict(context,obj,apply);
-    }
-    // Slices seem to act strangely when wrapped. Notably they seem to cause
-    // "RuntimeWarning: tp_compare didn't return -1 or -2 for exception"
-    // errors. Given that slice(Id('a'),Id('b')) is a *very* advanced usage,
-    // best to simply ignore this case for now.
-    else if (PySlice_Check(obj)){
-        Py_INCREF(obj);
-        return obj;
-    }
     // Translatable types have their context applied, but they can't be put in
     // the cache because they don't have a destructor that would remove them.
-    else if (PyObject_IsInstance(obj,(PyObject *)&TranslatableType)){
+    if (PyObject_IsInstance(obj,(PyObject *)&TranslatableType)){
         PyObject *source_context,*r;
         if (PyObject_IsInstance(context,(PyObject *)&WrappedType)){
             Py_INCREF(context);
@@ -217,6 +185,42 @@ apply_remove_context(PyObject *context,PyObject *obj,int apply){
         }
         Py_DECREF(source_context);
         return r;
+    }
+    // Basic types don't get wrapped at all.
+    //
+    // The basic types go *after* translatable types, because a translatable
+    // type may be a subclass of one of the basic types. For instance Id is a
+    // tuple subclass.
+    else if (obj == Py_None ||
+        PyBool_Check(obj) ||
+        PyInt_Check(obj) ||
+        PyLong_Check(obj) ||
+        PyFloat_Check(obj) || 
+        PyComplex_Check(obj) ||
+        PyType_Check(obj) ||
+        PyString_Check(obj) ||
+        PyUnicode_Check(obj) ||
+        PyFile_Check(obj)){
+
+        Py_INCREF(obj);
+        return obj;
+    }
+    else if (PyTuple_CheckExact(obj)){
+        return wrap_tuple(context,obj,apply);
+    }
+    else if (PyList_CheckExact(obj)){
+        return wrap_list(context,obj,apply);
+    }
+    else if (PyDict_CheckExact(obj)){
+        return wrap_dict(context,obj,apply);
+    }
+    // Slices seem to act strangely when wrapped. Notably they seem to cause
+    // "RuntimeWarning: tp_compare didn't return -1 or -2 for exception"
+    // errors. Given that slice(Id('a'),Id('b')) is a *very* advanced usage,
+    // best to simply ignore this case for now.
+    else if (PySlice_Check(obj)){
+        Py_INCREF(obj);
+        return obj;
     }
     // Check if an outer wrap will cancel out an inner wrap
     else if (PyObject_IsInstance(obj,(PyObject *)&WrappedType) &&

@@ -199,10 +199,23 @@ class IdTest(TestCase):
         T(Id('a') < Id('b'))
         T(not Id('a') > Id('b'))
 
+        T(Id('b') > Id('a'))
+        T(not Id('b') < Id('a'))
+
         T(Id('a/b') > Id('b'))
         T(not Id('a/b') < Id('b'))
 
         T(Id() < Id('a'))
+        T(not (Id() > Id('a')))
+
+    def testId__iter__(self):
+        p = []
+
+        for i in Id('aa/b/cc/dd'):
+            self.assert_(isinstance(i,Id)) 
+            p.append(i)
+
+        self.assert_(p == [Id('aa'),Id('b'),Id('cc'),Id('dd')])
 
     def testIdInitWithId(self):
         """Id(Id('foo'))"""
@@ -212,10 +225,6 @@ class IdTest(TestCase):
         b = Id(a)
 
         self.assert_(hash(a) == hash(b))
-
-        # Must not implement the simple self.id = other.id, as other.id may
-        # change.
-        self.assert_(a._id is not b._id)
 
     def testIdRaisesTypeErrors(self):
         """Id(1) raises TypeError"""

@@ -80,7 +80,7 @@ def _make_ref(base,ref):
 # is then a set of _elemrefs. At any point the whole shebang can be deleted,
 # and the weakref callback mechanism used in notify will clean up everything.
 
-class _elemref(Tuke.Id):
+class _elemref:
     """Connects explicit connection.
 
     Holds both the Id reference, and maintains/creates the implicit connection.
@@ -88,9 +88,7 @@ class _elemref(Tuke.Id):
     """
 
     def __init__(self,connects,ref):
-        ref = _make_ref(connects._parent,ref)
-
-        Tuke.Id.__init__(self,ref)
+        self.ref = ref 
 
         self.connects = connects
         self._compute_implicit_callbacks()
@@ -139,7 +137,7 @@ class _elemref(Tuke.Id):
         # dict.
         e = unwrap(self.connects._parent)
         p = Tuke.Id('.')
-        for i in self._id + (None,):
+        for i in tuple(tuple.__iter__(self.ref)) + (None,):
             if i is not None:
                 e.notify(Tuke.Id(i),self._invalidator_callable)
 
@@ -168,7 +166,7 @@ class _elemref(Tuke.Id):
 
 
 
-class Connects(set):
+class Connects(dict):
     """Per-Element connectivity info.
    
     The set of Elements an Element is connected too. Stored as a collection of
@@ -183,23 +181,27 @@ class Connects(set):
         iterable - Optional iterable of Ids to add.
         parent - Parent element, may be set after initialization
         """
-        self = set.__new__(cls) 
+        self = dict.__new__(cls) 
 
         assert isinstance(parent,(Tuke.Element,type(None)))
 
         self._implicitly_connected = weakref.WeakValueDictionary()
 
         for i in iterable:
-            super(cls,self).add(i)
+            self[i] = None 
 
         self._parent = parent
         return self
 
+    def __init__(self,*args,**kwargs):
+        # dict also has a __init__, ignore it
+        pass
 
     def add(self,ref):
         """Add an explicit connection."""
-        ref = _elemref(self,ref)
-        super(self.__class__,self).add(ref)
+        ref = _make_ref(self._parent,ref)
+        eref = _elemref(self,ref)
+        self[ref] = eref
 
     def to(self,ref):
         """True if self is connected to other, explicity or implicitly."""
@@ -240,7 +242,7 @@ class Connects(set):
 
     @Tuke.repr_helper.wrapped_repr_helper
     def __wrapped_repr__(self):
-        ids = [Tuke.Id(i) for i in self]
+        ids = self.keys() 
         return ((sorted(ids),),
                 {})
     __repr__ = Tuke.context.wrapped_str_repr.unwrapped_repr
