@@ -94,6 +94,17 @@ class IdTest(TestCase):
         self.assert_(str(f) == 'bar')
         self.assert_(f.bar == 'bar')
 
+    def testId_from_Id_subclass(self):
+        """Id(some id subclass) returns an Id"""
+
+        class foo(Id):
+            pass
+
+        f = foo('foo')
+        self.assert_(isinstance(f,foo))
+        f = Id(f)
+        self.assert_(not isinstance(f,foo))
+
     def testIdValidityChecking(self):
         """Id checks for invalid ids"""
 

@@ -56,10 +56,12 @@ class Id(tuple,context.wrapper.Translatable):
 
         if isinstance(s,Id):
             # Skip normalization if possible.
-            if cls is Id:
+            if cls is Id and s.__class__ is Id:
+                # An Id exactly, just return s
                 return s
             else:
-                # So Id subclasses work
+                # Some sort of Id subclass, either cls is, or s is, recreate an
+                # Id.
                 return tuple.__new__(cls,tuple.__iter__(s))
 
         try:
