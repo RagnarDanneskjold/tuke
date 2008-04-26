@@ -23,62 +23,51 @@ import Tuke.context.wrapped_str_repr
 
 from Tuke import Element,Id
 
-ElementRef_cache = weakref.WeakKeyDictionary()
-
-class ElementRef(object):
+class ElementRef(Id):
     """Weakly reference an Element from a given context.
 
-    Why from a given context? Well, the context is what determines what the
-    referenced Element is. For instance, in the context of 'a', 'b' is a
-    different thing if a.b is deleted and replaced. So an ElementRef only
-    stores a reference to the Element providing the context, and the Id of the
-    wrapped Element.
+    Essentially just a glorified Id, but also with some housekeeping. Namely
+    the base.connects is updated and you can call the ElementRef to obtain the
+    underlying Element.
 
     """
 
-    # See Connects code for all the gory details. In short, since there is one,
-    # and only one, ElementRef object for each base/ref combo each explicit
-    # connection maps to one ElementRef object. This key is then used to help
-    # implement the *implicit* connectivity map.
-    _implicit_connectivity_key = None
-
-    base = None
-    id = None
-
-    def __new__(cls,base,ref):
+    def __new__(cls,*args):
         """Create a new ElementRef
 
-        base - Context providing Element 
         ref - Referenced Element, or Id
+        base - Context providing Element
 
-        A subtle point is that for any given base/id only one
-        ElementRef object will be created, subsequent calls will return
-        the same object. 
-        
         """
 
-        id = None
+        ref = None
+        base = None
+        if len(args) == 1:
+            ref = args[0]
+        elif len(args) == 2:
+            base = args[0]
+            ref = args[1]
+        else:
+            raise TypeError("%s.__new__() takes either 1 or 2 arguments, %d given",
+                    cls.__name__,
+                    len(args))
+
         try:
-            id = ref.id
+            ref = ref.id
         except AttributeError:
-            id = Id(ref)
+            if not isinstance(ref,Id):
+                raise TypeError("Expected Element, ElementRef or Id, not %s" %
+                                type(id))
 
-        try:
-            return ElementRef_cache[base][id]
-        except KeyError:
-            self = object.__new__(cls)
+        # Id.__new__(Id('foo')) short-circuits to directly return Id('foo'),
+        # have to kludge around that.
+        self = Id.__new__(cls,ref)
 
-            self.base = base
-            self.id = id
+        self.base = base
+        if self.base is not None:
+            self.base.connects.add(self)
 
-            try: 
-                ElementRef_cache[base][id] = self
-            except KeyError:
-                ElementRef_cache[base] =\
-                        weakref.WeakValueDictionary()
-                ElementRef_cache[base][id] = self
-
-            return self
+        return self
 
     def __call__(self):
         """Dereference
@@ -86,9 +75,10 @@ class ElementRef(object):
         self.base[self.id]
 
         """
-        return self.base[self.id]
+        return self.base[self]
 
-    @Tuke.repr_helper.wrapped_non_evalable_repr_helper
+    @Tuke.repr_helper.wrapped_repr_helper
     def __wrapped_repr__(self):
-        return {'id':self.id,'base':self.base.id}
+        id = Id(self)
+        return ((id,),{})
     __repr__ = Tuke.context.wrapped_str_repr.unwrapped_repr

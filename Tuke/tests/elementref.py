@@ -24,13 +24,14 @@ class ElementRefTest(TestCase):
             r = ElementRef(root[0],ref)
             r2 = ElementRef(root[0],ref)
 
-            # One elementref per base->id combo. 
-            self.assert_(r is r2)
-
             r = r()
             r2 = r2()
             # Deref must return same object. 
             self.assert_(r is r2)
+
+            # Check that connects is updated
+            if root[0] is not None:
+                self.assert_(root[0].connects.to(r))
 
             self.assert_(r.id == expected_id,
                     'got id: %s  expected id: %s' % (r.id,expected_id))
