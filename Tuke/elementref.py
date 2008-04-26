@@ -20,6 +20,7 @@
 import Tuke.repr_helper
 import weakref
 import Tuke.context.wrapped_str_repr
+from Tuke.context.wrapper import wrap
 
 from Tuke import Element,Id
 
@@ -76,6 +77,18 @@ class ElementRef(Id):
 
         """
         return self.base[self]
+
+    def _apply_context(self,elem):
+        r = elem.id + self
+        r = ElementRef(r)
+        r.base = wrap(self.base,elem,1)
+        return r
+
+    def _remove_context(self,elem):
+        r = self.relto(elem.id)
+        r = ElementRef(r)
+        r.base = wrap(self.base,elem,0)
+        return r
 
     @Tuke.repr_helper.wrapped_repr_helper
     def __wrapped_repr__(self):

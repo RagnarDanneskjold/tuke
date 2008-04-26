@@ -14,6 +14,7 @@ from unittest import TestCase
 import Tuke
 from Tuke import Element,ElementRef,Id,rndId
 
+bypass = None
 class ElementRefTest(TestCase):
     """Perform tests of the elementref module"""
 
@@ -82,3 +83,31 @@ class ElementRefTest(TestCase):
             R(Id('../../'))
             R(Id('a/z'))
             R(Id('a/b/c/d'))
+
+
+    def testElementRef_apply_remove_context(self):
+        """ElementRef._(apply|remove)_context"""
+        def T(got,expected = True):
+            self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
+        global bypass
+        class skit(Element):
+            def f(self,d):
+                global bypass
+                r = bypass
+                bypass = d
+                return ElementRef(self,r)
+
+        a = Element(id=Id('a'))
+        a.add(Element(id=Id('b')))
+        a.b.add(Element(id=Id('c')))
+        s = skit(id=Id('s'))
+        a.b.c.add(s)
+
+        bypass = Id('.')
+        r = a.b.c.s.f(None)
+        T(r().id,Id('a/b/c/s'))
+
+        bypass = Id('../../..')
+        r = a.b.c.s.f(r)
+        T(bypass().id,Id('.'))
+        T(r().id,Id('a'))
