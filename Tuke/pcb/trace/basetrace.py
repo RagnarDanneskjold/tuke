@@ -28,57 +28,45 @@ class BaseTrace(Element):
     provided to manipulate and create groups of connected traces in a higher
     level way.
 
-    valid_endpoint_types - Endpoints will be checked against this.
     """
 
-    class InvalidEndpointTypeError(Exception):
-        """Trace endpoint type cannot be connected to."""
-        def __init__(self,endpoint_class,bad_endpoints):
-            """Create exception.
-
-            cls - Class of endpoint type requested.
-            bad_endpoints - Set of the invalid endpoint objects.
-            """
-            Exception.__init__(self)
-
-            assert isinstance(endpoint_class,type)
-            self.endpoint_class = endpoint_class
-            assert len(bad_endpoints)
-            self.bad_endpoints = bad_endpoints
-
-        def __str__(self):
-            def t(elem):
-                # FIXME: breaks layering in a nasty way... stupid
-                # ElementWrappers
-                try:
-                    return type(elem._obj)
-                except AttributeError:
-                    return type(elem)
-
-            ends = ','.join([str(t(e)) for e in self.bad_endpoints])
-            return '%s: invalid endpoint(s) for traces of type %s' % (ends,self.endpoint_class)
-
-    valid_endpoint_types = ()
     @classmethod
     def is_valid_endpoint(cls,other):
         return other in cls.valid_endpoint_types
 
-    def __init__(self,a,b,id=None):
+    __required__ = ()
+    __defaults__ = dict(a=None,b=None)
+
+    def _init(self):
         """Initialize trace
         
         a,b - The endpoints.
 
         Upon return a and b will be setup correctly for the subclass.
         """
-        Element.__init__(self,id=id)
 
-        bad_endpoints = []
-        for e in (a,b):
-            if not isinstance(e,self.valid_endpoint_types):
-                bad_endpoints.append(e)
-        if bad_endpoints:
-            raise BaseTrace.InvalidEndpointTypeError(self.__class__,set(bad_endpoints))
+        if self.a is not None and self.b is not None:
+            self.set_endpoints(self.a,self.b)
+        elif self.a is None and self.b is None:
+            pass
+        else:
+            raise ValueError("Must specify both end points if either specified")
 
-        self.a = ElementRef(a.id,a)
-        self.b = ElementRef(b.id,b)
+    def set_endpoints(self,a,b):
+        """Set endpoints after trace creation.
 
+        The endpoints have to be set in the traces context, which can be
+        difficult to figure out. For instance:
+
+        a.b.c.add(BaseTrace(a=?,b=?,id=Id('t')))
+
+        Easier is to add an unconnected trace, and then connect it's ends
+        after:
+
+        a.b.c.add(BaseTrace(id=Id('t')))
+        a.b.c.t.set_endpoints(a.b.c.d,a.b.c.e)
+
+        """
+
+        self.a = ElementRef(self,a)
+        self.b = ElementRef(self,b)

@@ -10,7 +10,7 @@
 
 from unittest import TestCase
 
-from Tuke import Element
+from Tuke import Element,Id
 from Tuke.pcb import Pin,Pad
 from Tuke.pcb.trace import BaseTrace
 
@@ -24,32 +24,30 @@ class PcbTraceBaseTraceTest(TestCase):
             self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
 
 
-        a = Element('a')
-        b = Element('b')
-        a.add(Element('b'))
-        b.add(Pin(1,1,1,1,id='foo'))
-        b.add(Pad((0,0),(1,1),0.5,0.2,0.6,id='bar'))
+        a = Element(id=Id('a'))
+        b = Element(id=Id('b'))
+        a.add(b)
+        b.add(Pin(dia=1,
+                  thickness=1,
+                  clearance=1,
+                  mask=1,
+                  id=Id('foo')))
+        b.add(Pad(a=(0,0),
+                  b=(1,1),
+                  thickness=0.5,
+                  clearance=0.2,
+                  mask=0.6,
+                  id=Id('bar')))
 
         class basetrace(BaseTrace):
             valid_endpoint_types = (Pin,Pad)
-        a.add(basetrace(b.foo,b.bar,id='t'))
-    
-        T(a.t.a.id,'b/foo')
-        T(a.t.b.id,'b/bar')
+        a.add(basetrace(id='t'))
+        a.t.set_endpoints(a.b.foo,a.b.bar)
 
+        T(a.t.a().id,Id('a/b/foo'))
+        T(a.t.b().id,Id('a/b/bar'))
 
-        def R(a,b,bad_endpoints,valid_endpoint_types):
-            try:
-                class rbasetrace(BaseTrace):
-                    valid_endpoint_types = None
-                rbasetrace.valid_endpoint_types = valid_endpoint_types
-                rbasetrace(a,b)
-            except BaseTrace.InvalidEndpointTypeError,ex:
-                T(ex.bad_endpoints,bad_endpoints)
-                return
-            T(bad_endpoints,'no exception raised')
-        
-        R(b.foo,b.bar,set((b.foo,b.bar)),valid_endpoint_types=())
-        R(b.foo,b.bar,set((b.foo,)),valid_endpoint_types=(Pad,))
-        R(b.foo,b.bar,set((b.bar,)),valid_endpoint_types=(Pin,))
-        R(None,None,set((None,None)),valid_endpoint_types=(Pin,Pad))
+        T(a.b.foo in a.t.connects)
+        T(a.b.bar in a.t.connects)
+        T(a.b.foo.connects.to(a.t))
+        T(a.b.bar.connects.to(a.t))
