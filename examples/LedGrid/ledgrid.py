@@ -35,6 +35,8 @@ from Tuke.geometry import translate,V
 from Tuke.sch import Component,Pin,Symbol
 from Tuke.library.footprint import Dil
 
+from Tuke.pcb.trace import AirTrace
+
 class Led(Symbol):
     def _init(self):
         self.add(Dil(n=2))
@@ -50,6 +52,10 @@ class LedGrid(Component):
         top_leds = []
         bottom_leds = []
 
+        def dt(a,b):
+            t = self.add(AirTrace())
+            t.set_endpoints(a,b)
+
         for x in xrange(self.cols):
             prev = None
             for y in xrange(self.rows):
@@ -60,14 +66,20 @@ class LedGrid(Component):
                 if prev is None:
                     top_leds.append(l)
                 else:
-                    l.connects.add(Id('../') + prev.id + Id('cathode'))
+                    dt(prev.cathode,l.anode)
 
                 prev = l
 
             bottom_leds.append(prev)
 
         # Link common anodes and cathodes
-        for t in top_leds:
-            t.anode.connects.add(Id('../../anode'))
-        for b in bottom_leds:
-            t.cathode.connects.add(Id('../../cathode'))
+        p = None
+        for i in top_leds:
+            if p is not None:
+                dt(p.anode,l.anode)
+            p = i
+        p = None
+        for i in bottom_leds:
+            if p is not None:
+                dt(p.cathode,i.cathode)
+            p = i 
