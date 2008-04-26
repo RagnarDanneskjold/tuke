@@ -21,19 +21,17 @@ from Tuke.pcb.trace import BaseTrace
 from Tuke.pcb import Pin
 
 class AirTrace(BaseTrace):
-    """Air wire trace."""
-    
-    def __init__(self,a,b,layer='pcb.top.airtrace',id=None):
-        """Create new air trace.
-        
-        a,b - The endpoints.
-        layer - Layer, should really be pcb.foo.airtrace
+    """Air wire trace.
 
-        Air traces can only be connected to Pins. They can't be connected to
-        vias, because a via can be plugged, have a solder mask over it etc.
-        """
-        BaseTrace.__init__(self,a,b,valid_endpoint_types=(Pin,),id=id)
+    Air traces can only be connected to Pins. They can't be connected to
+    vias, because a via can be plugged, have a solder mask over it etc.
+
+    """
+
+    valid_endpoint_types=(Pin,)
+
+    __defaults__ = dict(layer='pcb.top.airtrace')
 
     def render(self):
-        raise Exception('Not implemented')
+        raise NotImplementedError 
 
