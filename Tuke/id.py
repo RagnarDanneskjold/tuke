@@ -109,6 +109,8 @@ class Id(tuple,context.wrapper.Translatable):
         
 
     def __add__(self,b):
+        if not b:
+            return self
         n = normalize(tuple.__add__(self,b))
 
         return tuple.__new__(Id,n) 
