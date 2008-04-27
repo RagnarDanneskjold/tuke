@@ -21,9 +21,11 @@ from numpy import matrix
 
 import Tuke.repr_helper
 
+import Tuke.context as context
+
 from Tuke.geometry.matrix_subclassing import OddShapeError,odd_shape_handler
 
-class V(matrix):
+class V(matrix,context.wrapper.Translatable):
     """2d vector
     
     Based on a numpy matrix.
@@ -31,8 +33,13 @@ class V(matrix):
 
     def __new__(cls,x,y):
         """Create a new vector with x,y as the coordinates."""
-
         return super(V,cls).__new__(cls,(float(x),float(y)))
+
+    def _apply_context(self,elem):
+        return elem.transform(self)
+
+    def _remove_context(self,elem):
+        return elem.transform.I(self)
 
     @odd_shape_handler
     @Tuke.repr_helper.repr_helper
