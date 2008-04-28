@@ -208,6 +208,10 @@ source_notify(Source *self,PyObject *args,PyObject *kwargs){
         attr_callbacks = PySet_New(NULL);
         if (PyDict_SetItem(self->dict_callbacks,attr,attr_callbacks))
                 goto bail;
+    } else {
+        // Borrowed reference, while the XDECREF code at the end is designed
+        // for the PySet_New() case, where we own a new reference.
+        Py_INCREF(attr_callbacks);
     }
 
     Py_INCREF(attr_callbacks);
