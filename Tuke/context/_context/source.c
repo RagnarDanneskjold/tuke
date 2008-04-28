@@ -328,8 +328,8 @@ PyTypeObject SourceType = {
     0,              /*tp_hash */
     0,              /*tp_call*/
     0,               /*tp_str*/
-    source_getattro,           /*tp_getattro*/
-    source_setattro,           /*tp_setattro*/
+    (getattrofunc)source_getattro,           /*tp_getattro*/
+    (setattrofunc)source_setattro,           /*tp_setattro*/
     0,                         /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE, /*tp_flags*/
     "Internal use only, see source code.", /* tp_doc */
