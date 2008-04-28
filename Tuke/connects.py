@@ -142,7 +142,7 @@ class _elemref:
                 e.notify(Tuke.Id(i),self._invalidator_callable)
 
                 if i == '..':
-                    p = e._id_real + p
+                    p = e.__shadowless__.id + p
                 else:
                     p = Tuke.Id('..') + p
             try:

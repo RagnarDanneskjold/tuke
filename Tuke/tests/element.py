@@ -31,25 +31,6 @@ class ElementTest(TestCase):
 
         self.assertRaises(ValueError,lambda:Element(id='foo/bar'))
 
-    def testElementParent(self):
-        """Element.parent"""
-        def T(got,expected = True):
-            self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
-
-        a = Element(id='a')
-        b = Element(id='b')
-
-        T(b.parent,None)
-
-        called = [] 
-        def c(elem):
-            called.append(elem)
-        Tuke.context.source.notify(b,'parent',b,c)
-
-        a.add(b)
-        T(a.b.parent.id,a.id)
-        T(called,[b])
-
     def testElement_notify(self):
         """Element.notify()"""
         def T(got,expected = True):

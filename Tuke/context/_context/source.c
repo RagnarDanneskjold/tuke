@@ -28,202 +28,287 @@
 #include "cfunction.h"
 #include "wrapper.h"
 
-PyObject *source_callbacks = NULL;
-PyObject *transform_str,*parent_str;
+// context.Source objects are sub-classed by Element and are used to hold
+// context. They provide two main functions to that end. First they allow for
+// attributes to be shadowed. This is implemented with a __dict_shadow__ who's
+// values override __dict__ for getattrss, but not setattrs. This allows
+// attributes to be set to identities in the Elements context, while to the
+// outside world they have a value. For instance for the code in an Element, id
+// is always Id('.') while to the outside context it may be set to various
+// things.
+//
+// The second function is to provide a notify-on-change callback system for any
+// attribute in the Source __dict__ This is used in a variety of contexts when
+// changes need to be monitored.
+//
+//
+// A "cute party trick" is the special __shadowless__ attribute. It's a second
+// Source object, created alongside the regular Source object, with an empty
+// __dict_shadow__ This is used in the wrapper code to quickly give
+// _(apply|remove)_context functions access to the un-shadowed attributes of a
+// Source object.
 
-static int
-notify_member_callbacks(PyObject *self,PyObject *attr){
-    int r,pos;
-    PyObject *selfref = NULL,
-             *callbacks_by_obj = NULL,
-             *callbacks_for_attr = NULL,
-             *cb_copy = NULL,
-             *key = NULL,*value = NULL;
+PyObject *readonly_empty_dict = NULL;
 
-    selfref = PyWeakref_NewRef(self,NULL);
-    if (!selfref) goto bail; // shouldn't happen
+PyObject *
+Source_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
+    Source *self;
+    if (!PyArg_ParseTuple(args, ""))
+        return NULL;
 
-    // Either of the next two gets may fail, that just means that no callbacks
-    // were found.
-    callbacks_by_obj = PyDict_GetItem(source_callbacks,selfref);
-    if (!callbacks_by_obj) goto done;
-
-    callbacks_for_attr = PyDict_GetItem(callbacks_by_obj,attr);
-    if (!callbacks_for_attr) goto done;
-
-
-    // The callbacks may create more callbacks, so first clear the callbacks
-    // list. 
-    cb_copy = callbacks_for_attr;
-    Py_INCREF(cb_copy);
-    callbacks_for_attr = PyDict_New();
-    if (!callbacks_for_attr) goto bail;
-    if (PyDict_SetItem(callbacks_by_obj,attr,callbacks_for_attr)) goto bail;
+    // self->shadowless is created alongside self.
+    //
+    // This isn't as weird as it looks. It's not much different than normally
+    // creating objects within an object, we treat refcounts exactly as we
+    // would with any other sub-object, the difference being the creation is
+    // interleaved and self-referential.
     
-    pos = 0;
-    while (PyDict_Next(cb_copy,&pos,&key,&value)){
-        if (PyWeakref_GET_OBJECT(key) != Py_None){
-            value = PyObject_CallFunction(value,"(O)",PyWeakref_GET_OBJECT(key));
-            if (!value) {
-                goto bail;
-            } else {
-                Py_DECREF(value);
-            }
-        }
-    }
+    self = (Source *)type->tp_alloc(type, 0);
 
-done:
-    r = 0;
-    goto cleanup;
-bail:
-    r = -1;
-cleanup:
-    Py_XDECREF(selfref);
-    Py_XDECREF(callbacks_for_attr);
-    return r;
+    // shadowless is created with a refcnt of 1
+    self->shadowless = (Source *)type->tp_alloc(type, 0);
+
+    // Seperate weakreflists, as that stuff is handled by the weakref code.
+    self->in_weakreflist = NULL;
+    self->shadowless->in_weakreflist = NULL;
+
+    // Creating the master set of dicts.
+    self->dict = PyDict_New();
+    if (!self->dict) return NULL;
+    self->dict_shadow = PyDict_New();
+    if (!self->dict_shadow) return NULL;
+    self->dict_callbacks = PyDict_New();
+    if (!self->dict_callbacks) return NULL;
+
+    // shadowless shares __dict__ and __dict_callbacks__, so increment the
+    // reference counts and set pointers.
+    Py_INCREF(self->dict);
+    self->shadowless->dict = self->dict;
+    Py_INCREF(self->dict_callbacks);
+    self->shadowless->dict_callbacks = self->dict_callbacks;
+
+    // shadowless still has to have it's own valid shadow dict, so we use a
+    // pre-made, empty, read-only dict.
+    Py_INCREF(readonly_empty_dict);
+    self->shadowless->dict_shadow = readonly_empty_dict;
+
+    // shadowless also has to point to something, so point it itself, which
+    // means another reference.
+    Py_INCREF(self->shadowless);
+    self->shadowless->shadowless = self->shadowless;
+
+    return (PyObject *)self;
 }
 
-
+// In the following dealloc stuff notice how shadowless is treated completely
+// normally? Since we setup all the reference counts correctly, we can use the
+// standard garbage collection code. On dealloc the master, shadowed instance,
+// gets dealloced immediately, then the garbage collector later removes the
+// shadowless instance, with its internal self-reference after the usual
+// traverse and clear.
 static void
 Source_dealloc(Source* self){
     PyObject_GC_UnTrack(self);
     if (self->in_weakreflist != NULL)
             PyObject_ClearWeakRefs((PyObject *) self);
     Py_XDECREF(self->dict);
-    Py_XDECREF(self->id);
-    Py_XDECREF(self->id_real);
-    Py_XDECREF(self->transform);
-    Py_XDECREF(self->transform_real);
-    Py_XDECREF(self->parent);
+    Py_XDECREF(self->dict_shadow);
+    Py_XDECREF(self->dict_callbacks);
+    Py_XDECREF(self->shadowless);
     PyObject_GC_Del(self);
 }
 
 static int
 Source_traverse(Source *self, visitproc visit, void *arg){
     Py_VISIT(self->dict);
-    Py_VISIT(self->id);
-    Py_VISIT(self->id_real);
-    Py_VISIT(self->transform);
-    Py_VISIT(self->transform_real);
-    Py_VISIT(self->parent);
+    Py_VISIT(self->dict_shadow);
+    Py_VISIT(self->dict_callbacks);
+    Py_VISIT(self->shadowless);
     return 0;
 }
 
 static int
 Source_clear(Source *self){
-    PyObject *selfref = PyWeakref_NewRef((PyObject *)self,NULL); 
-    if (!selfref) return -1;
-    if (PyDict_DelItem(source_callbacks,selfref)){
-        // It's possible for Source_clear to be called more than once.
-        PyErr_Clear();
-    }
-    Py_DECREF(selfref);
-
     Py_CLEAR(self->dict);
-    Py_CLEAR(self->id);
-    Py_CLEAR(self->id_real);
-    Py_CLEAR(self->transform);
-    Py_CLEAR(self->transform_real);
-    Py_CLEAR(self->parent);
+    Py_CLEAR(self->dict_shadow);
+    Py_CLEAR(self->dict_callbacks);
+    Py_CLEAR(self->shadowless);
     return 0;
 }
-
-PyObject *
-Source_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
-    Source *self;
-    PyObject *id,*transform,*parent;
-
-    self =  (Source *)type->tp_alloc(type, 0);
-    self->in_weakreflist = NULL;
-
-    self->dict = PyDict_New();
-    if (!self->dict) return NULL;
-
-    if (!PyArg_ParseTuple(args, "OOO", &id, &transform, &parent))
-        return NULL;
-
-    Py_INCREF(id); self->id = id;
-    Py_INCREF(id); self->id_real = id;
-    Py_INCREF(transform); self->transform = transform;
-    Py_INCREF(transform); self->transform_real = transform;
-    Py_INCREF(parent); self->parent = parent;
-
-    return (PyObject *)self;
-}
-
-#define GETTER(name) \
-    static PyObject * \
-    Source_get_##name(Source *self,void *closure){\
-        Py_INCREF(self->name); \
-        return self->name; \
-    }
-
-#define SETTER(name,namestr) \
-    static int \
-    Source_set_##name(Source *self, PyObject *value, void *closure){\
-        if (namestr && notify_member_callbacks((PyObject *)self,namestr)) \
-            return -1; \
-        Py_DECREF(self->name##_real); \
-        Py_INCREF(value); \
-        self->name##_real = value; \
-        return 0; \
-    }
-
-#define DEF_GET_SET(name,namestr) \
-    SETTER(name,namestr) \
-    GETTER(name) \
-    GETTER(name##_real)
-
-
-DEF_GET_SET(id,NULL)
-DEF_GET_SET(transform,transform_str)
-
-
-// Parent is not masked
-static PyObject *
-Source_get_parent(Source *self, void *closure){
-    Py_INCREF(self->parent);
-    return self->parent;
-}
-
-static int
-Source_set_parent(Source *self, PyObject *value, void *closure){
-    if (notify_member_callbacks((PyObject *)self,parent_str)) return -1;
-    Py_DECREF(self->parent);
-    Py_INCREF(value);
-    self->parent = value;
-    return 0;
-}
-
-static PyGetSetDef Source_getseters[] = {
-    {"id",
-     (getter)Source_get_id, (setter)Source_set_id,
-     "Identifier",
-     NULL},
-    {"_id_real",
-     (getter)Source_get_id_real, NULL,
-     "Identifier",
-     NULL},
-    {"transform",
-     (getter)Source_get_transform, (setter)Source_set_transform,
-     "Geometry transformation",
-     NULL},
-    {"_transform_real",
-     (getter)Source_get_transform_real, NULL,
-     "Geometry transformation",
-     NULL},
-    {"parent",
-     (getter)Source_get_parent, (setter)Source_set_parent,
-     "Parent",
-     NULL},
-    {NULL}
-};
 
 static PyMemberDef Source_members[] = {
     {"__dict__", T_OBJECT_EX, offsetof(Source, dict), 0,
      NULL},
+    {"__dict_shadow__", T_OBJECT_EX, offsetof(Source, dict_shadow), 0,
+     NULL},
+    {"__dict_callbacks__", T_OBJECT_EX, offsetof(Source, dict_callbacks), 0,
+     NULL},
+    {"__shadowless__", T_OBJECT_EX, offsetof(Source, shadowless), 0,
+     NULL},
     {NULL}  /* Sentinel */
 };
+
+static PyObject *
+source_notify_callback_entry_destroyer(void *closure,
+                                       PyObject *args,PyObject *kwargs){
+    PyObject *callbacks = (PyObject *)closure;
+    PyObject *key;
+
+    if (!PyArg_ParseTuple(args, "O",&key)) return NULL;
+
+    if (PySet_Discard(callbacks,key)){
+        PyErr_Clear();
+    }
+
+    Py_RETURN_NONE;
+}
+static void
+source_notify_callback_entry_destroyer_destroyer(void *closure){
+    Py_DECREF((PyObject *)closure);
+}
+
+static PyObject *
+source_notify(Source *self,PyObject *args,PyObject *kwargs){
+    if (self->dict_shadow == readonly_empty_dict){
+        PyErr_SetString(PyExc_TypeError,
+                        "Source.__shadowless__.notify() is not supported.");
+        return NULL;
+    }
+
+    PyObject *r;
+    // Arguments, borrowed references:
+    PyObject *attr,
+             *callback;
+
+    // References owned by us. decrefed at the end:    
+    PyObject *attr_callbacks = NULL,
+             *callback_ref = NULL,
+             *cb_destroyer = NULL;
+
+    if (!PyArg_ParseTuple(args, "OO", 
+                          &attr, 
+                          &callback))
+        return NULL;
+
+    if (!PyString_CheckExact(attr)){
+        PyErr_Format(PyExc_TypeError,
+                     "attribute must be string, not %s",
+                     attr->ob_type->tp_name);
+        goto bail;
+    }
+    if (!PyCallable_Check(callback)){
+        PyErr_Format(PyExc_TypeError,
+                     "callback must be callable, not %s",
+                     callback->ob_type->tp_name);
+        goto bail;
+    }
+
+    attr_callbacks = PyDict_GetItem(self->dict_callbacks,attr);
+    if (!attr_callbacks){
+        attr_callbacks = PySet_New(NULL);
+        if (PyDict_SetItem(self->dict_callbacks,attr,attr_callbacks))
+                goto bail;
+    }
+
+    Py_INCREF(attr_callbacks);
+    cb_destroyer = CFunction_new(source_notify_callback_entry_destroyer,
+                                 source_notify_callback_entry_destroyer_destroyer,
+                                 attr_callbacks);
+    callback_ref = PyWeakref_NewRef(callback,cb_destroyer);
+    if (!callback_ref) goto bail;
+
+    if (PySet_Add(attr_callbacks,callback_ref)) goto bail;
+
+    Py_INCREF(Py_None);
+    r = Py_None;
+    goto cleanup;
+bail:
+    r = NULL;
+cleanup:
+    Py_XDECREF(attr_callbacks);
+    Py_XDECREF(callback_ref);
+    Py_XDECREF(cb_destroyer);
+    return r;
+}
+
+static PyMethodDef Source_methods[] = {
+    {"_source_notify", (PyCFunction)source_notify, METH_VARARGS,
+     ""}, // FIXME
+    {NULL,NULL,0,NULL}
+};
+
+static PyObject *
+source_getattro(Source *self,PyObject *name){
+    PyObject *r;
+
+    if (self->dict_shadow != readonly_empty_dict){
+        r = PyDict_GetItem(self->dict_shadow,name);
+        if (r) {
+            Py_INCREF(r);
+            return r;
+        }
+    }
+
+    return PyObject_GenericGetAttr((PyObject *)self,name);
+}
+
+static int
+source_setattro(Source *self,PyObject *name,PyObject *value){
+    int r; 
+    PyObject *attr_callbacks = NULL,
+             *cbref = NULL,
+             *cb = NULL,
+             *cr;
+
+    if (self->dict_shadow == readonly_empty_dict){
+        PyErr_SetString(PyExc_TypeError,
+                        "Source.__shadowless__ is read only.");
+        return -1;
+    }
+
+    r = PyObject_GenericSetAttr((PyObject *)self,name,value);
+    if (r) goto bail;
+
+    // Note that the callbacks are called *after* the value has been set,
+    // allowing the callbacks to see the new value.
+
+    attr_callbacks = PyDict_GetItem(self->dict_callbacks,name);
+    if (attr_callbacks){
+        // Calling the callbacks may generate new ones, so clear the list first.
+        Py_INCREF(attr_callbacks);
+        if (PyDict_DelItem(self->dict_callbacks,name)) goto bail;
+
+        while (PySet_GET_SIZE(attr_callbacks)){
+            cbref = PySet_Pop(attr_callbacks);
+            if (!cbref) goto bail;
+
+            cb = PyWeakref_GetObject(cbref);
+            Py_INCREF(cb);
+            Py_DECREF(cbref);
+            cbref = NULL;
+            if (cb == Py_None){
+                PyErr_SetString(PyExc_RuntimeError,
+                                "Callback reference points to dead object.");
+                goto bail; 
+            }
+
+            cr = PyObject_CallObject(cb,NULL);
+            if (!cr) goto bail;
+            Py_DECREF(cr);
+            Py_DECREF(cb);
+            cb = NULL;
+        }
+    }
+
+    goto cleanup;
+bail:
+    r = -1;
+cleanup:
+    Py_XDECREF(attr_callbacks);
+    Py_XDECREF(cbref);
+    Py_XDECREF(cb);
+    return r;
+}
 
 PyTypeObject SourceType = {
     PyObject_HEAD_INIT(&PyType_Type)
@@ -243,8 +328,8 @@ PyTypeObject SourceType = {
     0,              /*tp_hash */
     0,              /*tp_call*/
     0,               /*tp_str*/
-    0,           /*tp_getattro*/
-    0,           /*tp_setattro*/
+    source_getattro,           /*tp_getattro*/
+    source_setattro,           /*tp_setattro*/
     0,                         /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE, /*tp_flags*/
     "Internal use only, see source code.", /* tp_doc */
@@ -254,9 +339,9 @@ PyTypeObject SourceType = {
     offsetof(Source, in_weakreflist),  /* tp_weaklistoffset */
     0,		               /* tp_iter */
     0,		               /* tp_iternext */
-    0,             /* tp_methods */
+    Source_methods,             /* tp_methods */
     Source_members,             /* tp_members */
-    Source_getseters,                         /* tp_getset */
+    0,                         /* tp_getset */
     0,                         /* tp_base */
     0,                         /* tp_dict */
     0,                         /* tp_descr_get */
@@ -268,117 +353,8 @@ PyTypeObject SourceType = {
     PyObject_GC_Del, /* tp_del */
 };
 
-static PyObject *
-callback_entry_destroyer(void *closure,PyObject *args,PyObject *kwargs){
-    PyObject *callbacks = (PyObject *)closure;
-    PyObject *key;
-
-    if (!PyArg_ParseTuple(args, "O",&key)) return NULL;
-
-    if (PyDict_DelItem(callbacks,key)){
-        PyErr_Clear();
-    }
-
-    Py_RETURN_NONE;
-}
-static void
-callback_entry_destroyer_destroyer(void *closure){
-    Py_DECREF((PyObject *)closure);
-}
-
-
-static PyObject *
-notify(PyObject *junk,PyObject *args,PyObject *kwargs){
-    PyObject *r;
-
-    // Arguments, borrowed references
-    PyObject *self,
-             *attr,
-             *callback_callable,
-             *callback_self;
-
-    // References created by us, DECREFed at the end.
-    PyObject *selfref = NULL,
-             *callback_selfref = NULL,
-             *callbacks_by_attr = NULL,
-             *callbacks_for_attr = NULL,
-             *cb_destroyer = NULL;
-
-    if (!PyArg_ParseTuple(args, "OOOO", 
-                          &self, &attr, 
-                          &callback_self, &callback_callable))
-        return NULL;
-
-    if (!PyString_CheckExact(attr)){
-        PyErr_Format(PyExc_TypeError,
-                     "attribute must be string, not %s",
-                     attr->ob_type->tp_name);
-        goto bail;
-    }
-    if (!PyCallable_Check(callback_callable)){
-        PyErr_Format(PyExc_TypeError,
-                     "callback must be callable, not %s",
-                     callback_callable->ob_type->tp_name);
-        goto bail;
-    }
-    if (!(attr == transform_str ||
-           attr == parent_str)){
-        PyErr_Format(PyExc_ValueError,
-                     "%s is not a valid attribute to notify on.",
-                     PyString_AsString(attr));
-        goto bail;
-    }
-
-
-    // self may be wrapped, unwrap fully 
-    self = fully_unwrap_wrapped(self);
-
-    selfref = PyWeakref_NewRef(self,NULL);
-    if (!selfref) goto bail; // shouldn't happen
-
-    // The following are both created on demand:
-    callbacks_by_attr = PyDict_GetItem(source_callbacks,selfref);
-    if (!callbacks_by_attr){
-        callbacks_by_attr = PyDict_New();
-        if (PyDict_SetItem(source_callbacks,selfref,callbacks_by_attr))
-            goto bail;
-    }
-    callbacks_for_attr = PyDict_GetItem(callbacks_by_attr,attr);
-    if (!callbacks_for_attr){
-        callbacks_for_attr = PyDict_New();
-        if (PyDict_SetItem(callbacks_by_attr,attr,callbacks_for_attr))
-            goto bail;
-    }
-
-    // callback_self has a reference made too it. The callback, passed to
-    // NewRef, then has the job of removing the callback entry if callback_self
-    // is destroyed.
-    Py_INCREF(callbacks_for_attr);
-    cb_destroyer = CFunction_new(callback_entry_destroyer,
-                                 callback_entry_destroyer_destroyer,
-                                 callbacks_for_attr);
-    callback_selfref = PyWeakref_NewRef(callback_self,cb_destroyer);
-    if (!callback_selfref) goto bail;
-
-    // And put it into the callback list
-    if (PyDict_SetItem(callbacks_for_attr,callback_selfref,callback_callable))
-        goto bail;
-
-    Py_INCREF(Py_None);
-    r = Py_None;
-    goto cleanup;
-bail:
-    r = NULL;
-cleanup:
-    Py_XDECREF(selfref);
-    Py_XDECREF(callback_selfref);
-    Py_XDECREF(cb_destroyer);
-    return r;
-}
 
 static PyMethodDef methods[] = {
-    {"notify", (PyCFunction)notify, METH_VARARGS,
-     ""}, // FIXME
     {NULL,NULL,0,NULL}
 };
 
@@ -388,11 +364,11 @@ PyObject *initsource(void){
     if (PyType_Ready(&SourceType) < 0)
         return NULL;
 
-    source_callbacks = PyDict_New();
-    if (!source_callbacks) return NULL;
-
-    transform_str = PyString_InternFromString("transform");
-    parent_str = PyString_InternFromString("parent");
+    PyObject *tmp = PyDict_New();
+    if (!tmp) return NULL;
+    readonly_empty_dict = PyDictProxy_New(tmp);
+    Py_DECREF(tmp);
+    if (!readonly_empty_dict) return NULL;
 
     m = Py_InitModule3("Tuke.context._context.source", methods,
                        "Context source");

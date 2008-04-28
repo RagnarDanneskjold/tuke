@@ -108,10 +108,10 @@ class Element(context.source.Source):
 
     def __new__(cls,**kwargs):
         from Tuke.geometry import Transformation
-        self = context.source.Source.__new__(cls,
-                Tuke.Id('.'),
-                Transformation(),
-                None)
+        self = context.source.Source.__new__(cls)
+        self.__dict_shadow__['id'] = Tuke.Id('.')
+        self.__dict_shadow__['transform'] = Transformation()
+        self.parent = None
 
         # Initialize from kwargs
         #
@@ -157,16 +157,15 @@ class Element(context.source.Source):
 
     def _init(self):
         import Tuke
-        # Note how _*_real is used here.
-        if not self._id_real:
+        if not self.__dict__['id']:
             self.id = Tuke.Id.random()
         else:
-            self.id = Tuke.Id(self._id_real)
+            self.id = Tuke.Id(self.__dict__['id'])
 
-        if len(self._id_real) > 1:
-            raise ValueError, 'Invalid Element Id \'%s\': more than one path component' % str(self.id)
+        if len(self.__dict__['id']) > 1:
+            raise ValueError, 'Invalid Element Id \'%s\': more than one path component' % str(self.__dict__['id'])
 
-        if self._transform_real is None:
+        if self.__dict__['transform'] is None:
             import Tuke.geometry
             self.transform = Tuke.geometry.Transformation()
 
@@ -187,9 +186,11 @@ class Element(context.source.Source):
     def __iter__(self):
         """Iterate through sub-elements."""
 
-        for i in self.__dict__.itervalues():
-            if isinstance(i,Element):
-                yield i 
+        for k,v in self.__dict__.iteritems():
+            if k == 'parent':
+                continue
+            if isinstance(v,Element):
+                yield v 
 
     def _element_id_to_dict_key(self,id):
         """Returns the dict key that Element id should be stored under.
@@ -221,13 +222,14 @@ class Element(context.source.Source):
                 if self.parent is not None:
                     r = self.parent
                 else:
-                    raise KeyError("Element '%s' has no parent" % self._id_real)
+                    raise KeyError("Element '%s' has no parent" % 
+                                    self.__shadowless__.id)
             else:
                 try:
                     r = self.__dict__[self._element_id_to_dict_key(id[0])]
                 except KeyError:
                     raise KeyError("'%s' is not a sub-Element of '%s'" %
-                                    (id,self._id_real))
+                                    (id,self.__shadowless__.id))
             if len(id) > 1:
                 return r[str(id[1:])]
             else:
@@ -433,13 +435,13 @@ import Tuke
 
             from Tuke.repr_helper import shortest_class_name
             cname = shortest_class_name(self.__class__)
-            s = '%s = %s(' % (self._id_real,cname)
+            s = '%s = %s(' % (self.__shadowless__.id,cname)
             out(s)
             indent.append(' ' * len(s))
 
             kw = self._repr_kwargs()
-            kw['id'] = self._id_real
-            kw['transform'] = self._transform_real
+            kw['id'] = self.__shadowless__.id
+            kw['transform'] = self.__shadowless__.transform
 
             first = True
             for n,v in sorted(kw.iteritems()):
@@ -452,9 +454,9 @@ import Tuke
 
             f.write('); ')
             if level > 0:
-                f.write('__%d.add(%s)\n' % (level,self._id_real))
+                f.write('__%d.add(%s)\n' % (level,self.__shadowless__.id))
             else:
-                f.write('__%d = %s\n' % (level,self._id_real))
+                f.write('__%d = %s\n' % (level,self.__shadowless__.id))
             indent.pop()
 
             if not isinstance(self,ReprableByArgsElement) or full:
@@ -465,7 +467,7 @@ import Tuke
                 subs.sort(key=lambda e: e.id)
 
                 if subs:
-                    out('with %s as __%d:\n' % (self._id_real,level + 1))
+                    out('with %s as __%d:\n' % (self.__shadowless__.id,level + 1))
                     for e in subs:
                         unwrap(e).serialize(f,full,
                                             indent=indent + ['    ',],

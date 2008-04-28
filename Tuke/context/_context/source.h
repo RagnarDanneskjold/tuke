@@ -24,16 +24,16 @@
 
 extern PyTypeObject SourceType;
 
-typedef struct {
+typedef struct Source Source;
+
+struct Source {
     PyObject_HEAD
     PyObject *dict;
-    PyObject *id;
-    PyObject *id_real;
-    PyObject *transform;
-    PyObject *transform_real;
-    PyObject *parent;
+    PyObject *dict_shadow;
+    PyObject *dict_callbacks;
+    Source *shadowless;
     PyObject *in_weakreflist;
-} Source;
+};
 
 PyObject *Source_new(PyTypeObject *type, PyObject *args, PyObject *kwargs);
 

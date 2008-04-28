@@ -166,17 +166,11 @@ apply_remove_context(PyObject *context,PyObject *obj,int apply){
             Py_INCREF(context);
             source_context = context;
         } else {
-            // HACK! The innermost context, which is an actual Source instance
-            // as opposed to a Wrapped instance, has .id == Id('.') which
-            // breaks the (apply|remove)_context methods. So create a fake
-            // Source instance for it instead. 
-            source_context = Source_new(&SourceType,
-                                Py_BuildValue("(OOO)",
-                                    ((Source *)context)->id_real,
-                                    ((Source *)context)->transform_real,
-                                    ((Source *)context)->parent),
-                                NULL);
-            if (!source_context) return NULL;
+            // The innermost context is an actual Source instance, as opposed
+            // to a Wrapped instance, so we need to provide the shadowless
+            // version to the _(apply|remove)_context function.
+            source_context = ((Source *)context)->shadowless;
+            Py_INCREF(source_context);
         }
         if (apply){
             r = PyObject_CallMethod(obj,"_apply_context","O",source_context);

@@ -8,82 +8,117 @@
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
 # PURPOSE.
 
-from __future__ import with_statement
-
 from unittest import TestCase
 
-from Tuke import Id,Element
-from Tuke.geometry import Transformation,translate,Translation,V
-from Tuke.context.source import Source,notify
+from Tuke.context.source import Source
 
 import sys
 import gc
 
 class SourceTest(TestCase):
-    def test_Source(self):
-        """Source"""
+    def test_Source_shadow(self):
+        """Source.__dict_shadow__"""
         from Tuke.context.source import Source
         def T(got,expected = True):
             self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
 
-        s = Source(1,2,3)
-        T(s.id,1)
-        T(s.transform,2)
-        T(s.parent,3)
+        s = Source()
+        s.spam = 'spam'
+        T(s.spam,'spam')
 
-        s.id = 10
-        s.transform = 20
-        s.parent = 30
-        T(s.id,1)
-        T(s.transform,2)
-        T(s.parent,30)
+        s.__dict_shadow__['spam'] = 'ham'
+        T(s.spam,'ham')
+        s.spam = 'eggs'
+        T(s.spam,'ham')
+        T(s.__dict__['spam'],'eggs')
 
-    def test_Source_notify_raises(self):
-        """Source notify raises exceptions on bad arguments"""
-
-        class foo:
-            pass
-
-        a = Element(id=Id('a'))
-        self.assertRaises(TypeError,
-                lambda: notify(a,None,foo(),lambda:None))
-        self.assertRaises(ValueError,lambda: notify(a,
-            "Dr. Williams' Pink Pills for Pale People",foo(),lambda:None))
-        self.assertRaises(TypeError,lambda: notify(a,'transform',object(),lambda:None))
-        self.assertRaises(TypeError,lambda: notify(a,'transform',foo(),None))
+        # Deleting the attr shouldn't effect the shadow
+        del s.spam
+        T(s.spam,'ham')
+        T(s.__dict__,{})
 
     def test_Source_notify(self):
         """Source notify"""
         def T(got,expected = True):
             self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
 
-        a = Element(id=Id('a'))
+        a = Source() 
 
-        # Callable with a single value that is incremented on each call
-        class v:
-            def __init__(self):
-                self.v = 0
-            def __call__(self,closure):
-                self.v += 1
-                self.closure = closure 
+        # Records the value of the attr when called 
+        class cb:
+            def __init__(self,source,attr):
+                self.source = source
+                self.attr = attr
+                self.missing = object()
 
-        # Simple triggering of callbacks 
-        vparent = v()
-        notify(a,'parent',vparent,vparent)
-        vtransform = v()
-        notify(a,'transform',vtransform,vtransform)
+            def __call__(self,*args,**kwargs):
+                T(args,())
+                T(kwargs,{})
 
-        translate(a,V(1,1))
-        T(vparent.v,0)
-        T(vtransform.v,1)
-        T(vtransform.closure,vtransform)
+                try:
+                    self.v = getattr(self.source,self.attr)
+                except AttributeError:
+                    self.v = self.missing
+        
+        # Setting a callback before the attr is created is perfectly valid.
+        c = cb(a,'spam') 
+        a._source_notify('spam',c)
 
-        z = Element(id=Id('z'))
-        z.add(a)
-        T(vparent.v,1)
-        T(vparent.v,1)
-        T(vtransform.v,1)
-        T(vtransform.closure,vtransform)
+        a.spam = 479606400
+        T(c.v,479606400)
 
-        del a
-        del z
+        # Callbacks are a one shot affair
+        a.spam = object()
+        T(c.v,479606400)
+
+        # Callbacks are called on deletion as well
+        a._source_notify('spam',c)
+        del a.spam
+        T(c.v is c.missing)
+
+        # Make sure callbacks can set further callbacks
+        class cb:
+            def __init__(self,source,attr):
+                self.source = source
+                self.attr = attr
+                self.v = []
+            def __call__(self):
+                self.source._source_notify(self.attr,self)
+                self.v.append(getattr(self.source,self.attr))
+        c = cb(a,'ham')
+        crefs = sys.getrefcount(c)
+        arefs = sys.getrefcount(a)
+        a._source_notify('ham',c)
+        for i in range(1000):
+            a.ham = i
+        T(sys.getrefcount(c),crefs)
+        T(sys.getrefcount(a),arefs)
+        T(c.v,list(range(1000)))
+
+    def test_Source__shadowless__(self):
+        """Source.__shadowless__"""
+        def T(got,expected = True):
+            self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
+
+        a = Source()
+        a.__dict_shadow__['spam'] = 'ham'
+
+        self.assertRaises(AttributeError,lambda:getattr(a.__shadowless__,'spam'))
+        a.spam = 'can'
+        T(a.__shadowless__.spam,'can')
+
+        T(a.__shadowless__.__dict_shadow__.items(),[])
+
+        # Should be completely read-only
+        def f():
+            a.__shadowless__.spam = 10
+        self.assertRaises(TypeError,f)
+        def f():
+            del a.__shadowless__.spam
+        self.assertRaises(TypeError,f)
+        def f():
+            a.__shadowless__.__dict_shadow__['foo'] = 'bar'
+        self.assertRaises(TypeError,f)
+        def f():
+            a.__shadowless__._source_notify('foo',lambda:None)
+        self.assertRaises(TypeError,f)
