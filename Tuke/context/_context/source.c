@@ -214,6 +214,9 @@ source_notify(Source *self,PyObject *args,PyObject *kwargs){
     cb_destroyer = CFunction_new(source_notify_callback_entry_destroyer,
                                  source_notify_callback_entry_destroyer_destroyer,
                                  attr_callbacks);
+    // If callback is wrapped, the gc will invalidate our reference
+    // immediately, so unwrap it first.
+    callback = fully_unwrap_wrapped(callback); 
     callback_ref = PyWeakref_NewRef(callback,cb_destroyer);
     if (!callback_ref) goto bail;
 

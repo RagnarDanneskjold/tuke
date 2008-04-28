@@ -10,6 +10,7 @@
 
 from unittest import TestCase
 
+from Tuke import Element,Id
 from Tuke.context.source import Source
 
 import sys
@@ -122,3 +123,21 @@ class SourceTest(TestCase):
         def f():
             a.__shadowless__._source_notify('foo',lambda:None)
         self.assertRaises(TypeError,f)
+
+    def test_Source_notify_unwraps(self):
+        """Source.notify unwraps callables before storing them"""
+        def T(got,expected = True):
+            self.assert_(expected == got,'got: %s  expected: %s' % (got,expected))
+
+        a = Element(id=Id('a'))
+
+        called = False
+        class f:
+            def __init__(self):
+                self.called = False
+            def __call__(self):
+                self.called = True
+        f = f()
+        a._source_notify('foo',f)
+        a.foo = 10
+        T(f.called)
