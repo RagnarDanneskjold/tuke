@@ -239,7 +239,7 @@ cleanup:
 }
 
 static PyMethodDef Source_methods[] = {
-    {"_source_notify", (PyCFunction)source_notify, METH_VARARGS,
+    {"notify", (PyCFunction)source_notify, METH_VARARGS,
      ""}, // FIXME
     {NULL,NULL,0,NULL}
 };

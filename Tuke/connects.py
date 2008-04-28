@@ -74,7 +74,7 @@ def _make_ref(base,ref):
 # deleted, that info must automatically be removed. This is also tricky, as we
 # can't use any __dealloc__ hooks.
 #
-# The solution here uses the Element.notify() mechanism heavilly, setting up
+# The solution here uses the Element.topology_notify() mechanism heavilly, setting up
 # callbacks along every Element in the explicit connection chain. The
 # _elemref class then acts to maintain and process those callbacks. Connects
 # is then a set of _elemrefs. At any point the whole shebang can be deleted,
@@ -139,7 +139,7 @@ class _elemref:
         p = Tuke.Id('.')
         for i in tuple(tuple.__iter__(self.ref)) + (None,):
             if i is not None:
-                e.notify(Tuke.Id(i),self._invalidator_callable)
+                e.topology_notify(Tuke.Id(i),self._invalidator_callable)
 
                 if i == '..':
                     p = e.__shadowless__.id + p

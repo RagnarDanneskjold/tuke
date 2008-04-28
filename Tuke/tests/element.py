@@ -44,44 +44,48 @@ class ElementTest(TestCase):
             def __call__(self):
                 self.count += 1
 
-        self.assertRaises(ValueError,lambda:a.notify(Id('a'),lambda:None))
-        self.assertRaises(ValueError,lambda:a.notify(Id('z/y'),lambda:None))
-        self.assertRaises(TypeError,lambda:a.notify(Id('.'),None))
+        self.assertRaises(ValueError,
+                          lambda:a.topology_notify(Id('a'),lambda:None))
+        self.assertRaises(ValueError,
+                          lambda:a.topology_notify(Id('z/y'),lambda:None))
+        self.assertRaises(TypeError,
+                          lambda:a.topology_notify(Id('.'),None))
 
         # Test callback adding and deletion
         cb1 = cb()
-        a.notify(Id('a/b'),cb1)
-        T(unwrap(a)._notify_callbacks[Id('b')],set((weakref.ref(cb1),)))
+        a.topology_notify(Id('a/b'),cb1)
+        T(unwrap(a).__dict_callbacks__['b'],set((weakref.ref(cb1),)))
         cb2 = cb()
-        a.notify(Id('a/b'),cb2)
-        T(unwrap(a)._notify_callbacks[Id('b')],
+        a.topology_notify(Id('a/b'),cb2)
+        T(unwrap(a).__dict_callbacks__['b'],
                 set((weakref.ref(cb1),
                      weakref.ref(cb2))))
 
         del cb1
-        T(unwrap(a)._notify_callbacks[Id('b')],set((weakref.ref(cb2),)))
+        T(unwrap(a).__dict_callbacks__['b'],set((weakref.ref(cb2),)))
         del cb2
-        T(not unwrap(a)._notify_callbacks.has_key(Id('b')))
+        T(not unwrap(a).__dict_callbacks__.has_key('b')
+          or unwrap(a).__dict_callbacks__['b'] == set())
 
         # Test that callbacks are actually called
 
         # Called for adding an object
         cb1 = cb()
-        a.notify(Id('a/b'),cb1)
+        a.topology_notify(Id('a/b'),cb1)
         cb2 = cb()
-        a.notify(Id('a/b'),cb2)
+        a.topology_notify(Id('a/b'),cb2)
 
         b = Element(id=Id('b'))
         cbp = cb()
-        b.notify(Id('.'),cbp)
+        b.topology_notify(Id('.'),cbp)
 
         a.add(b)
 
         T(cb1.count,1)
         T(cb2.count,1)
         T(cbp.count,1)
-        T(not unwrap(a)._notify_callbacks.has_key(Id('b')))
-        T(not unwrap(b)._notify_callbacks.has_key(Id('..')))
+        T(not unwrap(a).__dict_callbacks__.has_key('b'))
+        T(not unwrap(b).__dict_callbacks__.has_key('parent'))
 
         # Test for removing an object, just a check that there is no .remove
         # for now.

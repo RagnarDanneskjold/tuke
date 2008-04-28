@@ -63,7 +63,7 @@ class SourceTest(TestCase):
         
         # Setting a callback before the attr is created is perfectly valid.
         c = cb(a,'spam') 
-        a._source_notify('spam',c)
+        a.notify('spam',c)
 
         a.spam = 479606400
         T(c.v,479606400)
@@ -73,7 +73,7 @@ class SourceTest(TestCase):
         T(c.v,479606400)
 
         # Callbacks are called on deletion as well
-        a._source_notify('spam',c)
+        a.notify('spam',c)
         del a.spam
         T(c.v is c.missing)
 
@@ -84,12 +84,12 @@ class SourceTest(TestCase):
                 self.attr = attr
                 self.v = []
             def __call__(self):
-                self.source._source_notify(self.attr,self)
+                self.source.notify(self.attr,self)
                 self.v.append(getattr(self.source,self.attr))
         c = cb(a,'ham')
         crefs = sys.getrefcount(c)
         arefs = sys.getrefcount(a)
-        a._source_notify('ham',c)
+        a.notify('ham',c)
         for i in range(1000):
             a.ham = i
         T(sys.getrefcount(c),crefs)
@@ -121,7 +121,7 @@ class SourceTest(TestCase):
             a.__shadowless__.__dict_shadow__['foo'] = 'bar'
         self.assertRaises(TypeError,f)
         def f():
-            a.__shadowless__._source_notify('foo',lambda:None)
+            a.__shadowless__.notify('foo',lambda:None)
         self.assertRaises(TypeError,f)
 
     def test_Source_notify_unwraps(self):
@@ -138,6 +138,6 @@ class SourceTest(TestCase):
             def __call__(self):
                 self.called = True
         f = f()
-        a._source_notify('foo',f)
+        a.notify('foo',f)
         a.foo = 10
         T(f.called)

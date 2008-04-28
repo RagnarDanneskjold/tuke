@@ -169,7 +169,6 @@ class Element(context.source.Source):
             import Tuke.geometry
             self.transform = Tuke.geometry.Transformation()
 
-        self._notify_callbacks = {}
         if self.connects is None:
             self.connects = Tuke.Connects()
         self.connects.parent = self
@@ -226,8 +225,8 @@ class Element(context.source.Source):
                                     self.__shadowless__.id)
             else:
                 try:
-                    r = self.__dict__[self._element_id_to_dict_key(id[0])]
-                except KeyError:
+                    r = getattr(self,self._element_id_to_dict_key(id[0]))
+                except AttributeError:
                     raise KeyError("'%s' is not a sub-Element of '%s'" %
                                     (id,self.__shadowless__.id))
             if len(id) > 1:
@@ -264,26 +263,11 @@ class Element(context.source.Source):
             raise self.IdCollisionError,"'%s' already exists" % str(obj.id)
 
         obj.parent = self
-        obj._call_notify_callbacks(Tuke.Id('.'))
         setattr(self,n,obj)
-
-        self._call_notify_callbacks(obj.id)
 
         return obj
 
-    def _call_notify_callbacks(self,filter):
-        try:
-            cb = self._notify_callbacks[filter]
-        except KeyError:
-            return
-
-        del self._notify_callbacks[filter]
-        for c in cb:
-            c = c()
-            if c is not None:
-                c()
-
-    def notify(self,filter,callback):
+    def topology_notify(self,filter,callback):
         """Notify on topology changes.
 
         filter - Path to filter by, must be a single path segment, either
@@ -293,9 +277,12 @@ class Element(context.source.Source):
                    callable must be kept elsewhere.
 
         The callbacks are one-shot, after they are called they are removed. The
-        callback may call notify again however.
+        callback may create another notify again however.
 
         """
+        if not isinstance(filter,Tuke.Id):
+            raise TypeError(
+                    "Filter must be an an Id, not '%s'" % type(filter))
         if not filter:
             raise ValueError(
                     "Filter '%s' invalid" % repr(filter))
@@ -303,39 +290,12 @@ class Element(context.source.Source):
             raise ValueError(
                     "Filter must have exactly one path segment, not '%s'" %
                     repr(filter))
-        if not callable(callback):
-            raise TypeError(
-                    "'%s' is not callable" % repr(callback))
 
-        # A WeakValueDictionary could be used here, except that we need to
-        # store multiple callbacks for a given filter key. Hence this dict of
-        # sets, where if all the weakrefs in the set go away, the set does too.
-        def mkremover(filter):
-            self_ref = weakref.ref(self)
-            def r(callback_ref):
-                self = self_ref()
-                if self is not None:
-                    # The garbage collector may call us after notify_callbacks
-                    # has been reset, to catch any KeyErrors
-                    try:
-                        self._notify_callbacks[filter].remove(callback_ref)
-                        if not self._notify_callbacks[filter]:
-                            del self._notify_callbacks[filter]
-                    except KeyError:
-                        pass
-            return r
-        remover = mkremover(filter)
+        filter = str(filter)
+        if filter == '..':
+            filter = 'parent'
 
-        # The unwrap is a subtle, but very important point. The callback may be
-        # wrapped, if it is, then the only reference to the *wrapper* object is
-        # here, and will be immediately garbage collected even though the
-        # unwrapped callback is still alive.
-        callback_ref = weakref.ref(unwrap(callback),remover)
-
-        try:
-            self._notify_callbacks[filter].add(callback_ref)
-        except KeyError:
-            self._notify_callbacks[filter] = set((callback_ref,))
+        self.notify(filter,callback)
 
     def iterlayout(self,layer_mask = None):
         """Iterate through layout.
