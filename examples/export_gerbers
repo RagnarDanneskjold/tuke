@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2.5
 # vim: tabstop=4 expandtab shiftwidth=4 fileencoding=utf8
 # ### BOILERPLATE ###
 # Tuke - Electrical Design Automation toolset
@@ -31,11 +31,11 @@ import iam_tuke_example
 
 import sys
 
-from Tuke import load_element_from_file
 from Tuke.export import to_gerber
 
-
-sch = load_element_from_file(sys.stdin)
+l = {}
+exec sys.stdin in l
+sch = l['__0']
 
 gerbs = to_gerber(sch)
 
