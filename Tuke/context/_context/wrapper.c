@@ -169,7 +169,7 @@ apply_remove_context(PyObject *context,PyObject *obj,int apply){
             // The innermost context is an actual Source instance, as opposed
             // to a Wrapped instance, so we need to provide the shadowless
             // version to the _(apply|remove)_context function.
-            source_context = ((Source *)context)->shadowless;
+            source_context = (PyObject *)(((Source *)context)->shadowless);
             Py_INCREF(source_context);
         }
         if (apply){
