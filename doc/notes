@@ -1,3 +1,26 @@
+Layers need to be fast, very, very fast, if transforms are to be layer
+specific. This is needed if the schematic and pcb views are to be within the
+same hiarchy. To achieve this, layers should be a type of tuple, with interned
+strings as the tuple parts. Transformations then become a tree, first with any
+transformations applicable to all layers, then applicable to, say, pcb.* or
+sch.*, then drilling down from there. The key is to make sure that comparisons
+are always identity based for speed, hence the interned strings. Fortunately
+Python seems to always intern string literals.
+
+Having said that, are transformations for a level below (or above) that even
+worthwhile?  What's the use case? Fastest would be transforms based purely on
+one level.
+
+Note that this is seperate from exchanging layers, another type of transform.
+In this scheme layers could be exchanged, but geometry transformations would
+exclusively apply to either 'pcb.*' or 'sch.*' Similarly exchanging layers
+could only be done on a 'pcb.foo.*' to 'pcb.bar.*' basis.
+
+
+Create a Tuke._tuke module, with all the hand-coded C-extensions in it. Moving
+Tuke.context._context to Tuke._tuke.context
+
+
 http://www.liquidpcb.org
 http:/cbold.com <- kinda like tuke, but doesn't do the physical side of things
 
