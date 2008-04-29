@@ -20,3 +20,4 @@
 from basetrace import BaseTrace
 
 from airtrace import AirTrace
+from trace import Trace

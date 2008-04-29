@@ -1,4 +1,3 @@
-#!/usr/bin/python2.5
 # vim: tabstop=4 expandtab shiftwidth=4 fileencoding=utf8
 # ### BOILERPLATE ###
 # Tuke - Electrical Design Automation toolset
@@ -18,41 +17,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ### BOILERPLATE ###
 
+from Tuke import ReprableByArgsElement
 
-"""
-Example Tuke-using program to generate an led grid.
+class Point(ReprableByArgsElement):
+    """Defines a point
 
-Usage:
+    Points only exist as a way to mark arbitrary locations.
 
-led_grid rows cols
-
-Generates a series-parallel grid of leds and prints the resulting XML to
-stdout.
-"""
-
-import iam_tuke_example
-
-import sys
-
-from Tuke import rndId
-from Tuke.units import *
-from LedGrid import Led,LedGrid
-from Tuke.export import to_gerber
-
-if __name__ == "__main__":
-    import sys
-
-    rows = int(sys.argv[1])
-    cols = int(sys.argv[2])
-
-    grid = LedGrid(rows=rows,cols=cols, id=rndId())
-
-    if len(sys.argv) == 4:
-        gerbs = to_gerber(grid)
-
-        for k in gerbs:
-            f = open(sys.argv[3] + '.' + k,'w')
-
-            f.write(gerbs[k])
-    else:
-        grid.serialize(sys.stdout,full=True),
+    """

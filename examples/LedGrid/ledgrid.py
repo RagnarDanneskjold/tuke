@@ -31,11 +31,13 @@ stdout.
 """
 
 from Tuke import Id
-from Tuke.geometry import translate,V
+from Tuke.units import MIL
+from Tuke.geometry import translate,V,centerof
 from Tuke.sch import Component,Pin,Symbol
 from Tuke.library.footprint import Dil
 
-from Tuke.pcb.trace import AirTrace
+from Tuke.pcb.trace import Trace
+from Tuke.pcb import Point
 
 class Led(Symbol):
     def _init(self):
@@ -45,7 +47,7 @@ class Led(Symbol):
 
 class LedGrid(Component):
     __required__ = ('rows','cols')
-    __defaults__ = {'spacing':0.5}
+    __defaults__ = {'spacing':600 * MIL}
     __version__ = (0,0)
     __baseversion__ = (0,0)
     def _init(self):
@@ -53,33 +55,50 @@ class LedGrid(Component):
         bottom_leds = []
 
         def dt(a,b):
-            t = self.add(AirTrace())
+            t = self.add(Trace(thickness=20 * MIL))
             t.set_endpoints(a,b)
 
         for x in xrange(self.cols):
             prev = None
             for y in xrange(self.rows):
                 l = Led(id=Id('LED%s_%s' % (str(x),str(y))))
-                translate(l,V((x * self.spacing) - ((self.cols - 1) * self.spacing / 2),(y * self.spacing) - ((self.rows - 1) * self.spacing / 2)))
+                translate(l,V((x * self.spacing) - ((self.cols - 1) * self.spacing / 2),
+                              (y * self.spacing) - ((self.rows - 0) * self.spacing / 2)))
                 l = self.add(l)
 
                 if prev is None:
                     top_leds.append(l)
                 else:
-                    dt(prev.cathode,l.anode)
+                    dt(prev.footprint._2,l.footprint._1)
 
                 prev = l
 
             bottom_leds.append(prev)
 
+        # Create offset points for the common anodes and cathodes.
+        top_points = []
+        for t in top_leds:
+            p = Point()
+            translate(p,centerof(t.footprint._1) + V(0,-self.spacing / 2))
+            p = self.add(p)
+            dt(t.footprint._1,p)
+            top_points.append(p)
+        bottom_points = []
+        for t in bottom_leds:
+            p = Point()
+            translate(p,centerof(t.footprint._2) + V(0,self.spacing / 2))
+            p = self.add(p)
+            dt(t.footprint._2,p)
+            bottom_points.append(p)
+
         # Link common anodes and cathodes
         p = None
-        for i in top_leds:
+        for i in top_points:
             if p is not None:
-                dt(p.anode,l.anode)
+                dt(p,i)
             p = i
         p = None
-        for i in bottom_leds:
+        for i in bottom_points:
             if p is not None:
-                dt(p.cathode,i.cathode)
+                dt(p,i)
             p = i 
