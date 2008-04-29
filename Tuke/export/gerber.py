@@ -46,11 +46,10 @@ def to_gerber(elem):
 
         l = str(g.layer)
 
-        # transform and convert coords to mm
-        def t(v,trans):
-            v = trans(v)
+        # convert coords to mm
+        def t(v):
             return (s(v[0,0]),s(v[0,1]))
-        coords = [t(v,g.transform) for v in coords]
+        coords = [t(v) for v in coords]
 
         # Create gerber layers for each element layer.
         if not layers.has_key(l):
