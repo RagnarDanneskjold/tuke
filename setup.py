@@ -21,16 +21,6 @@
 import sys, os, getopt
 from setuptools import setup, find_packages, Extension
 
-_context_module = Extension('Tuke.context._context',
-    sources = ['Tuke/context/_context/cfunction.c',
-               'Tuke/context/_context/source.c',
-               'Tuke/context/_context/weakset.c',
-               'Tuke/context/_context/wrap_dict.c',
-               'Tuke/context/_context/wrap_list.c',
-               'Tuke/context/_context/wrap_tuple.c',
-               'Tuke/context/_context/wrapper.c',
-               'Tuke/context/_context/__init__.c'])
-
 if sys.version_info[:2] < (2,5):
     print "Sorry, Tuke requires version 2.5 or later of python"
     sys.exit(1)
@@ -39,9 +29,17 @@ setup(
     name="tuke",
     version='0.1',
     packages = find_packages(),
-
-    ext_modules = [_context_module],
-
+    ext_modules = [
+        Extension('Tuke.context._context',
+                  sources = ['Tuke/context/_context/cfunction.c',
+                             'Tuke/context/_context/source.c',
+                             'Tuke/context/_context/weakset.c',
+                             'Tuke/context/_context/wrap_dict.c',
+                             'Tuke/context/_context/wrap_list.c',
+                             'Tuke/context/_context/wrap_tuple.c',
+                             'Tuke/context/_context/wrapper.c',
+                             'Tuke/context/_context/__init__.c']),
+        ],
     description="Tuke EDA toolkit.",
     author="Peter Todd",
     author_email="pete@petertodd.org",
