@@ -37,7 +37,7 @@ if sys.version_info[:2] < (2,5):
 
 setup(
     name="tuke",
-    version='0.0',
+    version='0.1',
     packages = find_packages(),
 
     ext_modules = [_context_module],

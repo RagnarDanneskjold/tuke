@@ -20,3 +20,29 @@ export PYTHONPATH=build
 Then after every change to a native C module:
 
 ./setup.py develop -d build
+
+Unittests
+=========
+
+To run all unit tests:
+
+./tuke test
+
+For other options:
+
+./tuke test --help
+
+Examples
+========
+
+Currently one example is usable:
+
+cd examples
+./led_grid 10 10 10x10 && gerbv 10x10.*
+
+Creates a 10x10 series-parallel led grid.
+
+You can also leave off the gerber output prefix to see the Python code for that
+grid:
+
+./led_grid 10 10
